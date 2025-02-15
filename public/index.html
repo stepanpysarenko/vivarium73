@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivarium73</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const gridSize = 200;
+        const scale = 4;  // Scale for better visibility
+        const creatures = Array.from({ length: 20 }, () => ({
+            x: Math.floor(Math.random() * gridSize),
+            y: Math.floor(Math.random() * gridSize)
+        }));
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            creatures.forEach(creature => {
+                ctx.fillStyle = "blue";
+                ctx.fillRect(creature.x * scale, creature.y * scale, scale, scale);
+            });
+        }
+        
+        async function updateCreatures() {
+            try {
+                const response = await fetch("http://localhost:3000/move");
+                const newPositions = await response.json();
+                creatures.forEach((creature, index) => {
+                    creature.x = newPositions[index].x;
+                    creature.y = newPositions[index].y;
+                });
+            } catch (error) {
+                console.error("Failed to fetch AI data", error);
+            }
+        }
+        
+        function gameLoop() {
+            updateCreatures();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        gameLoop();
+    </script>
+</body>
+</html>
