@@ -6,11 +6,12 @@ const app = express();
 const PORT = 3000;
 app.use(cors());
 
-// Serve frontend HTML
 app.use(express.static(path.join(__dirname, "public")));
 
-const gridSize = 200;
-let creatures = Array.from({ length: 20 }, () => ({
+const gridSize = 100;
+const creatureCount = 20;
+
+let creatures = Array.from({ length: creatureCount }, () => ({
     x: Math.floor(Math.random() * gridSize),
     y: Math.floor(Math.random() * gridSize)
 }));

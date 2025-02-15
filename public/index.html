@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vivarium73</title>
+    <title>vivarium73</title>
     <style>
         canvas {
             border: 1px solid black;
@@ -17,9 +17,12 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const gridSize = 200;
-        const scale = 4;  // Scale for better visibility
-        const creatures = Array.from({ length: 20 }, () => ({
+
+        const gridSize = 100;
+        const scale = canvas.width / gridSize;
+        const creatureCount = 20;
+
+        const creatures = Array.from({ length: creatureCount }, () => ({
             x: Math.floor(Math.random() * gridSize),
             y: Math.floor(Math.random() * gridSize)
         }));
@@ -41,7 +44,7 @@
                     creature.y = newPositions[index].y;
                 });
             } catch (error) {
-                console.error("Failed to fetch AI data", error);
+                console.error("Failed to fetch data", error);
             }
         }
         
