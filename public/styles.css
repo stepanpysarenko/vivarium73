@@ -1,0 +1,80 @@
+body {
+    background-color: #fafafa;
+    color: #333333;
+    font-family: 'Press Start 2P', cursive;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 20px 0;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding: 10px 0;
+}
+
+canvas {
+    border: 1px solid #cccccc;
+    background-color: #ffffff;
+    display: block;
+    width: 100%;
+    max-width: 798px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+button#toggleButton {
+    background-color: #e6d8b5;
+    color: #333333;
+    border: 1px solid #cccccc;
+    padding: 10px;
+    font-family: 'Press Start 2P', cursive;
+    cursor: pointer;
+    width: 120px;
+    transition: background-color 0.3s ease;
+}
+
+button#toggleButton:hover {
+    background-color: #d4c4a3;
+}
+
+.panel {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    padding: 20px 40px;
+    margin-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.game-title {
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .panel {
+        padding: 10px;
+        flex-direction: column;
+    }
+
+    button {
+        padding: 5px;
+        width: 100%;
+        max-width: none;
+        margin-top: 10px;
+    }
+}
