@@ -3,13 +3,23 @@ const ctx = canvas.getContext("2d");
 
 const gridSize = 100;
 const scale = canvas.width / gridSize;
-const creatureCount = 20;
 let animationFrameId;
+let creatures = [];
 
-const creatures = Array.from({ length: creatureCount }, () => ({
-    x: Math.floor(Math.random() * gridSize),
-    y: Math.floor(Math.random() * gridSize)
-}));
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const response = await fetch("http://localhost:3000/initial-state");
+        const initialState = await response.json();
+        initializeSimulation(initialState);
+    } catch (error) {
+        console.error("Error fetching initial state:", error);
+    }
+});
+
+function initializeSimulation(initialState) {
+    creatures = initialState;
+    draw();
+}
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -23,10 +33,7 @@ async function updateCreatures() {
     try {
         const response = await fetch("http://localhost:3000/move");
         const newPositions = await response.json();
-        creatures.forEach((creature, index) => {
-            creature.x = newPositions[index].x;
-            creature.y = newPositions[index].y;
-        });
+        creatures = newPositions;
     } catch (error) {
         console.error("Failed to fetch data", error);
     }
@@ -38,30 +45,27 @@ function gameLoop() {
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
+const toggleButton = document.getElementById("toggleButton");
+
 function startSimulation() {
-    if (!animationFrameId) {
-        console.log('Starting simulation...');
-        gameLoop();
-    }
+    console.log('Starting simulation...');
+    gameLoop();
+    toggleButton.textContent = "Stop";
 }
 
 function stopSimulation() {
-    if (animationFrameId) {
-        console.log('Stopping simulation...');
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
+    console.log('Stopping simulation...');
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    toggleButton.textContent = "Start";
 }
 
 function toggleSimulation() {
-    const button = document.getElementById("toggleButton");
     if (animationFrameId) {
-        stopSimulation();
-        button.textContent = "Start";
+        stopSimulation();       
     } else {
-        startSimulation();
-        button.textContent = "Stop";
+        startSimulation();       
     }
 }
 
-gameLoop();
+startSimulation()

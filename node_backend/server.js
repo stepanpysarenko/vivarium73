@@ -1,10 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const axios = require("axios");
 
 const app = express();
 const PORT = 3000;
 app.use(cors());
+app.use(express.json());
+
 
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -20,12 +23,20 @@ let creatures = Array.from({ length: creatureCount }, () => ({
     y: Math.floor(Math.random() * gridSize)
 }));
 
-app.get("/move", (req, res) => {
-    creatures = creatures.map(creature => ({
-        x: Math.max(0, Math.min(gridSize - 1, creature.x + (Math.random() > 0.5 ? 1 : -1))),
-        y: Math.max(0, Math.min(gridSize - 1, creature.y + (Math.random() > 0.5 ? 1 : -1)))
-    }));
+app.get("/initial-state", (req, res) => {
     res.json(creatures);
+});
+
+app.get("/move", async (req, res) => {
+    try {
+        const response = await axios.post("http://localhost:8000/move", creatures);
+        console.log("creatures", creatures);
+        creatures = response.data;
+        res.json(creatures);
+    } catch (error) {
+        console.error("Error connecting to AI backend:", error);
+        res.status(500).json({ error: "AI backend unreachable" });
+    }
 });
 
 app.listen(PORT, () => {

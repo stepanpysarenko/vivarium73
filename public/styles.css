@@ -8,7 +8,7 @@ body {
     height: 100vh;
     flex-direction: column;
     overflow: hidden;
-    padding: 20px 0;
+    padding: 0;
 }
 
 .container {
@@ -49,7 +49,7 @@ button#toggleButton:hover {
     background-color: #d4c4a3;
 }
 
-.panel {
+.panel{
     background-color: #ffffff;
     border: 1px solid #cccccc;
     padding: 20px 40px;
