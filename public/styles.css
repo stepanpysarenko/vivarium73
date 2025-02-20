@@ -34,7 +34,7 @@ canvas {
     margin-bottom: 20px;
 }
 
-button#toggleButton {
+button {
     background-color: #e6d8b5;
     color: #333333;
     border: 1px solid #cccccc;
@@ -45,7 +45,7 @@ button#toggleButton {
     transition: background-color 0.3s ease;
 }
 
-button#toggleButton:hover {
+button:hover {
     background-color: #d4c4a3;
 }
 

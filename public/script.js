@@ -3,69 +3,75 @@ const ctx = canvas.getContext("2d");
 
 const gridSize = 100;
 const scale = canvas.width / gridSize;
-let animationFrameId;
-let creatures = [];
 
-document.addEventListener("DOMContentLoaded", async () => {
+const interval = 100;
+var timer = null;
+
+let gameState = { creatures: [], food: [] };
+
+async function resetState() {
     try {
-        const response = await fetch("http://localhost:3000/initial-state");
-        const initialState = await response.json();
-        initializeSimulation(initialState);
+        const response = await fetch("http://localhost:3000/reset-state");
     } catch (error) {
-        console.error("Error fetching initial state:", error);
+        console.error("Error reseting state:", error);
     }
-});
+}
 
-function initializeSimulation(initialState) {
-    creatures = initialState;
-    draw();
+async function fetchGameUpdate() {
+    try {
+        const response = await fetch("http://localhost:3000/move");
+        gameState = await response.json();
+    } catch (error) {
+        console.error("Error fetching game update:", error);
+    }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    creatures.forEach(creature => {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(creature.x * scale, creature.y * scale, scale, scale);
+
+    ctx.fillStyle = "green";
+    gameState.food.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
+
+    ctx.fillStyle = "blue";
+    gameState.creatures.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 }
 
-async function updateCreatures() {
-    try {
-        const response = await fetch("http://localhost:3000/move");
-        const newPositions = await response.json();
-        creatures = newPositions;
-    } catch (error) {
-        console.error("Failed to fetch data", error);
-    }
-}
-
 function gameLoop() {
-    updateCreatures();
+    fetchGameUpdate()
     draw();
-    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 const toggleButton = document.getElementById("toggleButton");
 
 function startSimulation() {
     console.log('Starting simulation...');
-    gameLoop();
+    timer = setInterval(gameLoop, interval);
     toggleButton.textContent = "Stop";
 }
 
 function stopSimulation() {
     console.log('Stopping simulation...');
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
+    clearInterval(timer);
+    timer = null;
     toggleButton.textContent = "Start";
 }
 
 function toggleSimulation() {
-    if (animationFrameId) {
+    if (timer) {
         stopSimulation();       
     } else {
         startSimulation();       
     }
 }
 
-startSimulation()
+function resetSimulation() {
+    resetState();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    startSimulation();
+});

@@ -1,41 +1,59 @@
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const axios = require("axios");
+const path = require("path");
 
 const app = express();
 const PORT = 3000;
-app.use(cors());
-app.use(express.json());
+const AI_BACKEND_URL = "http://localhost:8000/move";
 
+const GRID_SIZE = 100;
+const CREATURE_COUNT = 20;
+const FOOD_COUNT = 20;
+
+let gameState;
 
 app.use(express.static(path.join(__dirname, "../public")));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
-const gridSize = 100;
-const creatureCount = 20;
+function randomPosition() {
+    return { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
+}
 
-let creatures = Array.from({ length: creatureCount }, () => ({
-    x: Math.floor(Math.random() * gridSize),
-    y: Math.floor(Math.random() * gridSize)
-}));
+function randomWeights() {
+    return [
+        [Math.random() * 2 - 1, Math.random() * 2 - 1],
+        [Math.random() * 2 - 1, Math.random() * 2 - 1]
+    ];
+}
 
-app.get("/initial-state", (req, res) => {
-    res.json(creatures);
+function generateState() {
+    gameState = {
+        creatures: Array.from({ length: CREATURE_COUNT }, () => ({
+            ...randomPosition(),
+            weights: randomWeights()
+        })),
+        food: Array.from({ length: FOOD_COUNT }, randomPosition)
+    };
+}
+generateState();
+
+
+app.get("/reset-state", (req, res) => {
+    generateState();
 });
 
 app.get("/move", async (req, res) => {
     try {
-        const response = await axios.post("http://localhost:8000/move", creatures);
-        console.log("creatures", creatures);
-        creatures = response.data;
-        res.json(creatures);
+        const response = await axios.post(AI_BACKEND_URL, gameState);
+        gameState = response.data;
+        res.json(gameState);
     } catch (error) {
-        console.error("Error connecting to AI backend:", error);
-        res.status(500).json({ error: "AI backend unreachable" });
+        console.error("Error connecting to AI backend: ", error.message);
+        res.status(500).json({ error: "AI backend unavailable" });
     }
 });
 
