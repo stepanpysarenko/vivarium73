@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 const gridSize = 100;
 const scale = canvas.width / gridSize;
 
-const interval = 100;
+const interval = 40; // 25 FPS
 var timer = null;
 
 let gameState = { creatures: [], food: [] };
@@ -47,31 +47,31 @@ function gameLoop() {
 
 const toggleButton = document.getElementById("toggleButton");
 
-function startSimulation() {
-    console.log('Starting simulation...');
+function start() {
+    console.log('Starting...');
     timer = setInterval(gameLoop, interval);
     toggleButton.textContent = "Stop";
 }
 
-function stopSimulation() {
-    console.log('Stopping simulation...');
+function stop() {
+    console.log('Stopping...');
     clearInterval(timer);
     timer = null;
     toggleButton.textContent = "Start";
 }
 
-function toggleSimulation() {
+function toggle() {
     if (timer) {
-        stopSimulation();       
+        stop();       
     } else {
-        startSimulation();       
+        start();       
     }
 }
 
-function resetSimulation() {
+function reset() {
     resetState();
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    startSimulation();
+    start();
 });

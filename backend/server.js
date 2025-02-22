@@ -8,10 +8,11 @@ const PORT = 3000;
 const AI_BACKEND_URL = "http://localhost:8000/move";
 
 const GRID_SIZE = 100;
-const CREATURE_COUNT = 20;
-const FOOD_COUNT = 20;
+const CREATURE_COUNT = 10;
+const FOOD_COUNT = 30;
 
 let gameState;
+let resetState = false;
 
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -38,16 +39,17 @@ function generateState() {
         })),
         food: Array.from({ length: FOOD_COUNT }, randomPosition)
     };
+    console.log('State generated:', gameState);
 }
 generateState();
 
-
-app.get("/reset-state", (req, res) => {
-    generateState();
-});
-
 app.get("/move", async (req, res) => {
     try {
+        if (resetState) {
+            generateState();
+            resetState = false;
+        }
+
         const response = await axios.post(AI_BACKEND_URL, gameState);
         gameState = response.data;
         res.json(gameState);
