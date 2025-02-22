@@ -1,13 +1,10 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const gridSize = 100;
-const scale = canvas.width / gridSize;
-
 const interval = 40; // 25 FPS
 var timer = null;
 
-let gameState = { creatures: [], food: [] };
+let gameState = {creatures: [], food: [], gridSize: 0};
 
 async function resetState() {
     try {
@@ -26,8 +23,9 @@ async function fetchGameUpdate() {
     }
 }
 
-function draw() {
+function draw() { 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = canvas.width / gameState.gridSize;
 
     ctx.fillStyle = "green";
     gameState.food.forEach(({ x, y }) => {
@@ -41,7 +39,7 @@ function draw() {
 }
 
 function gameLoop() {
-    fetchGameUpdate()
+    fetchGameUpdate();
     draw();
 }
 
