@@ -8,7 +8,7 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-const GRID_SIZE = 100;
+const GRID_SIZE = 50;
 const CREATURE_COUNT = 20;
 const FOOD_COUNT = 50;
 
@@ -71,7 +71,6 @@ app.get("/move", async (req, res) => {
 
             return { ...creature, x: new_x, y: new_y };
         });
-        console.log(gameState); 
         res.json(gameState);
     } catch (error) {
         console.error("Error calling AI backend:", error);

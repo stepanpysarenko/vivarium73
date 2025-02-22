@@ -1,7 +1,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const interval = 40; // 25 FPS
+const interval = 20; // 25 FPS
 var timer = null;
 
 let gameState = {creatures: [], food: [], gridSize: 0};
