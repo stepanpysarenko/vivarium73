@@ -9,6 +9,7 @@ class Creature(BaseModel):
     x: int
     y: int
     weights: List[List[float]]
+    energy: int
 
 class Food(BaseModel):
     x: int
