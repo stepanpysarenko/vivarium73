@@ -1,29 +1,11 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const toggleButton = document.getElementById("toggleButton");
+var socket = null;
 
-const interval = 20; // 25 FPS
-var timer = null;
+const SERVER_URL = "ws://localhost:3000";
 
-let gameState = {creatures: [], food: [], gridSize: 0};
-
-async function resetState() {
-    try {
-        const response = await fetch("http://localhost:3000/reset-state");
-    } catch (error) {
-        console.error("Error reseting state:", error);
-    }
-}
-
-async function fetchGameUpdate() {
-    try {
-        const response = await fetch("http://localhost:3000/move");
-        gameState = await response.json();
-    } catch (error) {
-        console.error("Error fetching game update:", error);
-    }
-}
-
-function draw() { 
+function draw(gameState) { 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / gameState.gridSize;
 
@@ -38,36 +20,42 @@ function draw() {
     });
 }
 
-function gameLoop() {
-    fetchGameUpdate();
-    draw();
-}
-
-const toggleButton = document.getElementById("toggleButton");
-
 function start() {
-    console.log('Starting...');
-    timer = setInterval(gameLoop, interval);
+    socket = new WebSocket(SERVER_URL);
+
+    socket.onopen = event => {
+        console.log("Connected to WebSocket server:", event.currentTarget.url);
+    };
+
+    socket.onmessage = event => {
+        const gameState = JSON.parse(event.data);
+        // console.log("Updated game state:", gameState);
+        draw(gameState);
+    };
+    
+    socket.onclose = () => {
+        console.log("Connection to WebSocket server closed");
+    };
+    
+    socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
+
     toggleButton.textContent = "Stop";
 }
 
 function stop() {
-    console.log('Stopping...');
-    clearInterval(timer);
-    timer = null;
+    socket.close();
+    socket = null;
     toggleButton.textContent = "Start";
 }
 
-function toggle() {
-    if (timer) {
+function toggle() {   
+    if (socket) {
         stop();       
     } else {
         start();       
     }
-}
-
-function reset() {
-    resetState();
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
