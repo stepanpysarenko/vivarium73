@@ -6,6 +6,7 @@ from ai_logic import think
 app = FastAPI()
 
 class Creature(BaseModel):
+    id: int
     x: int
     y: int
     weights: List[List[float]]

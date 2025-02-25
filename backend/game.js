@@ -10,8 +10,11 @@ const ENERGY_DECAY = 1; // Energy lost per move
 const ENERGY_GAIN = 200; // Energy gained when eating
 const MUTATION_RATE = 0.1; // Chance of mutation per weight
 
+var lastCreatureId = 0;
+
 var gameState = {
         creatures: Array.from({ length: CREATURE_COUNT }, () => ({
+            id: lastCreatureId++,
             x: Math.floor(Math.random() * GRID_SIZE),
             y: Math.floor(Math.random() * GRID_SIZE),
             weights: [[Math.random(), Math.random()], [Math.random(), Math.random()]], 

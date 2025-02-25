@@ -5,7 +5,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const { gameState, updateGameState } = require("./game");
 
-const GAME_STATE_UPDATE_INTERVAL = 100; //ms
+const GAME_STATE_UPDATE_INTERVAL_MS = 150;
 const PORT = 3000;
 
 const app = express();
@@ -34,7 +34,7 @@ async function gameLoop() {
                 client.send(JSON.stringify(gameState));
             }
         });
-        await new Promise(resolve => setTimeout(resolve, GAME_STATE_UPDATE_INTERVAL));
+        await new Promise(resolve => setTimeout(resolve, GAME_STATE_UPDATE_INTERVAL_MS));
     }
 }
 
