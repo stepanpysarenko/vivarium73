@@ -33,11 +33,14 @@ function draw() {
     });
 
     // draw creature
-    ctx.fillStyle = "blue";
-    gameState.creatures.forEach(({ x, y, prev_x, prev_y }) => {
+    gameState.creatures.forEach(({ x, y, prev_x, prev_y, energy }) => {
+        ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
         ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
+
+        ctx.fillStyle = "red";
+        ctx.fillRect(drawX * scale, drawY * scale - 5,  energy / 1000 * scale, 3);
     });
 
     requestAnimationFrame(draw);

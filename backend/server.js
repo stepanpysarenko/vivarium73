@@ -3,7 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("ws");
-const { gameState, initGameState, updateGameState } = require("./game");
+const { gameState, updateGameState } = require("./game");
 
 const GAME_STATE_UPDATE_INTERVAL_MS = 100;
 const PORT = 3000;

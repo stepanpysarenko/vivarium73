@@ -3,11 +3,11 @@ const axios = require("axios");
 const AI_BACKEND_URL = "http://localhost:8000/ai/move";
 
 const GRID_SIZE = 50;
-const CREATURE_COUNT = 10;
-const FOOD_COUNT = 80;
-const INITIAL_ENERGY = 4000;
+const CREATURE_COUNT = 20;
+const FOOD_COUNT = 100;
+const INITIAL_ENERGY = 1000;
 const ENERGY_DECAY = 1; // Energy lost per move
-const ENERGY_GAIN = 200; // Energy gained when eating
+const ENERGY_GAIN = 50; // Energy gained when eating
 const MUTATION_RATE = 0.1; // Chance of mutation per weight
 
 var lastCreatureId = 0;

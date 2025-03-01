@@ -29,8 +29,8 @@ def think(creature, food, grid_size):
     output = sigmoid(np.dot(weights, input_vector))
 
     # Movement logic
-    move_x = 1 if output[0] > 0.7 else (-1 if output[0] < 0.3 else 0)
-    move_y = 1 if output[1] > 0.7 else (-1 if output[1] < 0.3 else 0)
+    move_x = 1 if output[0] > 0.6 else (-1 if output[0] < 0.4 else 0)
+    move_y = 1 if output[1] > 0.6 else (-1 if output[1] < 0.4 else 0)
 
     # Small chance of random movement for exploration
     if np.random.rand() < 0.1:
