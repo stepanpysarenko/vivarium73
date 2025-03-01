@@ -9,6 +9,8 @@ class Creature(BaseModel):
     id: int
     x: int
     y: int
+    prev_x: int
+    prev_y: int
     weights: List[List[float]]
     energy: int
 
