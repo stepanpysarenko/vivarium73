@@ -13,6 +13,7 @@ class Creature(BaseModel):
     prev_y: int
     weights: List[List[float]]
     energy: int
+    generation: int
 
 class Food(BaseModel):
     x: int
