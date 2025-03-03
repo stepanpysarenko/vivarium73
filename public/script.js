@@ -46,7 +46,7 @@ function draw() {
         if (generation > 0){
             ctx.fillStyle = "black";
             ctx.font = "16px sans-serif";
-            ctx.fillText(generation, drawX * scale + 3, drawY * scale + 16);
+            ctx.fillText(generation, drawX * scale + 5, drawY * scale + 16);
         }      
     });
 

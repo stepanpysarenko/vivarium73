@@ -2,16 +2,16 @@ const axios = require("axios");
 
 const AI_BACKEND_URL = "http://localhost:8000/ai/move";
 
-const GRID_SIZE = 30;
+const GRID_SIZE = 40;
 const CREATURE_COUNT = 15;
 const FOOD_COUNT = 60;
 
-const INITIAL_ENERGY = 400;
+const INITIAL_ENERGY = 500;
 const MAX_ENERGY = 1000;    
 const ENERGY_DECAY = 1;
 const ENERGY_GAIN_EATING = 300;
-const MIN_ENERGY_TO_REPRODUCE = 800;
-const REPRODUCTION_ENERGY_COST = 500;
+const MIN_ENERGY_TO_REPRODUCE = 700;
+const REPRODUCTION_ENERGY_COST = 600;
 
 const MUTATION_RATE = 0.1; // chance of mutation per weight
 
@@ -26,7 +26,7 @@ function initCreature(generation = 0, x = null, y = null, weights = null) {
         y: y,
         prev_x: x,
         prev_y: y,
-        weights: weights ? weights : [[Math.random(), Math.random()], [Math.random(), Math.random()]], 
+        weights: weights ? weights : Array.from({ length: 28 }, () => Math.random()),
         energy: INITIAL_ENERGY,
         generation: generation
     }
@@ -47,7 +47,7 @@ var gameState = {
 }
 
 function mutate(weights) {
-    return weights.map(row => row.map(w => w + (Math.random() - 0.5) * 0.1));
+    return weights.map(w => w + (Math.random() - 0.5) * 0.1);
 }
 
 async function updateGameState()  {
@@ -55,7 +55,8 @@ async function updateGameState()  {
         const response = await axios.post(AI_BACKEND_URL, {
             creatures: gameState.creatures,
             food: gameState.food,
-            grid_size: gameState.gridSize
+            grid_size: gameState.gridSize,
+            max_energy: gameState.maxEnergy
         });
 
         const movements = response.data;

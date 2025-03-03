@@ -4,33 +4,30 @@ import random
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-def think(creature, food, grid_size):
-    """Compute movement direction based on a simple neural network."""
-    if not food:
-        # No food: move randomly to explore
-        return {"move_x": random.choice([-1, 0, 1]), "move_y": random.choice([-1, 0, 1])}
+def tanh(x):
+    return np.tanh(x)  # Output range: [-1, 1]
 
-    # Find the closest food based on Euclidean distance
+def think(creature, food, grid_size, max_energy):
     closest_food = min(food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
 
-    # Sensory input: relative food position (normalized)
-    input_vector = np.array([
-        (closest_food.x - creature.x) / grid_size,
-        (closest_food.y - creature.y) / grid_size
+    inputs = np.array([
+        (closest_food.x - creature.x) / (grid_size / 2),  
+        (closest_food.y - creature.y) / (grid_size / 2),  
+        (creature.prev_x - creature.x) / (grid_size / 2),
+        (creature.prev_y - creature.y) / (grid_size / 2),
+        (2 * creature.energy / max_energy) - 1
     ])
 
-    # Creature's neural weights (ensure correct shape)
     weights = np.array(creature.weights)
 
-    if weights.shape != (2, 2):
-        weights = np.random.randn(2, 2)  # Ensure a 2x2 matrix
+    weights_hidden = weights[:20].reshape(4, 5)
+    weights_output = weights[20:].reshape(2, 4)
 
-    # Compute movement direction
-    output = sigmoid(np.dot(weights, input_vector))
+    hidden_layer = tanh(np.dot(weights_hidden, inputs)) 
+    output = np.dot(weights_output, hidden_layer)
 
-    # Movement logic
-    move_x = 1 if output[0] > 0.6 else (-1 if output[0] < 0.4 else 0)
-    move_y = 1 if output[1] > 0.6 else (-1 if output[1] < 0.4 else 0)
+    move_x = 1 if output[0] > 0.5 else (-1 if output[0] < -0.5 else 0)
+    move_y = 1 if output[1] > 0.5 else (-1 if output[1] < -0.5 else 0)
 
     # Small chance of random movement for exploration
     if np.random.rand() < 0.1:
