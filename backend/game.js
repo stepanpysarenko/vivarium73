@@ -1,34 +1,49 @@
 const axios = require("axios");
 
-const AI_BACKEND_URL = "http://localhost:8000/ai/move";
+const AI_BACKEND_URL_INIT_WEIGHTS = "http://localhost:8000/init_weights";
+const AI_BACKEND_URL_THINK = "http://localhost:8000/think";
 
 const GRID_SIZE = 40;
 const CREATURE_COUNT = 15;
 const FOOD_COUNT = 60;
 
-const INITIAL_ENERGY = 500;
+const INITIAL_ENERGY = 300;
 const MAX_ENERGY = 1000;    
 const ENERGY_DECAY = 1;
 const ENERGY_GAIN_EATING = 300;
-const MIN_ENERGY_TO_REPRODUCE = 700;
-const REPRODUCTION_ENERGY_COST = 600;
+const MIN_ENERGY_TO_REPRODUCE = 600;
+const REPRODUCTION_ENERGY_COST = 400;
 
 const MUTATION_RATE = 0.1; // chance of mutation per weight
 
+var gameState;
 var lastCreatureId = 0;
 
-function initCreature(generation = 0, x = null, y = null, weights = null) {
-    x = x ? x : Math.floor(Math.random() * GRID_SIZE);
-    y = y ? y : Math.floor(Math.random() * GRID_SIZE);
-    return {
-        id: lastCreatureId++,
-        x: x,
-        y: y,
-        prev_x: x,
-        prev_y: y,
-        weights: weights ? weights : Array.from({ length: 28 }, () => Math.random()),
-        energy: INITIAL_ENERGY,
-        generation: generation
+function initCreature(x = null, y = null, weights = null, generation = 0) {
+    try {
+        if (weights == null) {
+            // const response = await axios.get(AI_BACKEND_URL_INIT_WEIGHTS);
+            // weights = response.data.weights;
+            weights = Array.from({ length: 28 }, () => Math.random() * 2 - 1);
+        }
+
+        x = x ? x : Math.floor(Math.random() * GRID_SIZE);
+        y = y ? y : Math.floor(Math.random() * GRID_SIZE);
+
+        return {
+            id: lastCreatureId++,
+            x: x,
+            y: y,
+            prev_x: x,
+            prev_y: y,
+            weights: weights,
+            energy: INITIAL_ENERGY,
+            generation: generation
+        };
+
+    } catch (error) {
+        console.error("Error generating weights:", error);
+        return null;
     }
 }
 
@@ -39,20 +54,27 @@ function initFood() {
     }
 }
 
-var gameState = {
-    creatures: Array.from({ length: CREATURE_COUNT }, () => initCreature(0, null, null, null)),
-    food: Array.from({ length: FOOD_COUNT }, initFood),
-    gridSize: GRID_SIZE,
-    maxEnergy: MAX_ENERGY
-}
-
 function mutate(weights) {
     return weights.map(w => w + (Math.random() - 0.5) * 0.1);
 }
 
+function getgameState(){
+    return gameState;
+}
+
+function initGameState()
+{
+    gameState = {
+        creatures: Array.from({ length: CREATURE_COUNT }, initCreature),
+        food: Array.from({ length: FOOD_COUNT }, initFood),
+        gridSize: GRID_SIZE,
+        maxEnergy: MAX_ENERGY
+    }
+}
+
 async function updateGameState()  {
     try {
-        const response = await axios.post(AI_BACKEND_URL, {
+        const response = await axios.post(AI_BACKEND_URL_THINK, {
             creatures: gameState.creatures,
             food: gameState.food,
             grid_size: gameState.gridSize,
@@ -90,7 +112,7 @@ async function updateGameState()  {
             }
 
             if (creature.energy > MIN_ENERGY_TO_REPRODUCE) {
-                let newCreature = initCreature(creature.generation + 1, creature.x, creature.y, mutate(creature.weights));
+                let newCreature = initCreature(creature.x, creature.y, mutate(creature.weights), creature.generation + 1);
                 offsprings.push(newCreature);
                 creature.energy -= REPRODUCTION_ENERGY_COST;
             }
@@ -103,7 +125,7 @@ async function updateGameState()  {
 
         if (gameState.creatures.length < CREATURE_COUNT) {
             do {
-                gameState.creatures.push(initCreature(0, null, null, null));
+                gameState.creatures.push(initCreature(null, null, null, 0));
             } while (gameState.creatures.length < CREATURE_COUNT);
         }
 
@@ -112,4 +134,4 @@ async function updateGameState()  {
     }
 }
 
-module.exports = { gameState, updateGameState };
+module.exports = { getgameState, initGameState, updateGameState };

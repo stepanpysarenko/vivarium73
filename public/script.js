@@ -43,7 +43,7 @@ function draw() {
         let drawY = lerp(prev_y, y, animationProgress);
         ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
 
-        if (generation > 0){
+        if (generation > 0) {
             ctx.fillStyle = "black";
             ctx.font = "16px sans-serif";
             ctx.fillText(generation, drawX * scale + 5, drawY * scale + 16);

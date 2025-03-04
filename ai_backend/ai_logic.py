@@ -1,11 +1,24 @@
 import numpy as np
 import random
 
+# Define the NN structure
+INPUT_SIZE = 5  
+HIDDEN_SIZE = 4 
+OUTPUT_SIZE = 2  # Movement decisions (X, Y)
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def tanh(x):
     return np.tanh(x)  # Output range: [-1, 1]
+
+def init_weights():
+    """Generates a flat list of random weights for a new creature."""
+    weights_hidden = np.random.uniform(-1, 1, (HIDDEN_SIZE * INPUT_SIZE))
+    weights_output = np.random.uniform(-1, 1, (OUTPUT_SIZE * HIDDEN_SIZE))
+    
+    weights = np.concatenate([weights_hidden, weights_output]).tolist()
+    return {"weights": weights}
 
 def think(creature, food, grid_size, max_energy):
     closest_food = min(food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
