@@ -4,15 +4,16 @@ const AI_BACKEND_URL_INIT_WEIGHTS = "http://localhost:8000/init_weights";
 const AI_BACKEND_URL_THINK = "http://localhost:8000/think";
 
 const GRID_SIZE = 40;
-const CREATURE_COUNT = 15;
-const FOOD_COUNT = 60;
+const CREATURE_COUNT = 10;
+const CREATURE_COUNT_MAX = 50;
+const FOOD_COUNT = 50;
 
-const INITIAL_ENERGY = 300;
+const INITIAL_ENERGY = 500;
 const MAX_ENERGY = 1000;    
 const ENERGY_DECAY = 1;
-const ENERGY_GAIN_EATING = 300;
-const MIN_ENERGY_TO_REPRODUCE = 600;
-const REPRODUCTION_ENERGY_COST = 400;
+const ENERGY_GAIN_EATING = 200;
+const MIN_ENERGY_TO_REPRODUCE = 900;
+const REPRODUCTION_ENERGY_COST = 600;
 
 const MUTATION_RATE = 0.1; // chance of mutation per weight
 
@@ -24,7 +25,7 @@ function initCreature(x = null, y = null, weights = null, generation = 0) {
         if (weights == null) {
             // const response = await axios.get(AI_BACKEND_URL_INIT_WEIGHTS);
             // weights = response.data.weights;
-            weights = Array.from({ length: 28 }, () => Math.random() * 2 - 1);
+            weights = Array.from({ length: 42 }, () => Math.random() * 2 - 1);
         }
 
         x = x ? x : Math.floor(Math.random() * GRID_SIZE);
@@ -47,7 +48,7 @@ function initCreature(x = null, y = null, weights = null, generation = 0) {
     }
 }
 
-function initFood() {
+function initPosition() {
     return {
         x: Math.floor(Math.random() * GRID_SIZE),
         y: Math.floor(Math.random() * GRID_SIZE)
@@ -66,7 +67,7 @@ function initGameState()
 {
     gameState = {
         creatures: Array.from({ length: CREATURE_COUNT }, initCreature),
-        food: Array.from({ length: FOOD_COUNT }, initFood),
+        food: Array.from({ length: FOOD_COUNT }, initPosition),
         gridSize: GRID_SIZE,
         maxEnergy: MAX_ENERGY
     }
@@ -123,11 +124,13 @@ async function updateGameState()  {
 
         gameState.creatures.push(...offsprings);
 
-        if (gameState.creatures.length < CREATURE_COUNT) {
+        if (gameState.creatures.length > CREATURE_COUNT_MAX) {
+            gameState.creatures = gameState.creatures.sort((a,b) => b.generation - a.generation).slice(0, CREATURE_COUNT_MAX);
+        } else if (gameState.creatures.length < CREATURE_COUNT) {
             do {
                 gameState.creatures.push(initCreature(null, null, null, 0));
             } while (gameState.creatures.length < CREATURE_COUNT);
-        }
+        } 
 
     } catch (error) {
         console.error("Error calling AI backend:", error);

@@ -1,49 +1,72 @@
 import numpy as np
 import random
+from fastapi import FastAPI
 
-# Define the NN structure
-INPUT_SIZE = 5  
-HIDDEN_SIZE = 4 
-OUTPUT_SIZE = 2  # Movement decisions (X, Y)
+app = FastAPI()
+
+# Corrected layer sizes
+INPUT_SIZE = 5    
+HIDDEN_SIZE = 6   
+OUTPUT_SIZE = 2   
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def tanh(x):
-    return np.tanh(x)  # Output range: [-1, 1]
+    return np.tanh(x)
 
-def init_weights():
+def generate_weights():
     """Generates a flat list of random weights for a new creature."""
-    weights_hidden = np.random.uniform(-1, 1, (HIDDEN_SIZE * INPUT_SIZE))
-    weights_output = np.random.uniform(-1, 1, (OUTPUT_SIZE * HIDDEN_SIZE))
-    
+    total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE + HIDDEN_SIZE  # Includes bias
+    total_weights_output = OUTPUT_SIZE * HIDDEN_SIZE + OUTPUT_SIZE  # Includes bias
+
+    weights_hidden = np.random.uniform(-1, 1, total_weights_hidden)
+    weights_output = np.random.uniform(-1, 1, total_weights_output)
+
     weights = np.concatenate([weights_hidden, weights_output]).tolist()
     return {"weights": weights}
 
 def think(creature, food, grid_size, max_energy):
-    closest_food = min(food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
+    """Decides movement based on food, borders, and movement history."""
+    
+    # Find the closest food if available
+    if food:
+        closest_food = min(food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
+        food_dx = 2 * (closest_food.x - creature.x) / grid_size
+        food_dy = 2 * (closest_food.y - creature.y) / grid_size
+    else:
+        food_dx, food_dy = np.random.uniform(-1, 1), np.random.uniform(-1, 1)  # Encourage wandering
 
+    # Encourage movement based on past motion instead of sticking in place
+    move_dx = 2 * (creature.x - creature.prev_x) / grid_size  
+    move_dy = 2 * (creature.y - creature.prev_y) / grid_size  
+
+    # Normalize energy level
+    energy_level = 2 * (creature.energy / max_energy) - 1  
+
+    # AI Inputs: Food direction, energy level, movement history
     inputs = np.array([
-        (closest_food.x - creature.x) / (grid_size / 2),  
-        (closest_food.y - creature.y) / (grid_size / 2),  
-        (creature.prev_x - creature.x) / (grid_size / 2),
-        (creature.prev_y - creature.y) / (grid_size / 2),
-        (2 * creature.energy / max_energy) - 1
+        food_dx,
+        food_dy,
+        energy_level,
+        move_dx,
+        move_dy
     ])
 
     weights = np.array(creature.weights)
 
-    weights_hidden = weights[:20].reshape(4, 5)
-    weights_output = weights[20:].reshape(2, 4)
+    total_hidden_weights = HIDDEN_SIZE * INPUT_SIZE
+    hidden_weights = weights[:total_hidden_weights].reshape(HIDDEN_SIZE, INPUT_SIZE)
+    output_weights = weights[total_hidden_weights:].reshape(OUTPUT_SIZE, HIDDEN_SIZE)
 
-    hidden_layer = tanh(np.dot(weights_hidden, inputs)) 
-    output = np.dot(weights_output, hidden_layer)
+    hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
+    output = np.dot(output_weights, hidden_layer) 
 
     move_x = 1 if output[0] > 0.5 else (-1 if output[0] < -0.5 else 0)
     move_y = 1 if output[1] > 0.5 else (-1 if output[1] < -0.5 else 0)
 
-    # Small chance of random movement for exploration
-    if np.random.rand() < 0.1:
+    exploration_factor = tanh(output[0] + output[1])
+    if np.random.rand() < (0.2 + 0.3 * (1 - abs(exploration_factor))):
         move_x = random.choice([-1, 0, 1])
         move_y = random.choice([-1, 0, 1])
 

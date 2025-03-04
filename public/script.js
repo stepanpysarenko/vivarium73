@@ -2,6 +2,8 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 var socket = null;
 
+const stats = document.getElementById("stats");
+
 const SERVER_URL = "ws://localhost:3000";
 const ANIMATION_DURATION = 100; 
 
@@ -53,6 +55,10 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
+function updateStats(){
+    stats.innerHTML = gameState.creatures.length;
+}
+
 function start() {
     socket = new WebSocket(SERVER_URL);
 
@@ -77,4 +83,5 @@ function start() {
 document.addEventListener("DOMContentLoaded", () => {
     start();
     requestAnimationFrame(draw);
+    setInterval(updateStats, 1000);
 });

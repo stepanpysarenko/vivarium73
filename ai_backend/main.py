@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-from ai_logic import (init_weights, think)
+from ai_logic import (generate_weights, think)
 
 app = FastAPI()
 
@@ -25,9 +25,9 @@ class GameState(BaseModel):
     grid_size: int
     max_energy: int
 
-# @app.get("/init_weights")
-# def get_init_weights():
-#     return init_weights()
+@app.get("/init_weights")
+def init_weights():
+    return generate_weights()
 
 @app.post("/think")
 def get_movements(state: GameState):
