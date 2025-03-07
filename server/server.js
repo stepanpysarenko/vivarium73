@@ -2,12 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const http = require("http");
-const WebSocket = require("ws");
-const { getgameState, initGameState, updateGameState } = require("./game");
-const { exit } = require("process");
+const WebSocket = require("./node_modules/ws");
+const { getGameState, initGameState, updateGameState } = require("./game");
 
 const GAME_STATE_UPDATE_INTERVAL_MS = 100;
-const PORT = 3000;
+const PORT = 3030;
 
 const app = express();
 app.use(cors());
@@ -32,7 +31,7 @@ async function gameLoop() {
         await updateGameState();
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(getgameState()));
+                client.send(JSON.stringify(getGameState()));
             }
         });
         await new Promise(resolve => setTimeout(resolve, GAME_STATE_UPDATE_INTERVAL_MS));      

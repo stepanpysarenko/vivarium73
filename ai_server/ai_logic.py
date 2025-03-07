@@ -15,8 +15,8 @@ def sigmoid(x):
 def tanh(x):
     return np.tanh(x)
 
-def generate_weights():
-    """Generates a flat list of random weights for a new creature."""
+def init_weights():
+    """Initialize a flat list of random weights for a new creature."""
     total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE + HIDDEN_SIZE  # Includes bias
     total_weights_output = OUTPUT_SIZE * HIDDEN_SIZE + OUTPUT_SIZE  # Includes bias
 

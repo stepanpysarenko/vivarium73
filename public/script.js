@@ -4,7 +4,7 @@ var socket = null;
 
 const stats = document.getElementById("stats");
 
-const SERVER_URL = "ws://localhost:3000";
+const SERVER_URL = "ws://localhost:3030";
 const ANIMATION_DURATION = 100; 
 
 let lastUpdateTime = performance.now();
@@ -31,13 +31,11 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / gameState.gridSize;
 
-    // draw food
     ctx.fillStyle = "green";
     gameState.food.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    // draw creature
     gameState.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
         ctx.fillStyle = "blue";
         ctx.globalAlpha = energy / gameState.maxEnergy * 0.9 + 0.1;
