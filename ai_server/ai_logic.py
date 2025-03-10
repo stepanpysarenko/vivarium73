@@ -17,8 +17,8 @@ def tanh(x):
 
 def init_weights():
     """Initialize a flat list of random weights for a new creature."""
-    total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE + HIDDEN_SIZE  # Includes bias
-    total_weights_output = OUTPUT_SIZE * HIDDEN_SIZE + OUTPUT_SIZE  # Includes bias
+    total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE
+    total_weights_output = OUTPUT_SIZE * HIDDEN_SIZE
 
     weights_hidden = np.random.uniform(-1, 1, total_weights_hidden)
     weights_output = np.random.uniform(-1, 1, total_weights_output)

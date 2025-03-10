@@ -5,15 +5,15 @@ const AI_BACKEND_URL_THINK = "http://localhost:8000/think";
 
 // env
 const GRID_SIZE = 40;
-const CREATURE_COUNT = 10;
-const TOTAL_ENERGY = 14000;
+const CREATURE_COUNT = 12;
+const TOTAL_ENERGY = 15000;
 const FOOD_ENERGY = 200;
 
 // creature
-const INITIAL_ENERGY = 500;
+const INITIAL_ENERGY = 400;
 const MAX_ENERGY = 1000;    
 const ENERGY_DECAY = 1;
-const REPRODUCTION_ENERGY_COST = 600;
+const REPRODUCTION_ENERGY_COST = 500;
 const MUTATION_RATE = 0.1;
 
 const FOOD_COUNT = Math.floor((TOTAL_ENERGY - CREATURE_COUNT * INITIAL_ENERGY) / FOOD_ENERGY);
@@ -66,12 +66,16 @@ function getGameState(){
 
 function initGameState()
 {
-
     gameState = {
-        creatures: Array.from({ length: CREATURE_COUNT }, initCreature),
+        creatures: [],
         food: Array.from({ length: FOOD_COUNT }, initFood),
         gridSize: GRID_SIZE,
         maxEnergy: MAX_ENERGY
+    }
+
+    for (let i = 0; i < CREATURE_COUNT; i++) {
+        var newCreature = initCreature();
+        gameState.creatures.push(newCreature);
     }
 }
 
@@ -104,10 +108,10 @@ async function updateGameState()  {
                 creature.energy = Math.min(creature.energy += FOOD_ENERGY, MAX_ENERGY);
                 gameState.food.splice(foodIndex, 1); // remove eaten food
 
-                // apply mutation when eating
-                if (Math.random() < MUTATION_RATE) {
-                    creature.weights = mutate(creature.weights)
-                }
+                // // apply mutation when eating
+                // if (Math.random() < MUTATION_RATE) {
+                //     creature.weights = mutate(creature.weights)
+                // }
 
                 if (creature.energy >= MAX_ENERGY) {
                     let newCreature = initCreature(creature.x, creature.y, mutate(creature.weights), creature.generation + 1);
@@ -123,7 +127,7 @@ async function updateGameState()  {
         gameState.creatures.push(...offsprings);
 
         if (gameState.creatures.length == 0){
-            initGameState();
+            await initGameState();
         }
         else {
             var totalCreatureEnergy =  gameState.creatures.reduce((total, creature) => total + creature.energy, 0);

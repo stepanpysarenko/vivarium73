@@ -7,6 +7,7 @@ const { getGameState, initGameState, updateGameState } = require("./game");
 
 const GAME_STATE_UPDATE_INTERVAL_MS = 100;
 const PORT = 3030;
+const WS_URL = "ws://localhost:3030";
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,8 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
+
+app.get('/api/wsurl', (req, res) => res.json({ wsUrl: WS_URL }));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -38,7 +41,7 @@ async function gameLoop() {
     }
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`Server running at http://localhost:${PORT}`);
     initGameState();
     gameLoop();

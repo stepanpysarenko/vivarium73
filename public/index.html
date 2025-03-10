@@ -9,12 +9,27 @@
 </head>
 <body>
     <div class="container">
-        <div class="panel">
+        <div id="header">
             <h2 class="game-title">vivarium73</h2> 
-            <br />
-            <span id="stats"></span>
+            <div class="game-stats">
+                <div class="stat">
+                    <span class="stat-label">top gen</span>
+                    <span id="top-gen">&nbsp;</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">creatures</span>
+                    <span id="creature-count">&nbsp;</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">food</span>
+                    <span id="food-count">&nbsp;</span>
+                </div>
+            </div>
         </div>
         <canvas id="gameCanvas" width="800" height="800"></canvas>
+        <div id="footer">
+            <span class="credits"><a href="https://github.com/stepanpysarenko/vivarium73">github</a></span>
+        </div>
     </div>
     <script src="script.js" defer></script>
 </body>

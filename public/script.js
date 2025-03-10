@@ -2,9 +2,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 var socket = null;
 
-const stats = document.getElementById("stats");
-
-const SERVER_URL = "ws://localhost:3030";
+var wsServerUrl;
 const ANIMATION_DURATION = 100; 
 
 let lastUpdateTime = performance.now();
@@ -53,12 +51,14 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-function updateStats(){
-    stats.innerHTML = gameState.creatures.length;
+function updateStats() {
+    document.getElementById("top-gen").textContent = gameState.creatures.reduce((max, creature) => creature.generation > max ? creature.generation : max, 0);
+    document.getElementById("creature-count").textContent = gameState.creatures.length;
+    document.getElementById("food-count").textContent = gameState.food.length;
 }
 
 function start() {
-    socket = new WebSocket(SERVER_URL);
+    socket = new WebSocket(wsServerUrl);
 
     socket.onopen = () => {
         console.log("Connected to WebSocket server");
@@ -78,8 +78,15 @@ function start() {
     };
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    start();
-    requestAnimationFrame(draw);
-    setInterval(updateStats, 1000);
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const response = await fetch("/api/wsurl");
+        wsServerUrl = response.wsUrl;
+
+        start();
+        requestAnimationFrame(draw);
+        setInterval(updateStats, 1000);
+    } catch (error) {
+        console.error("Error getting ws server url", error);
+    }
 });
