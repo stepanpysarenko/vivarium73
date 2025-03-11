@@ -1,7 +1,7 @@
 body {
     background-color: #fafafa;
     color: #333333;
-    font-family: 'Press Start 2P', cursive;
+    font-family: 'Press Start 2P',  monospace, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -9,6 +9,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     padding: 0;
+    margin: 0;
 }
 
 .container {
@@ -24,31 +25,20 @@ body {
     padding: 10px 0;
 }
 
-canvas {
+canvas#game-canvas {
     border: 1px solid #cccccc;
     background-color: #ffffff;
     display: block;
     width: 100%;
-    max-width: 798px;
+    max-width: 800px;
     height: auto;
-}
-
-button {
-    background-color: #e6d8b5;
-    color: #333333;
-    border: 1px solid #cccccc;
-    padding: 10px;
-    font-family: 'Press Start 2P', cursive;
-    cursor: pointer;
-    width: 120px;
-    transition: background-color 0.3s ease;
 }
 
 button:hover {
     background-color: #d4c4a3;
 }
 
-#header {
+.header {
     padding: 20px 0;
     margin-bottom: 10px;
     width: 100%;
@@ -58,7 +48,7 @@ button:hover {
     align-items: center;
 }
 
-#footer {
+.footer {
     padding: 10px 0;
     margin-bottom: 10px;
     width: 100%;
@@ -69,6 +59,8 @@ button:hover {
 }
 
 .game-title {
+    font-size: 24px;
+    line-height: 24px;
     margin: 0;
 }
 
@@ -85,19 +77,19 @@ span.credits a:hover {
 
 .game-stats {
     display: flex;
-    gap: 20px; /* Adds spacing between the stats */
-    align-items: flex-start; /* Aligns labels consistently */
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .stat {
-    text-align: center; /* Centers text and numbers */
+    text-align: center;
 }
 
 .stat-label {
-    display: block; /* Forces the label above the number */
+    display: block;
     font-size: 10px;
-    color: #b0b0b0; /* Slightly lighter for labels */
-    margin-bottom: 8px; /* Increased spacing between label and number */
+    color: #b0b0b0;
+    margin-bottom: 8px;
 }
 
 #top-gen, #creature-count, #food-count {
@@ -105,17 +97,31 @@ span.credits a:hover {
     font-weight: normal;
 }
 
-
-/* @media (max-width: 900px) {
-    #header {
-        padding: 10px;
+@media (max-width: 850px) {
+    .header {
         flex-direction: column;
+        gap: 10px;
+        text-align: center;
     }
 
-    button {
-        padding: 5px;
-        width: 100%;
-        max-width: none;
-        margin-top: 10px;
+    .game-stats {
+        flex-direction: row;
+        gap: 10px;
     }
-} */
+
+    .game-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .footer {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    span.credits a {
+        font-size: 10px;
+        color: #d3d3d3;
+        text-decoration: none;
+    }
+}
