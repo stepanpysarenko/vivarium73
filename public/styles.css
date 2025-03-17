@@ -92,7 +92,7 @@ span.credits a:hover {
     margin-bottom: 8px;
 }
 
-#top-gen, #creature-count, #food-count {
+#generation, #creature-count, #food-count {
     font-size: 14px;
     font-weight: normal;
 }

@@ -1,14 +1,15 @@
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
-var socket = null;
 
+var socket;
 var wsServerUrl;
-const ANIMATION_DURATION = 100; 
 
-let lastUpdateTime = performance.now();
+let lastStateUpdateTime = performance.now();
+let stateUpdateInterval;
+let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
+
 let gameState = { creatures: [], food: [], gridSize: 0 };
-let topCreatureId = null;
 
 function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -16,11 +17,11 @@ function lerp(a, b, t) {
 
 function draw() {
     const now = performance.now();
-    const deltaTime = now - lastUpdateTime;
-    lastUpdateTime = now;
+    const deltaTime = now - lastCanvasUpdateTime;
+    lastCanvasUpdateTime = now;
 
     if (animationProgress < 1) {
-        animationProgress += deltaTime / ANIMATION_DURATION;
+        animationProgress += deltaTime / stateUpdateInterval;
     }
     animationProgress = Math.min(animationProgress, 1);
 
@@ -35,26 +36,27 @@ function draw() {
     });
 
     gameState.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
-        ctx.fillStyle = "blue";
         ctx.globalAlpha = energy / gameState.maxEnergy * 0.9 + 0.1;
+
+        ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
-        ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
+        ctx.fillRect(drawX * scale, drawY * scale, scale, scale);  
 
-        if (generation > 0) {
-            ctx.fillStyle = "black";
-            ctx.font = "16px sans-serif";
-            ctx.fillText(generation, drawX * scale + 5, drawY * scale + 16);
-        }      
+        // yellow square to indicate current generation
+        if (generation == gameState.stats.generation) {
+            ctx.fillStyle = "yellow"; 
+            ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25,  scale * 0.5,  scale * 0.5);  
+        }
     });
 
     requestAnimationFrame(draw);
 }
 
 function updateStats() {
-    document.getElementById("top-gen").textContent = gameState.creatures.reduce((max, creature) => creature.generation > max ? creature.generation : max, 0);
-    document.getElementById("creature-count").textContent = gameState.creatures.length;
-    document.getElementById("food-count").textContent = gameState.food.length;
+    document.getElementById("generation").textContent = gameState.stats.generation;
+    document.getElementById("creature-count").textContent = gameState.stats.creatureCount;
+    document.getElementById("food-count").textContent = gameState.stats.foodCount;
 }
 
 function start() {
@@ -66,6 +68,8 @@ function start() {
 
     socket.onmessage = event => {
         gameState = JSON.parse(event.data);
+        stateUpdateInterval = performance.now() - lastStateUpdateTime;
+        lastStateUpdateTime = performance.now();
         animationProgress = 0;
     };
     

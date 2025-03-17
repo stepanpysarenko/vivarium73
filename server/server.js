@@ -4,10 +4,9 @@ const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
 const { getGameState, initGameState, updateGameState } = require("./game");
+const CONFIG = require("./config");
 
-const GAME_STATE_UPDATE_INTERVAL_MS = 100;
-const PORT = 3030;
-const WS_URL = "ws://localhost:3030";
+const { PORT, SERVER_WS_URL, STATE_UPDATE_INTERVAL } = CONFIG;
 
 const app = express();
 app.use(cors());
@@ -16,7 +15,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
-app.get('/api/wsurl', (req, res) => res.json({ wsUrl: WS_URL }));
+app.get('/api/wsurl', (req, res) => res.json({ wsUrl: SERVER_WS_URL }));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -37,7 +36,7 @@ async function gameLoop() {
                 client.send(JSON.stringify(getGameState()));
             }
         });
-        await new Promise(resolve => setTimeout(resolve, GAME_STATE_UPDATE_INTERVAL_MS));      
+        await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_INTERVAL));      
     }
 }
 
