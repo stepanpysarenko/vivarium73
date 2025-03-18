@@ -2,9 +2,8 @@ require("dotenv").config();
 
 const CONFIG = {
     PORT: process.env.PORT || 3000,
-    WS_SERVER_RL: process.env.WS_URL || "ws://localhost:3000",
-    AI_SERVER_URL_INIT_WEIGHTS: process.env.AI_SERVER_URL_INIT_WEIGHTS || "http://localhost:8000/initweights",
-    AI_SERVER_URL_THINK: process.env.AI_SERVER_URL_THINK || "http://localhost:8000/think",
+    WS_SERVER_URL: process.env.WS_URL || "ws://localhost:3000",
+    AI_SERVER_URL: process.env.AI_SERVER_URL || "http://localhost:8000/api",
     STATE_UPDATE_INTERVAL: 200,
     GRID_SIZE: 40,
     CREATURE_COUNT: 15,

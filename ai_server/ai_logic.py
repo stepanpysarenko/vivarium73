@@ -26,6 +26,11 @@ def init_weights():
     weights = np.concatenate([weights_hidden, weights_output]).tolist()
     return {"weights": weights}
 
+def mutate_weights(weights):
+    """Mutate the weights of a creature by adding a small random value."""
+    mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
+    return {"weights": mutated_weights}
+
 def think(creature, food, grid_size, max_energy):
     """Decides movement based on food, borders, and movement history."""
     

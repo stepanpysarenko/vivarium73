@@ -4,12 +4,19 @@ const ctx = canvas.getContext("2d");
 var socket;
 var wsServerUrl;
 
-let lastStateUpdateTime = performance.now();
 let stateUpdateInterval;
+let lastStateUpdateTime = performance.now();
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
-let gameState = { creatures: [], food: [], gridSize: 0 };
+let gameState = { 
+    creatures: [], 
+    food: [], 
+    params:{
+        gridSize: 0,
+        maxEnergy: 0
+    }
+};
 
 function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -28,7 +35,7 @@ function draw() {
     ctx.globalAlpha = 1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = canvas.width / gameState.gridSize;
+    const scale = canvas.width / gameState.params.gridSize;
 
     ctx.fillStyle = "green";
     gameState.food.forEach(({ x, y }) => {
@@ -36,17 +43,17 @@ function draw() {
     });
 
     gameState.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
-        ctx.globalAlpha = energy / gameState.maxEnergy * 0.9 + 0.1;
+        ctx.globalAlpha = energy / gameState.params.maxEnergy * 0.9 + 0.1;
 
         ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
-        ctx.fillRect(drawX * scale, drawY * scale, scale, scale);  
+        ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
 
         // yellow square to indicate current generation
         if (generation == gameState.stats.generation) {
-            ctx.fillStyle = "yellow"; 
-            ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25,  scale * 0.5,  scale * 0.5);  
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25, scale * 0.5, scale * 0.5);
         }
     });
 
@@ -72,11 +79,11 @@ function start() {
         lastStateUpdateTime = performance.now();
         animationProgress = 0;
     };
-    
+
     socket.onclose = () => {
         console.log("Connection to WebSocket server closed");
     };
-    
+
     socket.onerror = error => {
         console.error("WebSocket error:", error);
     };

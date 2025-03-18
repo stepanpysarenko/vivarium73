@@ -2,8 +2,7 @@ const axios = require("axios");
 const CONFIG = require("./config");
 
 const {
-    AI_SERVER_URL_INIT_WEIGHTS,
-    AI_SERVER_URL_THINK,
+    AI_SERVER_URL,
     GRID_SIZE,
     CREATURE_COUNT,
     TOTAL_ENERGY,
@@ -15,17 +14,14 @@ const {
     MUTATION_RATE
 } = CONFIG;
 
-const FOOD_COUNT = Math.floor((TOTAL_ENERGY - CREATURE_COUNT * INITIAL_ENERGY) / FOOD_ENERGY);
-
 var gameState;
 var lastCreatureId = 0;
 
-function initCreature(x = null, y = null, weights = null, generation = 1) {
+async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
         if (weights == null) {
-            // const response = await axios.get(AI_SERVER_URL_INIT_WEIGHTS);
-            // weights = response.data.weights;
-            weights = Array.from({ length: 42 }, () => Math.random() * 2 - 1);
+            const response = await axios.get(AI_SERVER_URL + "/weights/init");
+            weights = response.data.weights;
         }
 
         x = x ? x : Math.floor(Math.random() * GRID_SIZE);
@@ -55,32 +51,33 @@ function initFood() {
     }
 }
 
-function mutate(weights) {
-    return weights.map(w => w + (Math.random() - 0.5) * 0.1);
+async function getMovements() {
+    try {
+        const response = await axios.post(AI_SERVER_URL + "/think", {
+            creatures: gameState.creatures,
+            food: gameState.food,
+            grid_size: gameState.params.gridSize,
+            max_energy: gameState.params.maxEnergy
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error mutating weights:", error);
+        return null;
+    }
 }
 
-function getGameState(){
+async function mutate(weights) {
+    try {
+        const response = await axios.post(AI_SERVER_URL + "/weights/mutate", { weights });
+        return response.data.weights;
+    } catch (error) {
+        console.error("Error mutating weights:", error);
+        return weights;
+    }
+}
+
+function getGameState() {
     return gameState;
-}
-
-function initGameState()
-{
-    gameState = {
-        creatures: [],
-        food: Array.from({ length: FOOD_COUNT }, initFood),
-        gridSize: GRID_SIZE,
-        maxEnergy: MAX_ENERGY,
-        stats: {    
-            generation: 1,
-            creatureCount: 0,
-            foodCount: 0,
-        }
-    }
-
-    for (let i = 0; i < CREATURE_COUNT; i++) {
-        var newCreature = initCreature();
-        gameState.creatures.push(newCreature);
-    }
 }
 
 function updateStats() {
@@ -89,24 +86,40 @@ function updateStats() {
 }
 
 function updateFood() {
-    var totalCreatureEnergy =  gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
+    var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
     while (totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY) {
         gameState.food.push(initFood());
     }
 }
 
-async function updateGameState()  {
-    try {
-        const response = await axios.post(AI_SERVER_URL_THINK, {
-            creatures: gameState.creatures,
-            food: gameState.food,
-            grid_size: gameState.gridSize,
-            max_energy: gameState.maxEnergy
-        });
-        const movements = response.data;
+async function initGameState() {
+    gameState = {
+        creatures: [],
+        food: [],
+        params: {
+            gridSize: GRID_SIZE,
+            maxEnergy: MAX_ENERGY
+        },
+        stats: {
+            generation: 1,
+            creatureCount: 0,
+            foodCount: 0
+        }
+    };
 
+    for (let i = 0; i < CREATURE_COUNT; i++) {
+        const newCreature = await initCreature();
+        gameState.creatures.push(newCreature);
+    }
+
+    updateFood();
+}
+
+async function updateGameState() {
+    try {
+        const movements = await getMovements();
         var offsprings = [];
-        gameState.creatures = gameState.creatures.map((creature, index) => {
+        gameState.creatures = await Promise.all(gameState.creatures.map(async (creature, index) => {
             let move_x = movements[index].move_x;
             let move_y = movements[index].move_y;
 
@@ -119,16 +132,22 @@ async function updateGameState()  {
             // check if food is eaten
             let foodIndex = gameState.food.findIndex(f => f.x === new_x && f.y === new_y);
             if (foodIndex !== -1) {
-                creature.energy = Math.min(creature.energy += FOOD_ENERGY, MAX_ENERGY);
-                gameState.food.splice(foodIndex, 1); // remove eaten food
+                creature.energy = Math.min(creature.energy + FOOD_ENERGY, MAX_ENERGY);
+                gameState.food.splice(foodIndex, 1); // Remove eaten food
 
-                // apply mutation when eating
+                // Apply mutation when eating
                 if (Math.random() < MUTATION_RATE) {
-                    creature.weights = mutate(creature.weights)
+                    creature.weights = await mutate(creature.weights);
                 }
 
+                // reproduction
                 if (creature.energy >= MAX_ENERGY) {
-                    let newCreature = initCreature(creature.x, creature.y, mutate(creature.weights), creature.generation + 1);
+                    let newCreature = await initCreature(
+                        creature.x,
+                        creature.y,
+                        await mutate(creature.weights),
+                        creature.generation + 1
+                    );
                     offsprings.push(newCreature);
                     creature.energy = MAX_ENERGY - REPRODUCTION_ENERGY_COST;
                     gameState.stats.generation = Math.max(gameState.stats.generation, newCreature.generation);
@@ -136,17 +155,17 @@ async function updateGameState()  {
             }
 
             return { ...creature, x: new_x, y: new_y, prev_x: creature.x, prev_y: creature.y };
-        })
-        .filter(c => c.energy > 0); // remove creatures that ran out of energy
+        }));
 
+        gameState.creatures = gameState.creatures.filter(c => c.energy > 0); // remove creatures that ran out of energy
         gameState.creatures.push(...offsprings);
 
-        if (gameState.creatures.length == 0){
+        if (gameState.creatures.length == 0) {
             await initGameState();
         }
 
     } catch (error) {
-        console.error("Error calling AI backend:", error);
+        console.error("Error calling AI server:", error);
     }
 
     updateFood();
