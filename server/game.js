@@ -5,17 +5,20 @@ const {
     AI_SERVER_URL,
     GRID_SIZE,
     CREATURE_COUNT,
+    FOOD_COUNT,
     TOTAL_ENERGY,
     FOOD_ENERGY,
     INITIAL_ENERGY,
     MAX_ENERGY,
     ENERGY_DECAY,
     REPRODUCTION_ENERGY_COST,
-    MUTATION_RATE
+    MUTATION_RATE,
+    TOP_POPULATION_PERCENT_TO_RESTART
 } = CONFIG;
 
 var gameState;
 var lastCreatureId = 0;
+var performanceLog = [];
 
 async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
@@ -35,7 +38,10 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
             prev_y: y,
             weights: weights,
             energy: INITIAL_ENERGY,
-            generation: generation
+            generation: generation,
+            turnsSurvived: 0,
+            totalFoodCollected: 0,
+            totalMovesMade: 0
         };
 
     } catch (error) {
@@ -54,7 +60,15 @@ function initFood() {
 async function getMovements() {
     try {
         const response = await axios.post(AI_SERVER_URL + "/think", {
-            creatures: gameState.creatures,
+            creatures: gameState.creatures.map(c => ({
+                id: c.id,
+                x: c.x,
+                y: c.y,
+                prev_x: c.prev_x,
+                prev_y: c.prev_y,
+                weights: c.weights,
+                energy: c.energy,
+            })),
             food: gameState.food,
             grid_size: gameState.params.gridSize,
             max_energy: gameState.params.maxEnergy
@@ -86,9 +100,15 @@ function updateStats() {
 }
 
 function updateFood() {
-    var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
-    while (totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY) {
-        gameState.food.push(initFood());
+    if (FOOD_COUNT !== null) {
+        while (gameState.food.length < FOOD_COUNT) {
+            gameState.food.push(initFood());
+        }
+    } else {
+        var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
+        while (totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY) {
+            gameState.food.push(initFood());
+        }
     }
 }
 
@@ -101,6 +121,7 @@ async function initGameState() {
             maxEnergy: MAX_ENERGY
         },
         stats: {
+            restarts: 0,
             generation: 1,
             creatureCount: 0,
             foodCount: 0
@@ -115,6 +136,26 @@ async function initGameState() {
     updateFood();
 }
 
+async function restartPopulation() {
+    const scoredCreatures = performanceLog.sort((a, b) => b.efficiencyScore - a.efficiencyScore);
+    const topPerformers = scoredCreatures.slice(0, Math.max(1, Math.floor(CREATURE_COUNT * TOP_POPULATION_PERCENT_TO_RESTART)));
+
+    gameState.creatures = [];
+    for (let i = 0; i < CREATURE_COUNT; i++) {
+        const parent = topPerformers[i % topPerformers.length];
+        const mutatedWeights = await mutate(parent.weights);
+        const offspring = await initCreature(null, null, mutatedWeights, parent.generation + 1);
+        gameState.creatures.push(offspring);
+    }
+
+    performanceLog = [];
+
+    updateFood();
+    updateStats();
+
+    console.log(`Restarted population with ${topPerformers.length} best-performing creatures.`);
+}
+
 async function updateGameState() {
     try {
         const movements = await getMovements();
@@ -126,6 +167,11 @@ async function updateGameState() {
             let new_x = Math.max(0, Math.min(GRID_SIZE - 1, creature.x + move_x));
             let new_y = Math.max(0, Math.min(GRID_SIZE - 1, creature.y + move_y));
 
+            if (move_x !== 0 || move_y !== 0) {
+                creature.totalMovesMade++;
+            }
+            creature.turnsSurvived++;
+
             // reduce energy on movement
             creature.energy -= ENERGY_DECAY;
 
@@ -133,6 +179,7 @@ async function updateGameState() {
             let foodIndex = gameState.food.findIndex(f => f.x === new_x && f.y === new_y);
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, MAX_ENERGY);
+                creature.totalFoodCollected++;
                 gameState.food.splice(foodIndex, 1); // Remove eaten food
 
                 // Apply mutation when eating
@@ -154,6 +201,14 @@ async function updateGameState() {
                 }
             }
 
+            if (creature.energy <= 0) {
+                performanceLog.push({
+                    efficiencyScore: creature.totalFoodCollected / Math.max(1, creature.totalMovesMade),
+                    generation: creature.generation,
+                    weights: creature.weights
+                });
+            }
+
             return { ...creature, x: new_x, y: new_y, prev_x: creature.x, prev_y: creature.y };
         }));
 
@@ -161,7 +216,8 @@ async function updateGameState() {
         gameState.creatures.push(...offsprings);
 
         if (gameState.creatures.length == 0) {
-            await initGameState();
+            await restartPopulation();
+            gameState.stats.restarts++;
         }
 
     } catch (error) {

@@ -7,13 +7,15 @@ const CONFIG = {
     STATE_UPDATE_INTERVAL: 200,
     GRID_SIZE: 40,
     CREATURE_COUNT: 15,
+    FOOD_COUNT: 40, // if null, then the total energy approach is used
     TOTAL_ENERGY: 15000,
     FOOD_ENERGY: 200,
     INITIAL_ENERGY: 400,
     MAX_ENERGY: 1000,
     ENERGY_DECAY: 1,
     REPRODUCTION_ENERGY_COST: 500,
-    MUTATION_RATE: 0.1
+    MUTATION_RATE: 0.1,
+    TOP_POPULATION_PERCENT_TO_RESTART: 0.2
 };
 
 module.exports = CONFIG;

@@ -61,6 +61,7 @@ function draw() {
 }
 
 function updateStats() {
+    document.getElementById("restarts").textContent = gameState.stats.restarts;
     document.getElementById("generation").textContent = gameState.stats.generation;
     document.getElementById("creature-count").textContent = gameState.stats.creatureCount;
     document.getElementById("food-count").textContent = gameState.stats.foodCount;
