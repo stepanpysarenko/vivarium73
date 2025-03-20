@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  server:
+    build: ./server
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ai_server
+
+  ai_server:
+    build: ./ai_server
+    expose:
+      - "8000"
+    volumes:
+      - ./weights:/app/weights

@@ -2,12 +2,12 @@ require("dotenv").config();
 
 const CONFIG = {
     PORT: process.env.PORT || 3000,
-    WS_SERVER_URL: process.env.WS_URL || "ws://localhost:3000",
+    WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     AI_SERVER_URL: process.env.AI_SERVER_URL || "http://localhost:8000/api",
     STATE_UPDATE_INTERVAL: 200,
     GRID_SIZE: 40,
     CREATURE_COUNT: 15,
-    FOOD_COUNT: 40, // if null, then the total energy approach is used
+    MAX_FOOD_COUNT: 40,
     TOTAL_ENERGY: 15000,
     FOOD_ENERGY: 200,
     INITIAL_ENERGY: 400,

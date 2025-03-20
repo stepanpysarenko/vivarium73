@@ -5,7 +5,7 @@ const {
     AI_SERVER_URL,
     GRID_SIZE,
     CREATURE_COUNT,
-    FOOD_COUNT,
+    MAX_FOOD_COUNT,
     TOTAL_ENERGY,
     FOOD_ENERGY,
     INITIAL_ENERGY,
@@ -100,15 +100,10 @@ function updateStats() {
 }
 
 function updateFood() {
-    if (FOOD_COUNT !== null) {
-        while (gameState.food.length < FOOD_COUNT) {
-            gameState.food.push(initFood());
-        }
-    } else {
-        var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
-        while (totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY) {
-            gameState.food.push(initFood());
-        }
+    var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
+    var notEnoughFood = totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY;
+    while (notEnoughFood && gameState.food.length < MAX_FOOD_COUNT) {
+        gameState.food.push(initFood());
     }
 }
 

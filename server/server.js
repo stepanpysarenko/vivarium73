@@ -6,7 +6,7 @@ const WebSocket = require("./node_modules/ws");
 const { getGameState, initGameState, updateGameState } = require("./game");
 const CONFIG = require("./config");
 
-const { PORT, SERVER_WS_URL, STATE_UPDATE_INTERVAL } = CONFIG;
+const { PORT, WEBSOCKET_URL, STATE_UPDATE_INTERVAL } = CONFIG;
 
 const app = express();
 app.use(cors());
@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
-app.get('/api/wsurl', (req, res) => res.json({ wsUrl: SERVER_WS_URL }));
+app.get('/api/wsurl', (req, res) => res.json({ wsUrl: WEBSOCKET_URL }));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
