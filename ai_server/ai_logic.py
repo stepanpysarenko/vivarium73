@@ -4,7 +4,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-# Corrected layer sizes
 INPUT_SIZE = 5    
 HIDDEN_SIZE = 6   
 OUTPUT_SIZE = 2   

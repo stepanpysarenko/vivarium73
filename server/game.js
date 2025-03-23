@@ -1,8 +1,12 @@
+const fs = require('fs');
+const path = require('path');
 const axios = require("axios");
 const CONFIG = require("./config");
 
 const {
     AI_SERVER_URL,
+    SAVED_STATE_PATH,
+    SAVE_STATE_INTERVAL,
     GRID_SIZE,
     CREATURE_COUNT,
     MAX_FOOD_COUNT,
@@ -16,7 +20,7 @@ const {
     TOP_POPULATION_PERCENT_TO_RESTART
 } = CONFIG;
 
-var gameState;
+var state;
 var lastCreatureId = 0;
 var performanceLog = [];
 
@@ -60,7 +64,7 @@ function initFood() {
 async function getMovements() {
     try {
         const response = await axios.post(AI_SERVER_URL + "/think", {
-            creatures: gameState.creatures.map(c => ({
+            creatures: state.creatures.map(c => ({
                 id: c.id,
                 x: c.x,
                 y: c.y,
@@ -69,9 +73,9 @@ async function getMovements() {
                 weights: c.weights,
                 energy: c.energy,
             })),
-            food: gameState.food,
-            grid_size: gameState.params.gridSize,
-            max_energy: gameState.params.maxEnergy
+            food: state.food,
+            grid_size: state.params.gridSize,
+            max_energy: state.params.maxEnergy
         });
         return response.data;
     } catch (error) {
@@ -90,57 +94,96 @@ async function mutate(weights) {
     }
 }
 
-function getGameState() {
-    return gameState;
+function getState() {
+    return state;
 }
 
 function updateStats() {
-    gameState.stats.creatureCount = gameState.creatures.length;
-    gameState.stats.foodCount = gameState.food.length;
+    state.stats.creatureCount = state.creatures.length;
+    state.stats.foodCount = state.food.length;
 }
 
 function updateFood() {
-    var totalCreatureEnergy = gameState.creatures.reduce((total, creature) => total + creature.energy, 0);
-    var notEnoughFood = totalCreatureEnergy + (gameState.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY;
-    while (notEnoughFood && gameState.food.length < MAX_FOOD_COUNT) {
-        gameState.food.push(initFood());
+    var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
+    var notEnoughFood = totalCreatureEnergy + (state.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY;
+    while (notEnoughFood && state.food.length < MAX_FOOD_COUNT) {
+        state.food.push(initFood());
     }
 }
 
-async function initGameState() {
-    gameState = {
-        creatures: [],
-        food: [],
-        params: {
-            gridSize: GRID_SIZE,
-            maxEnergy: MAX_ENERGY
-        },
-        stats: {
-            restarts: 0,
-            generation: 1,
-            creatureCount: 0,
-            foodCount: 0
-        }
-    };
+function loadState() {
+    const filePath = path.resolve(SAVED_STATE_PATH);
 
-    for (let i = 0; i < CREATURE_COUNT; i++) {
-        const newCreature = await initCreature();
-        gameState.creatures.push(newCreature);
+    try {
+        if (!fs.existsSync(filePath)) {
+            console.warn(`State file not found at ${filePath}`);
+            return false;
+        }
+
+        const fileData = fs.readFileSync(filePath, 'utf8');
+        state = JSON.parse(fileData);
+        console.log(`State successfully loaded from ${filePath}`);
+        return true;
+    } catch (error) {
+        console.error(`Error loading state from ${filePath}:`, error.message);
+        return false
+    }
+}
+
+function saveState() {
+    const filePath = path.resolve(CONFIG.SAVED_STATE_PATH);
+
+    try {
+        const data = JSON.stringify(state, null, 4);
+        fs.writeFileSync(filePath, data, 'utf8');
+        console.log('State successfully saved to', filePath);
+    } catch (error) {
+        console.error(`Error saving state to ${filePath}:`, error.message);
+    }
+}
+
+async function initState() {
+    if (!loadState()) {
+        state = {
+            creatures: [],
+            food: [],
+            params: {
+                gridSize: GRID_SIZE,
+                maxEnergy: MAX_ENERGY
+            },
+            stats: {
+                restarts: 0,
+                generation: 1,
+                creatureCount: 0,
+                foodCount: 0
+            }
+        };
+    
+        for (let i = 0; i < CREATURE_COUNT; i++) {
+            const newCreature = await initCreature();
+            state.creatures.push(newCreature);
+        }
+    
+        updateFood();
+
+        console.log('New state initialized');
     }
 
-    updateFood();
+    if (SAVE_STATE_INTERVAL !== null) {
+        setInterval(saveState, SAVE_STATE_INTERVAL);
+    }
 }
 
 async function restartPopulation() {
     const scoredCreatures = performanceLog.sort((a, b) => b.efficiencyScore - a.efficiencyScore);
     const topPerformers = scoredCreatures.slice(0, Math.max(1, Math.floor(CREATURE_COUNT * TOP_POPULATION_PERCENT_TO_RESTART)));
 
-    gameState.creatures = [];
+    state.creatures = [];
     for (let i = 0; i < CREATURE_COUNT; i++) {
         const parent = topPerformers[i % topPerformers.length];
         const mutatedWeights = await mutate(parent.weights);
         const offspring = await initCreature(null, null, mutatedWeights, parent.generation + 1);
-        gameState.creatures.push(offspring);
+        state.creatures.push(offspring);
     }
 
     performanceLog = [];
@@ -148,14 +191,14 @@ async function restartPopulation() {
     updateFood();
     updateStats();
 
-    console.log(`Restarted population with ${topPerformers.length} best-performing creatures.`);
+    console.log(`Restarted population with ${topPerformers.length} best-performing creatures`);
 }
 
-async function updateGameState() {
+async function updateState() {
     try {
         const movements = await getMovements();
         var offsprings = [];
-        gameState.creatures = await Promise.all(gameState.creatures.map(async (creature, index) => {
+        state.creatures = await Promise.all(state.creatures.map(async (creature, index) => {
             let move_x = movements[index].move_x;
             let move_y = movements[index].move_y;
 
@@ -171,11 +214,11 @@ async function updateGameState() {
             creature.energy -= ENERGY_DECAY;
 
             // check if food is eaten
-            let foodIndex = gameState.food.findIndex(f => f.x === new_x && f.y === new_y);
+            let foodIndex = state.food.findIndex(f => f.x === new_x && f.y === new_y);
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, MAX_ENERGY);
                 creature.totalFoodCollected++;
-                gameState.food.splice(foodIndex, 1); // Remove eaten food
+                state.food.splice(foodIndex, 1); // Remove eaten food
 
                 // Apply mutation when eating
                 if (Math.random() < MUTATION_RATE) {
@@ -192,7 +235,7 @@ async function updateGameState() {
                     );
                     offsprings.push(newCreature);
                     creature.energy = MAX_ENERGY - REPRODUCTION_ENERGY_COST;
-                    gameState.stats.generation = Math.max(gameState.stats.generation, newCreature.generation);
+                    state.stats.generation = Math.max(state.stats.generation, newCreature.generation);
                 }
             }
 
@@ -207,12 +250,12 @@ async function updateGameState() {
             return { ...creature, x: new_x, y: new_y, prev_x: creature.x, prev_y: creature.y };
         }));
 
-        gameState.creatures = gameState.creatures.filter(c => c.energy > 0); // remove creatures that ran out of energy
-        gameState.creatures.push(...offsprings);
+        state.creatures = state.creatures.filter(c => c.energy > 0); // remove creatures that ran out of energy
+        state.creatures.push(...offsprings);
 
-        if (gameState.creatures.length == 0) {
+        if (state.creatures.length == 0) {
             await restartPopulation();
-            gameState.stats.restarts++;
+            state.stats.restarts++;
         }
 
     } catch (error) {
@@ -223,4 +266,4 @@ async function updateGameState() {
     updateStats();
 }
 
-module.exports = { getGameState, initGameState, updateGameState };
+module.exports = { getState, initState, updateState };

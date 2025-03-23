@@ -9,7 +9,7 @@ let lastStateUpdateTime = performance.now();
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
-let gameState = { 
+let state = { 
     creatures: [], 
     food: [], 
     params:{
@@ -35,15 +35,15 @@ function draw() {
     ctx.globalAlpha = 1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = canvas.width / gameState.params.gridSize;
+    const scale = canvas.width / state.params.gridSize;
 
     ctx.fillStyle = "green";
-    gameState.food.forEach(({ x, y }) => {
+    state.food.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    gameState.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
-        ctx.globalAlpha = energy / gameState.params.maxEnergy * 0.9 + 0.1;
+    state.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
+        ctx.globalAlpha = energy / state.params.maxEnergy * 0.9 + 0.1;
 
         ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
@@ -51,7 +51,7 @@ function draw() {
         ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
 
         // yellow square to indicate current generation
-        if (generation == gameState.stats.generation) {
+        if (generation == state.stats.generation) {
             ctx.fillStyle = "yellow";
             ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25, scale * 0.5, scale * 0.5);
         }
@@ -61,10 +61,10 @@ function draw() {
 }
 
 function updateStats() {
-    document.getElementById("restarts").textContent = gameState.stats.restarts;
-    document.getElementById("generation").textContent = gameState.stats.generation;
-    document.getElementById("creature-count").textContent = gameState.stats.creatureCount;
-    document.getElementById("food-count").textContent = gameState.stats.foodCount;
+    document.getElementById("restarts").textContent = state.stats.restarts;
+    document.getElementById("generation").textContent = state.stats.generation;
+    document.getElementById("creature-count").textContent = state.stats.creatureCount;
+    document.getElementById("food-count").textContent = state.stats.foodCount;
 }
 
 function start() {
@@ -75,7 +75,7 @@ function start() {
     };
 
     socket.onmessage = event => {
-        gameState = JSON.parse(event.data);
+        state = JSON.parse(event.data);
         stateUpdateInterval = performance.now() - lastStateUpdateTime;
         lastStateUpdateTime = performance.now();
         animationProgress = 0;

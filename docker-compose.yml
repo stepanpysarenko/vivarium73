@@ -4,6 +4,8 @@ services:
     build: ./server
     ports:
       - "3000:3000"
+    volumes:
+      - ./data:/app/data
     depends_on:
       - ai_server
 
@@ -11,5 +13,3 @@ services:
     build: ./ai_server
     expose:
       - "8000"
-    volumes:
-      - ./weights:/app/weights
