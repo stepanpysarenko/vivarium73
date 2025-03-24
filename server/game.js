@@ -25,13 +25,13 @@ var performanceLog = [];
 
 async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
-        if (weights == null) {
+        if (weights === null) {
             const response = await axios.get(AI_SERVER_URL + "/weights/init");
             weights = response.data.weights;
         }
 
-        x = x ? x : Math.floor(Math.random() * GRID_SIZE);
-        y = y ? y : Math.floor(Math.random() * GRID_SIZE);
+        x = (x !== null && x !== undefined) ? x : Math.floor(Math.random() * GRID_SIZE);
+        y = (y !== null && y !== undefined) ? y : Math.floor(Math.random() * GRID_SIZE);
 
         return {
             id: lastCreatureId++,
@@ -76,10 +76,11 @@ async function getMovements() {
             grid_size: state.params.gridSize,
             max_energy: state.params.maxEnergy
         });
-        return response.data;
+
+        return response.data || [];
     } catch (error) {
-        console.error("Error mutating weights:", error);
-        return null;
+        console.error("Error fetching movements:", error);
+        return state.creatures.map(() => ({ move_x: 0, move_y: 0 }));
     }
 }
 
@@ -126,7 +127,7 @@ function loadState() {
         return true;
     } catch (error) {
         console.error(`Error loading state from ${filePath}:`, error.message);
-        return false
+        return false;
     }
 }
 
@@ -166,30 +167,46 @@ async function initState() {
     
         updateFood();
 
-        console.log('New state initialized');
+        console.log('New random state initialized');
     }
 }
 
 async function restartPopulation() {
-    const scoredCreatures = performanceLog.sort((a, b) => b.efficiencyScore - a.efficiencyScore);
-    const topPerformers = scoredCreatures.slice(0, Math.max(1, Math.floor(CREATURE_COUNT * TOP_POPULATION_PERCENT_TO_RESTART)));
+    const topPerformers = performanceLog
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Math.max(1, Math.floor(CREATURE_COUNT * TOP_PERFORMERS_RATIO)));
+    console.log('Top performers score:', topPerformers.map(p => p.score));
 
-    state.creatures = [];
-    for (let i = 0; i < CREATURE_COUNT; i++) {
-        const parent = topPerformers[i % topPerformers.length];
-        const mutatedWeights = await mutate(parent.weights);
-        const offspring = await initCreature(null, null, mutatedWeights, parent.generation + 1);
-        state.creatures.push(offspring);
+    if (topPerformers.length == 0) {
+        await initState();
+    } else {
+        state.creatures = [];
+        for (let i = 0; i < CREATURE_COUNT; i++) {
+            const parent = topPerformers[i % topPerformers.length];
+            const offspring = await initCreature(null, null, await mutate(parent.weights), parent.generation + 1);
+            state.creatures.push(offspring);
+        }
+        performanceLog = [];
+
+        updateFood();
+        updateStats();
+        
+        console.log(`Restarted population with ${topPerformers.length} best-performing creatures`);
     }
-
-    performanceLog = [];
-
-    updateFood();
-    updateStats();
-
-    console.log(`Restarted population with ${topPerformers.length} best-performing creatures`);
-
+   
     saveState();
+}
+
+function getScore(creature) {
+    return creature.totalFoodCollected / Math.max(1, creature.totalMovesMade);
+}
+
+function savePerformance(creature) {
+    performanceLog.push({
+        score: getScore(creature),
+        generation: creature.generation,
+        weights: creature.weights
+    });
 }
 
 async function updateState() {
@@ -237,17 +254,14 @@ async function updateState() {
             }
 
             if (creature.energy <= 0) {
-                performanceLog.push({
-                    efficiencyScore: creature.totalFoodCollected / Math.max(1, creature.totalMovesMade),
-                    generation: creature.generation,
-                    weights: creature.weights
-                });
+                savePerformance(creature);
+                return null;
             }
 
             return { ...creature, x: new_x, y: new_y, prev_x: creature.x, prev_y: creature.y };
         }));
 
-        state.creatures = state.creatures.filter(c => c.energy > 0); // remove creatures that ran out of energy
+        state.creatures = state.creatures.filter(c => c !== null);
         state.creatures.push(...offsprings);
 
         if (state.creatures.length == 0) {

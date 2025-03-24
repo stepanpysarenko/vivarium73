@@ -61,5 +61,8 @@ server.listen(PORT, async () => {
     console.log(`Server running at http://localhost:${PORT}`);
     await initState();
     gameLoop();
-    setInterval(saveState, STATE_SAVE_INTERVAL);
+
+    if (STATE_SAVE_INTERVAL !== null) {
+        setInterval(saveState, STATE_SAVE_INTERVAL);
+    }
 });
