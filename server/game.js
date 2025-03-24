@@ -5,8 +5,7 @@ const CONFIG = require("./config");
 
 const {
     AI_SERVER_URL,
-    SAVED_STATE_PATH,
-    SAVE_STATE_INTERVAL,
+    STATE_SAVE_PATH,
     GRID_SIZE,
     CREATURE_COUNT,
     MAX_FOOD_COUNT,
@@ -101,6 +100,7 @@ function getState() {
 function updateStats() {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
+    state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
 }
 
 function updateFood() {
@@ -112,7 +112,7 @@ function updateFood() {
 }
 
 function loadState() {
-    const filePath = path.resolve(SAVED_STATE_PATH);
+    const filePath = path.resolve(STATE_SAVE_PATH);
 
     try {
         if (!fs.existsSync(filePath)) {
@@ -131,7 +131,7 @@ function loadState() {
 }
 
 function saveState() {
-    const filePath = path.resolve(CONFIG.SAVED_STATE_PATH);
+    const filePath = path.resolve(STATE_SAVE_PATH);
 
     try {
         const data = JSON.stringify(state, null, 4);
@@ -168,10 +168,6 @@ async function initState() {
 
         console.log('New state initialized');
     }
-
-    if (SAVE_STATE_INTERVAL !== null) {
-        setInterval(saveState, SAVE_STATE_INTERVAL);
-    }
 }
 
 async function restartPopulation() {
@@ -192,6 +188,8 @@ async function restartPopulation() {
     updateStats();
 
     console.log(`Restarted population with ${topPerformers.length} best-performing creatures`);
+
+    saveState();
 }
 
 async function updateState() {
@@ -235,7 +233,6 @@ async function updateState() {
                     );
                     offsprings.push(newCreature);
                     creature.energy = MAX_ENERGY - REPRODUCTION_ENERGY_COST;
-                    state.stats.generation = Math.max(state.stats.generation, newCreature.generation);
                 }
             }
 
@@ -266,4 +263,4 @@ async function updateState() {
     updateStats();
 }
 
-module.exports = { getState, initState, updateState };
+module.exports = { getState, saveState, initState, updateState };

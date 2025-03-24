@@ -3,10 +3,15 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
-const { getState, initState, updateState } = require("./game");
+const { getState, saveState, initState, updateState } = require("./game");
 const CONFIG = require("./config");
 
-const { PORT, WEBSOCKET_URL, STATE_UPDATE_INTERVAL } = CONFIG;
+const {
+    PORT,
+    WEBSOCKET_URL,
+    STATE_SAVE_INTERVAL,
+    STATE_UPDATE_INTERVAL 
+} = CONFIG;
 
 const app = express();
 app.use(cors());
@@ -36,12 +41,25 @@ async function gameLoop() {
                 client.send(JSON.stringify(getState()));
             }
         });
-        await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_INTERVAL));      
+        await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_INTERVAL));
     }
 }
+
+process.on("SIGINT", () => {
+    console.log("SIGINT received. Saving state before shutdown...");
+    saveState();
+    process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+    console.log("SIGTERM received. Saving state before shutdown...");
+    saveState();
+    process.exit(0);
+});
 
 server.listen(PORT, async () => {
     console.log(`Server running at http://localhost:${PORT}`);
     await initState();
     gameLoop();
+    setInterval(saveState, STATE_SAVE_INTERVAL);
 });
