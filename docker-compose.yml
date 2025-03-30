@@ -2,14 +2,22 @@ version: '3.8'
 services:
   server:
     build: ./server
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
       - ./data:/app/data
     depends_on:
-      - ai_server
+      ai_server:
+        condition: service_healthy
 
   ai_server:
     build: ./ai_server
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

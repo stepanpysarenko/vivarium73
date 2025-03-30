@@ -15,10 +15,12 @@ const {
 
 const app = express();
 app.use(cors());
-app.use(express.static(path.join(__dirname, "../public")));
+app.use(express.static(path.join(__dirname, "/public")));
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public", "index.html"));
+    res.sendFile(path.join(__dirname, "/public", "index.html"));
 });
+
+app.get('/api/health', (req, res) => res.json({ status: "OK" })); // add ai-server health check endpoint ???
 
 app.get('/api/wsurl', (req, res) => res.json({ wsUrl: WEBSOCKET_URL }));
 

@@ -27,6 +27,10 @@ class GameState(BaseModel):
 class MutateRequest(BaseModel):
     weights: List[float]
 
+@app.get("/api/health")
+def healthcheck():
+    return {"status": "OK"}
+
 @app.get("/api/weights/init")
 def initweights():
     return init_weights()
@@ -42,7 +46,3 @@ def get_movements(state: GameState):
         move = think(creature, [food for food in state.food], state.grid_size, state.max_energy)
         movements.append(move)
     return movements
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="localhost", port=8000)
