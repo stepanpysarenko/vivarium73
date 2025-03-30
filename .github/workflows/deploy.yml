@@ -9,6 +9,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    environment: prod
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -16,7 +18,7 @@ jobs:
     - name: Copy code to server via SSH
       uses: appleboy/scp-action@v0.1.4
       with:
-        host: ${{ secrets.HOST }}
+        host: ${{ vars.HOST }}
         username: root
         key: ${{ secrets.SSH_KEY }}
         source: "."
@@ -25,13 +27,12 @@ jobs:
     - name: Build and start containers with injected env
       uses: appleboy/ssh-action@v0.1.10
       with:
-        host: ${{ secrets.HOST }}
+        host: ${{ vars.HOST }}
         username: root
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /root/vivarium73
-          rm -f .env
-          echo "WEBSOCKET_URL=ws://${{ secrets.HOST }}" >> .env
+          echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > .env
           docker-compose down --volumes --remove-orphans
           docker-compose build --no-cache
           docker-compose up -d
