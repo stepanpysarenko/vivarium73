@@ -11,6 +11,7 @@ services:
       - "3000:3000"
     volumes:
       - ./data:/app/data
+    restart: always
     depends_on:
       ai_server:
         condition: service_healthy
@@ -19,6 +20,7 @@ services:
     build: ./ai_server
     expose:
       - "8000"
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 5s

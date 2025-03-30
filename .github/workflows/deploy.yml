@@ -30,6 +30,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /root/vivarium73
+          rm -f .env
           echo "WEBSOCKET_URL=ws://${{ secrets.HOST }}" >> .env
           docker-compose down --volumes --remove-orphans
           docker-compose build --no-cache
