@@ -4,6 +4,9 @@ services:
     build: ./server
     env_file:
       - .env
+    environment:
+      - AI_SERVER_URL=http://ai_server:8000/api
+      - PORT=3000
     ports:
       - "3000:3000"
     volumes:

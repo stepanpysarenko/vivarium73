@@ -22,7 +22,7 @@ jobs:
         source: "."
         target: "/root/vivarium73"
 
-    - name: Run Docker Compose on Droplet
+    - name: Build and start containers with injected env
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.HOST }}
@@ -30,6 +30,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /root/vivarium73
+          echo "WEBSOCKET_URL=ws://${{ secrets.HOST }}" >> .env
           docker-compose down --volumes --remove-orphans
           docker-compose build --no-cache
           docker-compose up -d
