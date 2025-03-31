@@ -7,15 +7,15 @@ const {
     AI_SERVER_URL,
     STATE_SAVE_PATH,
     GRID_SIZE,
-    CREATURE_COUNT,
-    MAX_FOOD_COUNT,
     TOTAL_ENERGY,
-    FOOD_ENERGY,
-    INITIAL_ENERGY,
-    MAX_ENERGY,
-    ENERGY_DECAY,
-    REPRODUCTION_ENERGY_COST,
+    CREATURE_INITIAL_COUNT,
+    CREATURE_INITIAL_ENERGY,
+    CREATURE_MAX_ENERGY,
+    CREATURE_ENERGY_DECAY,
+    CREATURE_REPRODUCTION_ENERGY_COST,
     MUTATION_RATE,
+    FOOD_MAX_COUNT,    
+    FOOD_ENERGY,   
     TOP_PERFORMERS_RATIO
 } = CONFIG;
 
@@ -26,7 +26,7 @@ var performanceLog = [];
 async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
         if (weights === null) {
-            const response = await axios.get(AI_SERVER_URL + "/weights/init");
+            const response = await axios.get(AI_SERVER_URL + "/api/weights/init");
             weights = response.data.weights;
         }
 
@@ -40,7 +40,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
             prev_x: x,
             prev_y: y,
             weights: weights,
-            energy: INITIAL_ENERGY,
+            energy: CREATURE_INITIAL_ENERGY,
             generation: generation,
             turnsSurvived: 0,
             totalFoodCollected: 0,
@@ -62,7 +62,7 @@ function initFood() {
 
 async function getMovements() {
     try {
-        const response = await axios.post(AI_SERVER_URL + "/think", {
+        const response = await axios.post(AI_SERVER_URL + "/api/think", {
             creatures: state.creatures.map(c => ({
                 id: c.id,
                 x: c.x,
@@ -86,7 +86,7 @@ async function getMovements() {
 
 async function mutate(weights) {
     try {
-        const response = await axios.post(AI_SERVER_URL + "/weights/mutate", { weights });
+        const response = await axios.post(AI_SERVER_URL + "/api/weights/mutate", { weights });
         return response.data.weights;
     } catch (error) {
         console.error("Error mutating weights:", error);
@@ -105,9 +105,14 @@ function updateStats() {
 }
 
 function updateFood() {
-    var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
-    var notEnoughFood = totalCreatureEnergy + (state.food.length + 1) * FOOD_ENERGY <= TOTAL_ENERGY;
-    while (notEnoughFood && state.food.length < MAX_FOOD_COUNT) {
+    // var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
+    // console.log(`Total energy of all creatures: ${totalCreatureEnergy}`);
+    // var notEnoughFood = (totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY;
+    // while (notEnoughFood && state.food.length < FOOD_MAX_COUNT) {
+    //     state.food.push(initFood());
+    // }
+
+    while (state.food.length < FOOD_MAX_COUNT) {
         state.food.push(initFood());
     }
 }
@@ -150,7 +155,7 @@ async function initState() {
             food: [],
             params: {
                 gridSize: GRID_SIZE,
-                maxEnergy: MAX_ENERGY
+                maxEnergy: CREATURE_MAX_ENERGY
             },
             stats: {
                 restarts: 0,
@@ -160,7 +165,7 @@ async function initState() {
             }
         };
     
-        for (let i = 0; i < CREATURE_COUNT; i++) {
+        for (let i = 0; i < CREATURE_INITIAL_COUNT; i++) {
             const newCreature = await initCreature();
             state.creatures.push(newCreature);
         }
@@ -174,14 +179,14 @@ async function initState() {
 async function restartPopulation() {
     const topPerformers = performanceLog
         .sort((a, b) => b.score - a.score)
-        .slice(0, Math.max(1, Math.floor(CREATURE_COUNT * TOP_PERFORMERS_RATIO)));
+        .slice(0, Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO)));
     console.log('Top performers score:', topPerformers.map(p => p.score));
 
     if (topPerformers.length == 0) {
         await initState();
     } else {
         state.creatures = [];
-        for (let i = 0; i < CREATURE_COUNT; i++) {
+        for (let i = 0; i < CREATURE_INITIAL_COUNT; i++) {
             const parent = topPerformers[i % topPerformers.length];
             const offspring = await initCreature(null, null, await mutate(parent.weights), parent.generation + 1);
             state.creatures.push(offspring);
@@ -226,12 +231,12 @@ async function updateState() {
             creature.turnsSurvived++;
 
             // reduce energy on movement
-            creature.energy -= ENERGY_DECAY;
+            creature.energy -= CREATURE_ENERGY_DECAY;
 
             // check if food is eaten
             let foodIndex = state.food.findIndex(f => f.x === new_x && f.y === new_y);
             if (foodIndex !== -1) {
-                creature.energy = Math.min(creature.energy + FOOD_ENERGY, MAX_ENERGY);
+                creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
                 creature.totalFoodCollected++;
                 state.food.splice(foodIndex, 1); // Remove eaten food
 
@@ -241,7 +246,7 @@ async function updateState() {
                 }
 
                 // reproduction
-                if (creature.energy >= MAX_ENERGY) {
+                if (creature.energy >= CREATURE_MAX_ENERGY) {
                     let newCreature = await initCreature(
                         creature.x,
                         creature.y,
@@ -249,7 +254,7 @@ async function updateState() {
                         creature.generation + 1
                     );
                     offsprings.push(newCreature);
-                    creature.energy = MAX_ENERGY - REPRODUCTION_ENERGY_COST;
+                    creature.energy = CREATURE_MAX_ENERGY - CREATURE_REPRODUCTION_ENERGY_COST;
                 }
             }
 

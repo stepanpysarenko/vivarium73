@@ -29,7 +29,7 @@ body {
     flex-grow: 1;
 }
 
-canvas#game-canvas {
+#game-canvas {
     border: 1px solid #cccccc;
     background-color: #ffffff;
     display: block;
@@ -120,7 +120,7 @@ span.credits a:hover {
     }
 
     .stat-label {
-        font-size: 8px;
+        font-size: 9px;
         margin-bottom: 5px;
     }
 
@@ -131,10 +131,11 @@ span.credits a:hover {
     .footer {
         flex-direction: column;
         gap: 5px;
+        padding-top: 15px;
     }
 
     span.credits a {
-        font-size: 8px;
+        font-size: 9px;
         color: #d3d3d3;
         text-decoration: none;
     }
