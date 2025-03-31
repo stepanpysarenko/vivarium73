@@ -14,8 +14,8 @@ const {
     CREATURE_ENERGY_DECAY,
     CREATURE_REPRODUCTION_ENERGY_COST,
     MUTATION_RATE,
-    FOOD_MAX_COUNT,    
-    FOOD_ENERGY,   
+    FOOD_MAX_COUNT,
+    FOOD_ENERGY,
     TOP_PERFORMERS_RATIO
 } = CONFIG;
 
@@ -148,6 +148,8 @@ function saveState() {
 }
 
 async function initState() {
+    console.log('Initializing new random state...');
+
     if (!loadState()) {
         state = {
             creatures: [],
@@ -163,22 +165,23 @@ async function initState() {
                 foodCount: 0
             }
         };
-    
+
         for (let i = 0; i < CREATURE_INITIAL_COUNT; i++) {
             const newCreature = await initCreature();
             state.creatures.push(newCreature);
         }
-    
+
         updateFood();
 
-        console.log('New random state initialized');
+        console.log('New state initialized');
     }
 }
 
 async function restartPopulation() {
+    console.log('Restarting population with top performers weights...');
     const topPerformers = performanceLog
-        .sort((a, b) => b.score - a.score)
-        .slice(0, Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO)));
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO)));
     console.log('Top performers score:', topPerformers.map(p => p.score));
 
     if (topPerformers.length == 0) {
@@ -194,10 +197,10 @@ async function restartPopulation() {
 
         updateFood();
         updateStats();
-        
-        console.log(`Restarted population with ${topPerformers.length} best-performing creatures`);
+
+        console.log('Population restarted');
     }
-   
+
     saveState();
 }
 
