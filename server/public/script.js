@@ -103,14 +103,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+function ensureWebSocketConnection() {
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+        console.log("Reconnecting to WebSocket server...");
+        start();
+    }
+}
+
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-        if (!socket || socket.readyState === WebSocket.CLOSED) {
-            console.log("Reconnecting to WebSocket server...");
-            start();
-        }
+        ensureWebSocketConnection();
     }
 });
+
+window.addEventListener("pageshow", () => {
+    ensureWebSocketConnection();
+});
+
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
