@@ -51,10 +51,10 @@ function draw() {
         ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
 
         // yellow square to indicate current generation
-        if (generation == state.stats.generation) {
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25, scale * 0.5, scale * 0.5);
-        }
+        // if (generation == state.stats.generation) {
+        //     ctx.fillStyle = "yellow";
+        //     ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25, scale * 0.5, scale * 0.5);
+        // }
     });
 
     requestAnimationFrame(draw);
@@ -102,3 +102,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Error getting ws server url", error);
     }
 });
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
+  
