@@ -105,16 +105,15 @@ function updateStats() {
 }
 
 function updateFood() {
-    // var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
-    // console.log(`Total energy of all creatures: ${totalCreatureEnergy}`);
-    // var notEnoughFood = (totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY;
-    // while (notEnoughFood && state.food.length < FOOD_MAX_COUNT) {
-    //     state.food.push(initFood());
-    // }
-
-    while (state.food.length < FOOD_MAX_COUNT) {
+    var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
+    var notEnoughFood = (totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY;
+    while (notEnoughFood && state.food.length < FOOD_MAX_COUNT) {
         state.food.push(initFood());
     }
+
+    // while (state.food.length < FOOD_MAX_COUNT) {
+    //     state.food.push(initFood());
+    // }
 }
 
 function loadState() {
