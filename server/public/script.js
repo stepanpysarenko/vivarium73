@@ -9,10 +9,10 @@ let lastStateUpdateTime = performance.now();
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
-let state = { 
-    creatures: [], 
-    food: [], 
-    params:{
+let state = {
+    creatures: [],
+    food: [],
+    params: {
         gridSize: 0,
         maxEnergy: 0
     }
@@ -103,11 +103,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+            console.log("Reconnecting to WebSocket server...");
+            start();
+        }
+    }
+});
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => console.log('SW registered:', reg))
-        .catch(err => console.error('SW registration failed:', err));
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(reg => console.log('SW registered:', reg))
+            .catch(err => console.error('SW registration failed:', err));
     });
-  }
-  
+}
+
