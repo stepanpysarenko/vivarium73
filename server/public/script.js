@@ -116,8 +116,18 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
+window.addEventListener("focus", () => {
+    ensureWebSocketConnection();
+});
+
 window.addEventListener("pageshow", () => {
     ensureWebSocketConnection();
+});
+
+window.addEventListener("beforeunload", () => {
+    if (socket) {
+        socket.close();
+    }
 });
 
 

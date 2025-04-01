@@ -21,7 +21,7 @@ const {
 
 var state;
 var lastCreatureId = 0;
-var performanceLog = [];
+var topPerformers = [];
 
 async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
@@ -110,10 +110,6 @@ function updateFood() {
     while (notEnoughFood && state.food.length < FOOD_MAX_COUNT) {
         state.food.push(initFood());
     }
-
-    // while (state.food.length < FOOD_MAX_COUNT) {
-    //     state.food.push(initFood());
-    // }
 }
 
 function loadState() {
@@ -179,9 +175,6 @@ async function initState() {
 
 async function restartPopulation() {
     console.log('Restarting population with top performers weights...');
-    const topPerformers = performanceLog
-    .sort((a, b) => b.score - a.score)
-    .slice(0, Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO)));
     console.log('Top performers score:', topPerformers.map(p => p.score));
 
     if (topPerformers.length == 0) {
@@ -208,12 +201,15 @@ function getScore(creature) {
     return creature.totalFoodCollected / Math.max(1, creature.totalMovesMade);
 }
 
-function savePerformance(creature) {
-    performanceLog.push({
-        score: getScore(creature),
-        generation: creature.generation,
-        weights: creature.weights
-    });
+function appendTopPerformers(creature) {
+    creature.score = getScore(creature);
+    topPerformers.push(creature);
+    topPerformers.sort((a, b) => b.score - a.score)
+
+    const MAX_LENGTH = Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO));
+    if (topPerformers.length > MAX_LENGTH) {
+        topPerformers.length = MAX_LENGTH;
+    }
 }
 
 async function updateState() {
@@ -240,14 +236,14 @@ async function updateState() {
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
                 creature.totalFoodCollected++;
-                state.food.splice(foodIndex, 1); // Remove eaten food
+                state.food.splice(foodIndex, 1); // remove eaten food
 
-                // Apply mutation when eating
+                // apply mutation when eating
                 if (Math.random() < MUTATION_RATE) {
                     creature.weights = await mutate(creature.weights);
                 }
 
-                // reproduction
+                // reproduce
                 if (creature.energy >= CREATURE_MAX_ENERGY) {
                     let newCreature = await initCreature(
                         creature.x,
@@ -261,7 +257,7 @@ async function updateState() {
             }
 
             if (creature.energy <= 0) {
-                savePerformance(creature);
+                appendTopPerformers(creature);
                 return null;
             }
 
