@@ -6,7 +6,7 @@ const CONFIG = {
     AI_SERVER_URL: process.env.AI_SERVER_URL || "http://localhost:8000",
     STATE_SAVE_PATH: "./data/state.json",
     STATE_SAVE_INTERVAL: 1000 * 60 * 5,
-    STATE_UPDATE_INTERVAL: 250,
+    STATE_UPDATE_INTERVAL: 500,
     GRID_SIZE: 40,
     TOTAL_ENERGY: 15000,
     CREATURE_INITIAL_COUNT: 15,
