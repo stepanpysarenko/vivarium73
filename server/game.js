@@ -5,7 +5,7 @@ const CONFIG = require("./config");
 
 const {
     AI_SERVER_URL,
-    STATE_SAVE_PATH,
+    SAVE_PATH_STATE,
     GRID_SIZE,
     TOTAL_ENERGY,
     CREATURE_INITIAL_COUNT,
@@ -13,6 +13,8 @@ const {
     CREATURE_MAX_ENERGY,
     CREATURE_ENERGY_DECAY,
     CREATURE_REPRODUCTION_ENERGY_COST,
+    CREATURE_FOOD_VISIBILITY_RADIUS,
+    FOOD_PICKUP_RADIUS,
     MUTATION_RATE,
     FOOD_MAX_COUNT,
     FOOD_ENERGY,
@@ -71,8 +73,10 @@ async function getMovements() {
                 prev_y: c.prev_y,
                 weights: c.weights,
                 energy: c.energy,
+                visible_food: state.food.filter(food =>
+                    Math.hypot(food.x - c.x, food.y - c.y) <= CREATURE_FOOD_VISIBILITY_RADIUS
+                )
             })),
-            food: state.food,
             grid_size: state.params.gridSize,
             max_energy: state.params.maxEnergy
         });
@@ -113,7 +117,7 @@ function updateFood() {
 }
 
 function loadState() {
-    const filePath = path.resolve(STATE_SAVE_PATH);
+    const filePath = path.resolve(SAVE_PATH_STATE);
 
     try {
         if (!fs.existsSync(filePath)) {
@@ -132,7 +136,7 @@ function loadState() {
 }
 
 function saveState() {
-    const filePath = path.resolve(STATE_SAVE_PATH);
+    const filePath = path.resolve(SAVE_PATH_STATE);
 
     try {
         const data = JSON.stringify(state, null, 4);
@@ -232,7 +236,10 @@ async function updateState() {
             creature.energy -= CREATURE_ENERGY_DECAY;
 
             // check if food is eaten
-            let foodIndex = state.food.findIndex(f => f.x === new_x && f.y === new_y);
+            // let foodIndex = state.food.findIndex(f => f.x === Math.floor(new_x) && f.y === Math.floor(new_y));
+            let foodIndex = state.food.findIndex(f =>
+                Math.abs(f.x - new_x) < FOOD_PICKUP_RADIUS && Math.abs(f.y - new_y) < FOOD_PICKUP_RADIUS
+            );
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
                 creature.totalFoodCollected++;

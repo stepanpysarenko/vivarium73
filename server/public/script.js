@@ -42,19 +42,13 @@ function draw() {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    state.creatures.forEach(({ x, y, prev_x, prev_y, energy, generation }) => {
+    state.creatures.forEach(({ x, y, prev_x, prev_y, energy }) => {
         ctx.globalAlpha = energy / state.params.maxEnergy * 0.9 + 0.1;
 
         ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
         ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
-
-        // yellow square to indicate current generation
-        // if (generation == state.stats.generation) {
-        //     ctx.fillStyle = "yellow";
-        //     ctx.fillRect(drawX * scale + scale * 0.25, drawY * scale + scale * 0.25, scale * 0.5, scale * 0.5);
-        // }
     });
 
     requestAnimationFrame(draw);

@@ -1,26 +1,26 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-from ai_logic import (init_weights, mutate_weights, think)
+from logic import (init_weights, mutate_weights, think)
 
 app = FastAPI()
-
-class Creature(BaseModel):
-    id: int
-    x: int
-    y: int
-    prev_x: int
-    prev_y: int
-    weights: List[float]
-    energy: int
 
 class Food(BaseModel):
     x: int
     y: int
 
+class Creature(BaseModel):
+    id: int
+    x: float
+    y: float
+    prev_x: float
+    prev_y: float
+    weights: List[float]
+    energy: int
+    visible_food: List[Food]
+
 class GameState(BaseModel):
     creatures: List[Creature]
-    food: List[Food]
     grid_size: int
     max_energy: int
 
@@ -43,6 +43,6 @@ def mutateweights(request: MutateRequest):
 def get_movements(state: GameState):
     movements = []
     for creature in state.creatures:
-        move = think(creature, [food for food in state.food], state.grid_size, state.max_energy)
+        move = think(creature, state.grid_size, state.max_energy)
         movements.append(move)
     return movements

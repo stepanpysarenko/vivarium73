@@ -30,12 +30,12 @@ def mutate_weights(weights):
     mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
     return {"weights": mutated_weights}
 
-def think(creature, food, grid_size, max_energy):
+def think(creature, grid_size, max_energy):
     """Decides movement based on food, borders, and movement history."""
     
     # Find the closest food if available
-    if food:
-        closest_food = min(food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
+    if len(creature.visible_food) > 0:
+        closest_food = min(creature.visible_food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
         food_dx = 2 * (closest_food.x - creature.x) / grid_size
         food_dy = 2 * (closest_food.y - creature.y) / grid_size
     else:
@@ -66,8 +66,8 @@ def think(creature, food, grid_size, max_energy):
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.dot(output_weights, hidden_layer) 
 
-    move_x = 1 if output[0] > 0.5 else (-1 if output[0] < -0.5 else 0)
-    move_y = 1 if output[1] > 0.5 else (-1 if output[1] < -0.5 else 0)
+    move_x = float(np.clip(output[0], -1.0, 1.0))
+    move_y = float(np.clip(output[1], -1.0, 1.0))
 
     exploration_factor = tanh(output[0] + output[1])
     if np.random.rand() < (0.2 + 0.3 * (1 - abs(exploration_factor))):
