@@ -110,7 +110,7 @@ function updateStats() {
 
 function updateFood() {
     var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
-    while ((totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY) && state.food.length < FOOD_MAX_COUNT) {
+    while (((totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY) && state.food.length < FOOD_MAX_COUNT) {
         state.food.push(initFood());
     }
 }
