@@ -66,8 +66,10 @@ def think(creature, grid_size, max_energy):
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.dot(output_weights, hidden_layer) 
 
-    move_x = float(np.clip(output[0], -1.0, 1.0))
-    move_y = float(np.clip(output[1], -1.0, 1.0))
+    # move_x = float(np.clip(output[0], -1.0, 1.0))
+    # move_y = float(np.clip(output[1], -1.0, 1.0))
+    move_x = np.tanh(output[0]) 
+    move_y = np.tanh(output[1]) 
 
     exploration_factor = tanh(output[0] + output[1])
     if np.random.rand() < (0.2 + 0.3 * (1 - abs(exploration_factor))):

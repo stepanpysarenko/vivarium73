@@ -39,16 +39,20 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
             id: lastCreatureId++,
             x: x,
             y: y,
-            prev_x: x,
-            prev_y: y,
-            weights: weights,
             energy: CREATURE_INITIAL_ENERGY,
+            prev: {
+                x: x,
+                y: y,
+                energy: CREATURE_INITIAL_ENERGY
+            },
+            weights: weights,
             generation: generation,
-            turnsSurvived: 0,
-            totalFoodCollected: 0,
-            totalMovesMade: 0
+            stats: {
+                turnsSurvived: 0,
+                totalFoodCollected: 0,
+                totalMovesMade: 0
+            }
         };
-
     } catch (error) {
         console.error("Error initiating weights:", error);
         return null;
@@ -69,8 +73,8 @@ async function getMovements() {
                 id: c.id,
                 x: c.x,
                 y: c.y,
-                prev_x: c.prev_x,
-                prev_y: c.prev_y,
+                prev_x: c.prev.x,
+                prev_y: c.prev.y,
                 weights: c.weights,
                 energy: c.energy,
                 visible_food: state.food.filter(food =>
@@ -98,8 +102,18 @@ async function mutate(weights) {
     }
 }
 
-function getState() {
-    return state;
+function getStatePublic() {
+    return {
+        ...state,
+        creatures: state.creatures.map(c => ({
+            id: c.id,
+            x: c.x,
+            y: c.y,
+            energy: c.energy,
+            prev_x: c.prev.x,
+            prev_y: c.prev.y,
+        }))
+    };
 }
 
 function updateStats() {
@@ -201,7 +215,7 @@ async function restartPopulation() {
 }
 
 function getScore(creature) {
-    return creature.totalFoodCollected / Math.max(1, creature.totalMovesMade);
+    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.totalMovesMade);
 }
 
 function appendTopPerformers(creature) {
@@ -227,9 +241,9 @@ async function updateState() {
             let new_y = Math.max(0, Math.min(GRID_SIZE - 1, creature.y + move_y));
 
             if (move_x !== 0 || move_y !== 0) {
-                creature.totalMovesMade++;
+                creature.stats.totalMovesMade++;
             }
-            creature.turnsSurvived++;
+            creature.stats.turnsSurvived++;
 
             // reduce energy on movement
             creature.energy -= CREATURE_ENERGY_DECAY;
@@ -240,7 +254,7 @@ async function updateState() {
             );
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
-                creature.totalFoodCollected++;
+                creature.stats.totalFoodCollected++;
                 state.food.splice(foodIndex, 1); // remove eaten food
 
                 // apply mutation when eating
@@ -266,7 +280,16 @@ async function updateState() {
                 return null;
             }
 
-            return { ...creature, x: new_x, y: new_y, prev_x: creature.x, prev_y: creature.y };
+            return {
+                ...creature,
+                x: new_x,
+                y: new_y,
+                prev: {
+                    x: creature.x,
+                    y: creature.y,
+                    energy: creature.energy
+                }
+            };
         }));
 
         state.creatures = state.creatures.filter(c => c !== null);
@@ -285,4 +308,4 @@ async function updateState() {
     updateStats();
 }
 
-module.exports = { getState, saveState, initState, updateState };
+module.exports = { getStatePublic, saveState, initState, updateState };

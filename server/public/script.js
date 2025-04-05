@@ -4,8 +4,7 @@ const ctx = canvas.getContext("2d");
 var socket;
 var wsServerUrl;
 
-let stateUpdateInterval;
-let lastStateUpdateTime = performance.now();
+const ANIMATION_DURATION = 500;
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
@@ -28,7 +27,7 @@ function draw() {
     lastCanvasUpdateTime = now;
 
     if (animationProgress < 1) {
-        animationProgress += deltaTime / stateUpdateInterval;
+        animationProgress += deltaTime / ANIMATION_DURATION;
     }
     animationProgress = Math.min(animationProgress, 1);
 
@@ -70,8 +69,6 @@ function start() {
 
     socket.onmessage = event => {
         state = JSON.parse(event.data);
-        stateUpdateInterval = performance.now() - lastStateUpdateTime;
-        lastStateUpdateTime = performance.now();
         animationProgress = 0;
     };
 
