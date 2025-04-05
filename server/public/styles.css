@@ -50,6 +50,7 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    user-select: none;
 }
 
 .footer {
@@ -60,6 +61,7 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    user-select: none;
 }
 
 .game-title {

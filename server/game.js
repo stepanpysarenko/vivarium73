@@ -235,7 +235,6 @@ async function updateState() {
             creature.energy -= CREATURE_ENERGY_DECAY;
 
             // check if food is eaten
-            // let foodIndex = state.food.findIndex(f => f.x === Math.floor(new_x) && f.y === Math.floor(new_y));
             let foodIndex = state.food.findIndex(f =>
                 Math.abs(f.x - new_x) < FOOD_PICKUP_RADIUS && Math.abs(f.y - new_y) < FOOD_PICKUP_RADIUS
             );

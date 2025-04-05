@@ -24,7 +24,7 @@ jobs:
         source: "."
         target: "/root/vivarium73"
 
-    - name: Build and start containers with injected env
+    - name: Build and start containers
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ vars.HOST }}
