@@ -1,11 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const axios = require("axios");
 const CONFIG = require("./config");
-
 const {
     AI_SERVER_URL,
-    SAVE_PATH_STATE,
     GRID_SIZE,
     TOTAL_ENERGY,
     CREATURE_INITIAL_COUNT,
@@ -21,9 +17,21 @@ const {
     TOP_PERFORMERS_RATIO
 } = CONFIG;
 
+const {
+    saveState,
+    loadState,
+    saveTopPerformers,
+    loadTopPerformers
+} = require('./state-manager');
+
 var state;
 var lastCreatureId = 0;
 var topPerformers = [];
+
+function saveData() {
+    saveState(state);
+    saveTopPerformers(topPerformers);
+}
 
 async function initCreature(x = null, y = null, weights = null, generation = 1) {
     try {
@@ -129,41 +137,13 @@ function updateFood() {
     }
 }
 
-function loadState() {
-    const filePath = path.resolve(SAVE_PATH_STATE);
-
-    try {
-        if (!fs.existsSync(filePath)) {
-            console.warn(`State file not found at ${filePath}`);
-            return false;
-        }
-
-        const fileData = fs.readFileSync(filePath, 'utf8');
-        state = JSON.parse(fileData);
-        console.log(`State successfully loaded from ${filePath}`);
-        return true;
-    } catch (error) {
-        console.error(`Error loading state from ${filePath}:`, error.message);
-        return false;
-    }
-}
-
-function saveState() {
-    const filePath = path.resolve(SAVE_PATH_STATE);
-
-    try {
-        const data = JSON.stringify(state, null, 4);
-        fs.writeFileSync(filePath, data, 'utf8');
-        console.log('State successfully saved to', filePath);
-    } catch (error) {
-        console.error(`Error saving state to ${filePath}:`, error.message);
-    }
-}
-
 async function initState() {
     console.log('Initializing new random state...');
 
-    if (!loadState()) {
+    topPerformers = loadTopPerformers();
+    state = loadState();
+
+    if (state === null) {
         state = {
             creatures: [],
             food: [],
@@ -190,6 +170,21 @@ async function initState() {
     }
 }
 
+function getScore(creature) {
+    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.totalMovesMade);
+}
+
+function appendTopPerformers(creature) {
+    creature.score = getScore(creature);
+    topPerformers.push(creature);
+    topPerformers.sort((a, b) => b.score - a.score)
+
+    const MAX_LENGTH = Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO));
+    if (topPerformers.length > MAX_LENGTH) {
+        topPerformers.length = MAX_LENGTH;
+    }
+}
+
 async function restartPopulation() {
     console.log('Restarting population with top performers weights...');
     console.log('Top performers score:', topPerformers.map(p => p.score));
@@ -211,22 +206,7 @@ async function restartPopulation() {
         console.log('Population restarted');
     }
 
-    saveState();
-}
-
-function getScore(creature) {
-    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.totalMovesMade);
-}
-
-function appendTopPerformers(creature) {
-    creature.score = getScore(creature);
-    topPerformers.push(creature);
-    topPerformers.sort((a, b) => b.score - a.score)
-
-    const MAX_LENGTH = Math.max(1, Math.floor(CREATURE_INITIAL_COUNT * TOP_PERFORMERS_RATIO));
-    if (topPerformers.length > MAX_LENGTH) {
-        topPerformers.length = MAX_LENGTH;
-    }
+    saveState(state);
 }
 
 async function updateState() {
@@ -308,4 +288,4 @@ async function updateState() {
     updateStats();
 }
 
-module.exports = { getStatePublic, saveState, initState, updateState };
+module.exports = { getStatePublic, initState, updateState, saveData };

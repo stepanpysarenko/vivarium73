@@ -3,14 +3,14 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
-const { getStatePublic, saveState, initState, updateState } = require("./game");
+const { getStatePublic, initState, updateState, saveData } = require("./game");
 const CONFIG = require("./config");
 
 const {
     PORT,
     WEBSOCKET_URL,
-    STATE_SAVE_INTERVAL,
-    STATE_UPDATE_INTERVAL 
+    DATA_SAVE_INTERVAL,
+    STATE_UPDATE_INTERVAL
 } = CONFIG;
 
 const app = express();
@@ -47,24 +47,33 @@ async function gameLoop() {
     }
 }
 
-process.on("SIGINT", () => {
-    console.log("SIGINT received. Saving state before shutdown...");
-    saveState();
-    process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-    console.log("SIGTERM received. Saving state before shutdown...");
-    saveState();
-    process.exit(0);
-});
-
 server.listen(PORT, async () => {
     console.log(`Server running at http://localhost:${PORT}`);
     await initState();
     gameLoop();
 
-    if (STATE_SAVE_INTERVAL !== null) {
-        setInterval(saveState, STATE_SAVE_INTERVAL);
+    if (DATA_SAVE_INTERVAL !== null) {
+        setInterval(saveData, DATA_SAVE_INTERVAL);
     }
 });
+
+function gracefulShutdown() {
+    console.log("Shutting down gracefully...");
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.close();
+        }
+    });
+
+    console.log("Saving data before shutdown...");
+    saveData();
+
+    server.close(() => {
+        console.log("HTTP server closed");
+        console.log("Shutting down...");
+        process.exit(0);
+    });
+}
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
