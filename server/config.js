@@ -7,7 +7,7 @@ const CONFIG = {
     STATE_SAVE_PATH: "./data/state.json",
     TOP_PERFORMERS_SAVE_PATH: "./data/top-performers.json",
     DATA_SAVE_INTERVAL: 1000 * 60 * 5,
-    STATE_UPDATE_INTERVAL: 500,
+    STATE_UPDATE_INTERVAL: 250,
     GRID_SIZE: 40,
     TOTAL_ENERGY: 12000,
     CREATURE_INITIAL_COUNT: 15,
