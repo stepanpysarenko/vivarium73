@@ -68,8 +68,8 @@ def think(creature, grid_size, max_energy):
 
     # move_x = float(np.clip(output[0], -1.0, 1.0))
     # move_y = float(np.clip(output[1], -1.0, 1.0))
-    move_x = np.tanh(output[0]) 
-    move_y = np.tanh(output[1]) 
+    move_x = output[0]
+    move_y = output[1]
 
     exploration_factor = tanh(output[0] + output[1])
     if np.random.rand() < (0.2 + 0.3 * (1 - abs(exploration_factor))):
