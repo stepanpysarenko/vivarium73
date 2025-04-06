@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 var socket;
 var wsServerUrl;
 
-const ANIMATION_DURATION = 500;
+const ANIMATION_DURATION = 250;
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
