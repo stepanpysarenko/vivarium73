@@ -110,7 +110,7 @@ async function mutate(weights) {
     }
 }
 
-function getStatePublic() {
+function getPublicState() {
     return {
         ...state,
         creatures: state.creatures.map(c => ({
@@ -236,26 +236,19 @@ async function updateState() {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
                 creature.stats.totalFoodCollected++;
                 state.food.splice(foodIndex, 1); // remove eaten food
-
-                // apply mutation when eating
-                if (Math.random() < MUTATION_RATE) {
-                    creature.weights = await mutate(creature.weights);
-                }
-
-                // reproduce
-                if (creature.energy >= CREATURE_MAX_ENERGY) {
-                    let newCreature = await initCreature(
-                        creature.x,
-                        creature.y,
-                        await mutate(creature.weights),
-                        creature.generation + 1
-                    );
-                    offsprings.push(newCreature);
-                    creature.energy = CREATURE_MAX_ENERGY - CREATURE_REPRODUCTION_ENERGY_COST;
-                }
             }
 
-            if (creature.energy <= 0) {
+            // reproduce
+            if (creature.energy >= CREATURE_MAX_ENERGY) {
+                let newCreature = await initCreature(
+                    creature.x,
+                    creature.y,
+                    await mutate(creature.weights),
+                    creature.generation + 1
+                );
+                offsprings.push(newCreature);
+                creature.energy = CREATURE_MAX_ENERGY - CREATURE_REPRODUCTION_ENERGY_COST;
+            } else if (creature.energy <= 0) {
                 appendTopPerformers(creature);
                 return null;
             }
@@ -288,4 +281,4 @@ async function updateState() {
     updateStats();
 }
 
-module.exports = { getStatePublic, initState, updateState, saveData };
+module.exports = { getPublicState, initState, updateState, saveData };

@@ -3,7 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
-const { getStatePublic, initState, updateState, saveData } = require("./game");
+const { getPublicState, initState, updateState, saveData } = require("./game");
 const CONFIG = require("./config");
 
 const {
@@ -40,7 +40,7 @@ async function gameLoop() {
         await updateState();
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(getStatePublic()));
+                client.send(JSON.stringify(getPublicState()));
             }
         });
         await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_INTERVAL));

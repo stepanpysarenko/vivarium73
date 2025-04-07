@@ -39,7 +39,7 @@ def think(creature, grid_size, max_energy):
         food_dx = 2 * (closest_food.x - creature.x) / grid_size
         food_dy = 2 * (closest_food.y - creature.y) / grid_size
     else:
-        food_dx, food_dy = np.random.uniform(-1, 1), np.random.uniform(-1, 1)  # Encourage wandering
+        food_dx, food_dy = 0, 0
 
     # Encourage movement based on past motion instead of sticking in place
     move_dx = 2 * (creature.x - creature.prev_x) / grid_size  
@@ -64,16 +64,24 @@ def think(creature, grid_size, max_energy):
     output_weights = weights[total_hidden_weights:].reshape(OUTPUT_SIZE, HIDDEN_SIZE)
 
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
-    output = np.dot(output_weights, hidden_layer) 
+    output = np.tanh(np.dot(output_weights, hidden_layer))
 
-    # move_x = float(np.clip(output[0], -1.0, 1.0))
-    # move_y = float(np.clip(output[1], -1.0, 1.0))
     move_x = output[0]
-    move_y = output[1]
+    move_y = output[1] 
 
     exploration_factor = tanh(output[0] + output[1])
-    if np.random.rand() < (0.2 + 0.3 * (1 - abs(exploration_factor))):
-        move_x = random.choice([-1, 0, 1])
-        move_y = random.choice([-1, 0, 1])
+    if np.random.rand() < 0.2 + 0.3 * (1 - abs(exploration_factor)):
+        # Generate a small random direction and magnitude
+        angle = random.uniform(0, 2 * np.pi)
+        magnitude = random.uniform(0.2, 0.5)
+
+        # Smooth directional exploration
+        move_x += magnitude * np.cos(angle)
+        move_y += magnitude * np.sin(angle)
+
+        # Clamp final movement into valid range
+        move_x = np.clip(move_x, -1, 1)
+        move_y = np.clip(move_y, -1, 1)
+
 
     return {"move_x": move_x, "move_y": move_y}
