@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 var socket;
 var wsServerUrl;
 
-const ANIMATION_DURATION = 250;
+const ANIMATION_DURATION = 500;
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function ensureWebSocketConnection() {
-    if (!socket || socket.readyState === WebSocket.CLOSED) {
+    if (!socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
         console.log("Reconnecting to WebSocket server...");
         start();
     }
