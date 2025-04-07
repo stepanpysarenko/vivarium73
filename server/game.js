@@ -110,20 +110,6 @@ async function mutate(weights) {
     }
 }
 
-function getPublicState() {
-    return {
-        ...state,
-        creatures: state.creatures.map(c => ({
-            id: c.id,
-            x: c.x,
-            y: c.y,
-            energy: c.energy,
-            prev_x: c.prev.x,
-            prev_y: c.prev.y,
-        }))
-    };
-}
-
 function updateStats() {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
@@ -131,6 +117,7 @@ function updateStats() {
 }
 
 function updateFood() {
+    // add food while total energy is not reached
     var totalCreatureEnergy = state.creatures.reduce((total, creature) => total + creature.energy, 0);
     while (((totalCreatureEnergy + state.food.length * FOOD_ENERGY) < TOTAL_ENERGY) && state.food.length < FOOD_MAX_COUNT) {
         state.food.push(initFood());
@@ -138,12 +125,11 @@ function updateFood() {
 }
 
 async function initState() {
-    console.log('Initializing new random state...');
-
     topPerformers = loadTopPerformers();
     state = loadState();
 
     if (state === null) {
+        console.log('Initializing new random state...');
         state = {
             creatures: [],
             food: [],
@@ -168,6 +154,20 @@ async function initState() {
 
         console.log('New state initialized');
     }
+}
+
+function getPublicState() {
+    return {
+        ...state,
+        creatures: state.creatures.map(c => ({
+            id: c.id,
+            x: c.x,
+            y: c.y,
+            energy: c.energy,
+            prev_x: c.prev.x,
+            prev_y: c.prev.y,
+        }))
+    };
 }
 
 function getScore(creature) {

@@ -1,4 +1,4 @@
-name: Deploy to prod
+name: deploy to prod
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
+      - 'docs/**'
 
 jobs:
   deploy:
