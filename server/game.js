@@ -9,7 +9,7 @@ const {
     CREATURE_MAX_ENERGY,
     CREATURE_ENERGY_DECAY,
     CREATURE_REPRODUCTION_ENERGY_COST,
-    CREATURE_FOOD_VISIBILITY_RADIUS,
+    CREATURE_VISIBILITY_RADIUS,
     FOOD_PICKUP_RADIUS,
     MUTATION_RATE,
     FOOD_MAX_COUNT,
@@ -86,7 +86,7 @@ async function getMovements() {
                 weights: c.weights,
                 energy: c.energy,
                 visible_food: state.food.filter(food =>
-                    Math.hypot(food.x - c.x, food.y - c.y) <= CREATURE_FOOD_VISIBILITY_RADIUS
+                    Math.hypot(food.x - c.x, food.y - c.y) <= CREATURE_VISIBILITY_RADIUS
                 )
             })),
             grid_size: state.params.gridSize,
@@ -235,7 +235,7 @@ async function updateState() {
             if (foodIndex !== -1) {
                 creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
                 creature.stats.totalFoodCollected++;
-                state.food.splice(foodIndex, 1); // remove eaten food
+                state.food.splice(foodIndex, 1);
             }
 
             // reproduce
