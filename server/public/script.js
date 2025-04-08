@@ -12,6 +12,13 @@ let animationProgress = 1;
 let state = {
     creatures: [],
     food: [],
+    obstacles : [],
+    stats: {
+        restarts: 0,
+        generation: 0,
+        creatureCount: 0,
+        foodCount: 0
+    },
     params: {
         gridSize: 0,
         maxEnergy: 0
@@ -36,6 +43,11 @@ function draw() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / state.params.gridSize;
+
+    ctx.fillStyle = "#d3d3d3";
+    state.obstacles.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
 
     ctx.fillStyle = "green";
     state.food.forEach(({ x, y }) => {
@@ -137,7 +149,6 @@ window.addEventListener("beforeunload", () => {
         socket.close();
     }
 });
-
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
