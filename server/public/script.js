@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 
 var socket;
 var wsServerUrl;
+let wakeLock = null;
 
 const ANIMATION_DURATION = 500;
 let lastCanvasUpdateTime = performance.now();
@@ -89,6 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         start();
         requestAnimationFrame(draw);
         setInterval(updateStats, 1000);
+        await requestWakeLock(); 
     } catch (error) {
         console.error("Error getting ws server url", error);
     }
@@ -101,18 +103,33 @@ function ensureWebSocketConnection() {
     }
 }
 
+async function requestWakeLock() {
+    if ('wakeLock' in navigator && wakeLock === null) {
+        wakeLock = await navigator.wakeLock.request('screen');
+    }
+}
+
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         ensureWebSocketConnection();
     }
 });
 
-window.addEventListener("focus", () => {
-    ensureWebSocketConnection();
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === "visible") {
+        ensureWebSocketConnection();
+        await requestWakeLock();
+    }
 });
 
-window.addEventListener("pageshow", () => {
+window.addEventListener("focus", async() => {
     ensureWebSocketConnection();
+    await requestWakeLock();
+});
+
+window.addEventListener("pageshow", async () => {
+    ensureWebSocketConnection();
+    await requestWakeLock();
 });
 
 window.addEventListener("beforeunload", () => {
