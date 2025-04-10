@@ -33,8 +33,8 @@ def mutate_weights(weights):
 def think(creature, grid_size, max_energy):
     """Decides movement based on food, borders, and movement history."""
     
-    if len(creature.visible_food) > 0:
-        closest_food = min(creature.visible_food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
+    if len(creature.food) > 0:
+        closest_food = min(creature.food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
         food_dx = 2 * (closest_food.x - creature.x) / grid_size
         food_dy = 2 * (closest_food.y - creature.y) / grid_size
     else:

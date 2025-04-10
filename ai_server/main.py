@@ -5,7 +5,7 @@ from logic import (init_weights, mutate_weights, think)
 
 app = FastAPI()
 
-class Food(BaseModel):
+class Position(BaseModel):
     x: int
     y: int
 
@@ -13,11 +13,14 @@ class Creature(BaseModel):
     id: int
     x: float
     y: float
+    energy: float
     prev_x: float
     prev_y: float
+    prev_energy: float
+    just_reproduced: bool
     weights: List[float]
-    energy: int
-    visible_food: List[Food]
+    food: List[Position]
+    obstacles: List[Position]
 
 class GameState(BaseModel):
     creatures: List[Creature]
@@ -29,7 +32,7 @@ class MutateRequest(BaseModel):
 
 @app.get("/api/health")
 def healthcheck():
-    return {"status": "OK"}
+    return { "status": "OK" }
 
 @app.get("/api/weights/init")
 def initweights():

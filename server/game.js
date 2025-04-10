@@ -7,7 +7,8 @@ const {
     CREATURE_INITIAL_COUNT,
     CREATURE_INITIAL_ENERGY,
     CREATURE_MAX_ENERGY,
-    CREATURE_ENERGY_DECAY,
+    CREATURE_ENERGY_LOSS,
+    CREATURE_COLLISION_PENALTY,
     CREATURE_REPRODUCTION_ENERGY_COST,
     CREATURE_VISIBILITY_RADIUS,
     CREATURE_INTERACTION_RADIUS,
@@ -22,7 +23,7 @@ const {
     loadState,
     saveTopPerformers,
     loadTopPerformers
-} = require('./state-manager');
+} = require('./data-manager');
 
 var state;
 var lastCreatureId = 0;
@@ -53,8 +54,9 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
                 y: y,
                 energy: CREATURE_INITIAL_ENERGY
             },
-            weights: weights,
             generation: generation,
+            justReproduced: false,
+            weights: weights,
             stats: {
                 turnsSurvived: 0,
                 totalFoodCollected: 0,
@@ -67,11 +69,14 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
     }
 }
 
+function isCellOccupied(x, y) {
+    return state.food.some(f => f.x === x && f.y === y)
+        || state.obstacles.some(o => o.x === x && o.y === y);
+}
+
 function initFood() {
     var food = null;
-    while (food === null 
-        || state.food.some(f => f.x === food.x && f.y === food.y) 
-        || state.obstacles.some(o => o.x === food.x && o.y === food.y)) {
+    while (food === null || isCellOccupied(food.x, food.y)) {
         food = {
             x: Math.floor(Math.random() * GRID_SIZE),
             y: Math.floor(Math.random() * GRID_SIZE)
@@ -82,35 +87,78 @@ function initFood() {
 
 function initObstacles() {
     return [
-        { x: 20, y: 20 },
-        { x: 20, y: 21 },
-        { x: 20, y: 22 },
-        { x: 20, y: 23 },
-        { x: 20, y: 24 },
-        { x: 20, y: 25 },
-        { x: 20, y: 26 },
-        { x: 20, y: 27 },
-        { x: 20, y: 28 },
-        { x: 20, y: 29 },
+        // Diagonal top-left to bottom-right
+        { x: 10, y: 10 },
+        { x: 11, y: 11 },
+        { x: 12, y: 12 },
+        { x: 13, y: 13 },
+    
+        // Vertical short line
+        { x: 35, y: 5 },
+        { x: 35, y: 6 },
+        { x: 35, y: 7 },
+    
+        // Horizontal long line
+        { x: 5, y: 40 },
+        { x: 6, y: 40 },
+        { x: 7, y: 40 },
+        { x: 8, y: 40 },
+        { x: 9, y: 40 },
+        { x: 10, y: 40 },
+    
+        // Diagonal bottom-left to top-right
+        { x: 18, y: 32 },
+        { x: 19, y: 31 },
         { x: 20, y: 30 },
-        { x: 21, y: 30 },
-        { x: 22, y: 30 },
-        { x: 23, y: 30 }, 
-        { x: 24, y: 30 }, 
-        { x: 25, y: 30 }, 
-        { x: 26, y: 30 }, 
-        { x: 27, y: 30 }, 
-        { x: 28, y: 30 }, 
-        { x: 29, y: 30 }, 
-        { x: 30, y: 30 }, 
-        { x: 31, y: 30 }, 
-        { x: 32, y: 30 }, 
-        { x: 19, y: 25 },
-        { x: 18, y: 25 },
-        { x: 17, y: 25 },
-        { x: 16, y: 25 },
-        { x: 15, y: 25 },
-    ]
+        { x: 21, y: 29 },
+    
+        // Vertical mid-length
+        { x: 25, y: 10 },
+        { x: 25, y: 11 },
+        { x: 25, y: 12 },
+        { x: 25, y: 13 },
+        { x: 25, y: 14 },
+    
+        // Horizontal short top right
+        { x: 40, y: 5 },
+        { x: 41, y: 5 },
+        { x: 42, y: 5 },
+    
+        // Short diagonal in bottom right
+        { x: 38, y: 38 },
+        { x: 39, y: 39 },
+        { x: 40, y: 40 }
+    ];
+}
+
+function getVisibleFood(creature) {
+    return state.food.filter(f =>
+        Math.hypot(f.x - creature.x, f.y - creature.y) <= CREATURE_VISIBILITY_RADIUS
+    );
+}
+
+function getVisibleObstacles(creature) {
+    var obstacles = state.obstacles.filter(o =>
+        Math.hypot(o.x - creature.x, o.y - creature.y) <= CREATURE_VISIBILITY_RADIUS
+    );
+
+     // add borders
+     for (let i = 0; i < GRID_SIZE; i++) {
+        if (Math.hypot(i - creature.x, 0 - creature.y) <= CREATURE_VISIBILITY_RADIUS) {
+            obstacles.push({ x: i, y: 0 }); // top
+        }
+        if (Math.hypot(i - creature.x, GRID_SIZE - 1 - creature.y) <= CREATURE_VISIBILITY_RADIUS) {
+            obstacles.push({ x: i, y: GRID_SIZE - 1 }); // bottom
+        }
+        if (Math.hypot(0 - creature.x, i - creature.y) <= CREATURE_VISIBILITY_RADIUS) {
+            obstacles.push({ x: 0, y: i }); // left
+        }
+        if (Math.hypot(GRID_SIZE - 1 - creature.x, i - creature.y) <= CREATURE_VISIBILITY_RADIUS) {
+            obstacles.push({ x: GRID_SIZE - 1, y: i }); // right
+        }
+    }
+
+    return obstacles;
 }
 
 async function getMovements() {
@@ -120,22 +168,22 @@ async function getMovements() {
                 id: c.id,
                 x: c.x,
                 y: c.y,
+                energy: c.energy,
                 prev_x: c.prev.x,
                 prev_y: c.prev.y,
+                prev_energy: c.prev.energy,
+                just_reproduced: c.justReproduced,
                 weights: c.weights,
-                energy: c.energy,
-                visible_food: state.food.filter(food =>
-                    Math.hypot(food.x - c.x, food.y - c.y) <= CREATURE_VISIBILITY_RADIUS
-                )
+                food: getVisibleFood(c),
+                obstacles: getVisibleObstacles(c)
             })),
             grid_size: state.params.gridSize,
             max_energy: state.params.maxEnergy
         });
 
-        return response.data || [];
+        return response.data;
     } catch (error) {
         console.error("Error fetching movements:", error);
-        return state.creatures.map(() => ({ move_x: 0, move_y: 0 }));
     }
 }
 
@@ -195,7 +243,11 @@ async function initState() {
         console.log('New state initialized');
     }
 
-    state.obstacles = initObstacles(); // dev
+    // migrations
+    // for(let i = 0; i < state.creatures.length; i++) {
+    //     state.creatures[i].justReproduced = false;
+    // }
+    // state.obstacles = initObstacles();
 }
 
 function getPublicState() {
@@ -250,80 +302,79 @@ async function restartPopulation() {
 
     saveState(state);
 }
+
 async function updateState() {
-    try {
-        const movements = await getMovements();
-        var offsprings = [];
-        state.creatures = await Promise.all(state.creatures.map(async (creature, index) => {
-            let move_x = movements[index].move_x;
-            let move_y = movements[index].move_y;
+    var offsprings = [];
+    const movements = await getMovements();
+    state.creatures = await Promise.all(state.creatures.map(async (creature, index) => {
+        let move_x = movements[index].move_x;
+        let move_y = movements[index].move_y;
 
-            let new_x = Math.max(0, Math.min(GRID_SIZE - 1, creature.x + move_x));
-            let new_y = Math.max(0, Math.min(GRID_SIZE - 1, creature.y + move_y));
+        let new_x = Math.max(0, Math.min(GRID_SIZE - 1, creature.x + move_x));
+        let new_y = Math.max(0, Math.min(GRID_SIZE - 1, creature.y + move_y));
 
-            const hitsObstacle = state.obstacles.some(o => 
-                Math.abs(o.x - new_x) < CREATURE_INTERACTION_RADIUS && Math.abs(o.y - new_y) < CREATURE_INTERACTION_RADIUS
-            );
-            if (hitsObstacle) {
-                new_x = creature.x;
-                new_y = creature.y;
-            }
-
-            if (move_x !== 0 || move_y !== 0) {
-                creature.stats.totalMovesMade++;
-            }
-            creature.stats.turnsSurvived++;
-
-            // reduce energy on movement
-            creature.energy -= CREATURE_ENERGY_DECAY;
-
-            // check if food is eaten
-            let foodIndex = state.food.findIndex(f =>
-                Math.abs(f.x - new_x) < CREATURE_INTERACTION_RADIUS && Math.abs(f.y - new_y) < CREATURE_INTERACTION_RADIUS
-            );
-            if (foodIndex !== -1) {
-                creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
-                creature.stats.totalFoodCollected++;
-                state.food.splice(foodIndex, 1);
-            }
-
-            // reproduce
-            if (creature.energy >= CREATURE_MAX_ENERGY) {
-                let newCreature = await initCreature(
-                    creature.x,
-                    creature.y,
-                    await mutate(creature.weights),
-                    creature.generation + 1
-                );
-                offsprings.push(newCreature);
-                creature.energy = CREATURE_MAX_ENERGY - CREATURE_REPRODUCTION_ENERGY_COST;
-            } else if (creature.energy <= 0) {
-                appendTopPerformers(creature);
-                return null;
-            }
-
-            return {
-                ...creature,
-                x: new_x,
-                y: new_y,
-                prev: {
-                    x: creature.x,
-                    y: creature.y,
-                    energy: creature.energy
-                }
-            };
-        }));
-
-        state.creatures = state.creatures.filter(c => c !== null);
-        state.creatures.push(...offsprings);
-
-        if (state.creatures.length == 0) {
-            await restartPopulation();
-            state.stats.restarts++;
+        const hitsObstacle = state.obstacles.some(o =>
+            Math.abs(o.x - new_x) < CREATURE_INTERACTION_RADIUS && Math.abs(o.y - new_y) < CREATURE_INTERACTION_RADIUS
+        );
+        if (hitsObstacle) {
+            new_x = creature.x;
+            new_y = creature.y;
+            creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
         }
 
-    } catch (error) {
-        console.error("Error calling AI server:", error);
+        if (move_x !== 0 || move_y !== 0) {
+            creature.stats.totalMovesMade++;
+        }
+        creature.stats.turnsSurvived++;
+
+        // reduce energy on movement
+        creature.energy -= CREATURE_ENERGY_LOSS * (0.2 + Math.hypot(move_x, move_y));
+
+        // check if food is eaten
+        let foodIndex = state.food.findIndex(f =>
+            Math.abs(f.x - new_x) < CREATURE_INTERACTION_RADIUS && Math.abs(f.y - new_y) < CREATURE_INTERACTION_RADIUS
+        );
+        if (foodIndex !== -1) {
+            creature.energy = Math.min(creature.energy + FOOD_ENERGY, CREATURE_MAX_ENERGY);
+            creature.stats.totalFoodCollected++;
+            state.food.splice(foodIndex, 1);
+        }
+
+        // reproduce
+        creature.justReproduced = false;
+        if (creature.energy >= CREATURE_MAX_ENERGY) {
+            let newCreature = await initCreature(
+                creature.x,
+                creature.y,
+                await mutate(creature.weights),
+                creature.generation + 1
+            );
+            offsprings.push(newCreature);
+            creature.energy = CREATURE_MAX_ENERGY - CREATURE_REPRODUCTION_ENERGY_COST;
+            creature.justReproduced = true;
+        } else if (creature.energy <= 0) {
+            appendTopPerformers(creature);
+            return null;
+        }
+
+        return {
+            ...creature,
+            x: new_x,
+            y: new_y,
+            prev: {
+                x: creature.x,
+                y: creature.y,
+                energy: creature.energy
+            }
+        };
+    }));
+
+    state.creatures = state.creatures.filter(c => c !== null);
+    state.creatures.push(...offsprings);
+
+    if (state.creatures.length == 0) {
+        await restartPopulation();
+        state.stats.restarts++;
     }
 
     updateFood();

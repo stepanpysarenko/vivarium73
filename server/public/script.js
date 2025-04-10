@@ -44,7 +44,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / state.params.gridSize;
 
-    ctx.fillStyle = "#d3d3d3";
+    ctx.fillStyle = "#f0f0f0";
     state.obstacles.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
