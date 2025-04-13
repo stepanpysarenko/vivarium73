@@ -5,7 +5,7 @@ const CONFIG = {
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     AI_SERVER_URL: process.env.AI_SERVER_URL || "http://localhost:8000",
     STATE_SAVE_PATH: "./data/state.json",
-    DATA_SAVE_INTERVAL: 1000 * 60 * 5,
+    STATE_SAVE_INTERVAL: 1000 * 60 * 5,
     STATE_UPDATE_INTERVAL: 500,
     GRID_SIZE: 50,
     TOTAL_ENERGY: 15000,

@@ -6,13 +6,6 @@ const WebSocket = require("./node_modules/ws");
 const { initState, updateState, getPublicState, saveState } = require("./game");
 const CONFIG = require("./config");
 
-const {
-    PORT,
-    WEBSOCKET_URL,
-    DATA_SAVE_INTERVAL,
-    STATE_UPDATE_INTERVAL
-} = CONFIG;
-
 const app = express();
 app.use(cors());
 app.use(express.static(path.join(__dirname, "/public")));
@@ -22,7 +15,7 @@ app.get("/", (req, res) => {
 
 app.get('/api/health', (req, res) => res.json({ status: "OK" })); // add ai-server health check endpoint ???
 
-app.get('/api/wsurl', (req, res) => res.json({ wsUrl: WEBSOCKET_URL }));
+app.get('/api/wsurl', (req, res) => res.json({ wsUrl: CONFIG.WEBSOCKET_URL }));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -43,17 +36,17 @@ async function gameLoop() {
                 client.send(JSON.stringify(getPublicState()));
             }
         });
-        await new Promise(resolve => setTimeout(resolve, STATE_UPDATE_INTERVAL));
+        await new Promise(resolve => setTimeout(resolve, CONFIG.STATE_UPDATE_INTERVAL));
     }
 }
 
-server.listen(PORT, async () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+server.listen(CONFIG.PORT, async () => {
+    console.log(`Server running at http://localhost:${CONFIG.PORT}`);
     await initState();
     gameLoop();
 
-    if (DATA_SAVE_INTERVAL !== null) {
-        setInterval(saveState, DATA_SAVE_INTERVAL);
+    if (CONFIG.STATE_SAVE_INTERVAL !== null) {
+        setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
     }
 });
 
