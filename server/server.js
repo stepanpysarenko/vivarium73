@@ -3,7 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
-const { initState, updateState, getPublicState, saveData } = require("./game");
+const { initState, updateState, getPublicState, saveState } = require("./game");
 const CONFIG = require("./config");
 
 const {
@@ -53,7 +53,7 @@ server.listen(PORT, async () => {
     gameLoop();
 
     if (DATA_SAVE_INTERVAL !== null) {
-        setInterval(saveData, DATA_SAVE_INTERVAL);
+        setInterval(saveState, DATA_SAVE_INTERVAL);
     }
 });
 
@@ -66,7 +66,7 @@ function gracefulShutdown() {
     });
 
     console.log("Saving data before shutdown...");
-    saveData();
+    saveState();
 
     server.close(() => {
         console.log("HTTP server closed");

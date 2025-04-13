@@ -1,15 +1,14 @@
-const CONFIG = require("../config");
+const fs = require('fs');
+const path = require('path');
+const CONFIG = require('../config');
 const { initCreature } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
 const { initObstacles, updateFood } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
-const { saveState, loadState, saveTopPerformers, loadTopPerformers } = require("./data-manager");
 
-var state;
-var topPerformers = [];
+var state = null;
 
 async function initState() {
-    topPerformers = loadTopPerformers();
     state = loadState();
 
     if (!state) {
@@ -26,7 +25,8 @@ async function initState() {
                 generation: 1,
                 creatureCount: 0,
                 foodCount: 0
-            }
+            },
+            topPerformers: []
         };
 
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
@@ -35,6 +35,8 @@ async function initState() {
         }
 
         updateFood(state);
+
+        console.log("New random state initialized");
     }
 }
 
@@ -90,15 +92,13 @@ async function updateState() {
 
         creature.justReproduced = false;
         if (creature.energy >= CONFIG.CREATURE_MAX_ENERGY) {
-            const weights = Math.random() <= CONFIG.MUTATION_RATE
-                ? await mutateWeights(creature.weights)
-                : creature.weights;
+            const weights = Math.random() <= CONFIG.MUTATION_RATE ? await mutateWeights(creature.weights) : creature.weights;
             const offspring = await initCreature(creature.x, creature.y, weights, creature.generation + 1);
             offsprings.push(offspring);
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
             creature.justReproduced = true;
         } else if (creature.energy <= 0) {
-            appendTopPerformers(creature);
+            appendTopPerformers(state, creature);
             return null;
         }
 
@@ -120,7 +120,7 @@ async function updateState() {
     if (state.creatures.length === 0) {
         await restartPopulation(state);
         state.stats.restarts++;
-        saveData();
+        saveState();
     }
 
     updateFood(state);
@@ -130,9 +130,32 @@ async function updateState() {
     state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
 }
 
-async function saveData() {
-    saveState(state);
-    saveTopPerformers(topPerformers);
+function saveState() {
+    const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
+    try {
+        const data = JSON.stringify(state, null, 4);
+        fs.writeFileSync(filePath, data, 'utf8');
+        console.log('State successfully saved to', filePath);
+    } catch (error) {
+        console.error(`Error saving state to ${filePath}:`, error.message);
+    }
 }
 
-module.exports = { initState, updateState, getPublicState, saveData };
+function loadState() {
+    const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
+    try {
+        if (!fs.existsSync(filePath)) {
+            console.warn(`State file not found at ${filePath}`);
+            return null;
+        }
+        const fileData = fs.readFileSync(filePath, 'utf8');
+        const state = JSON.parse(fileData);
+        console.log(`State successfully loaded from ${filePath}`);
+        return state;
+    } catch (error) {
+        console.error(`Error loading state from ${filePath}:`, error.message);
+        return null;
+    }
+}
+
+module.exports = { initState, updateState, getPublicState, saveState };

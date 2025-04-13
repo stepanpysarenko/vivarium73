@@ -1,8 +1,8 @@
-const { initState, updateState, getPublicState, saveData } = require("./state");
+const { initState, updateState, getPublicState, saveState } = require("./state");
 
 module.exports = {
     initState,
     updateState,
     getPublicState,
-    saveData
+    saveState
 };
