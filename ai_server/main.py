@@ -48,4 +48,4 @@ def get_movements(state: GameState):
     for creature in state.creatures:
         move = think(creature, state.grid_size, state.max_energy)
         movements.append(move)
-    return movements
+    return { "movements": movements }

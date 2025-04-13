@@ -3,7 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("./node_modules/ws");
-const { getPublicState, initState, updateState, saveData } = require("./game");
+const { initState, updateState, getPublicState, saveData } = require("./game");
 const CONFIG = require("./config");
 
 const {

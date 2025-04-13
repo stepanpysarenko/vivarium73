@@ -1,11 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const CONFIG = require('./config');
-
-const { STATE_SAVE_PATH, TOP_PERFORMERS_SAVE_PATH } = CONFIG;
+const CONFIG = require('../config');
 
 function saveState(state) {
-    const filePath = path.resolve(STATE_SAVE_PATH);
+    const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
         const data = JSON.stringify(state, null, 4);
         fs.writeFileSync(filePath, data, 'utf8');
@@ -16,7 +14,7 @@ function saveState(state) {
 }
 
 function loadState() {
-    const filePath = path.resolve(STATE_SAVE_PATH);
+    const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
         if (!fs.existsSync(filePath)) {
             console.warn(`State file not found at ${filePath}`);
@@ -33,7 +31,7 @@ function loadState() {
 }
 
 function saveTopPerformers(topPerformers) {
-    const filePath = path.resolve(TOP_PERFORMERS_SAVE_PATH);
+    const filePath = path.resolve(CONFIG.TOP_PERFORMERS_SAVE_PATH);
     try {
         const data = JSON.stringify(topPerformers, null, 4);
         fs.writeFileSync(filePath, data, 'utf8');
@@ -44,7 +42,7 @@ function saveTopPerformers(topPerformers) {
 }
 
 function loadTopPerformers() {
-    const filePath = path.resolve(TOP_PERFORMERS_SAVE_PATH);
+    const filePath = path.resolve(CONFIG.TOP_PERFORMERS_SAVE_PATH);
     try {
         if (!fs.existsSync(filePath)) {
             return [];

@@ -8,12 +8,6 @@ INPUT_SIZE = 5
 HIDDEN_SIZE = 6   
 OUTPUT_SIZE = 2   
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def tanh(x):
-    return np.tanh(x)
-
 def init_weights():
     """Initialize a flat list of random weights for a new creature."""
     total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE
@@ -31,8 +25,7 @@ def mutate_weights(weights):
     return {"weights": mutated_weights}
 
 def think(creature, grid_size, max_energy):
-    """Decides movement based on food, borders, and movement history."""
-    
+    """Decide next movement for a creature based on its context."""   
     if len(creature.food) > 0:
         closest_food = min(creature.food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
         food_dx = 2 * (closest_food.x - creature.x) / grid_size
@@ -62,7 +55,7 @@ def think(creature, grid_size, max_energy):
     move_x = output[0]
     move_y = output[1] 
 
-    exploration_factor = tanh(output[0] + output[1])
+    exploration_factor = np.tanh(output[0] + output[1])
     if np.random.rand() < 0.3 + 0.4 * (1 - abs(exploration_factor)):
         angle = random.uniform(0, 2 * np.pi)
         magnitude = random.uniform(0.4, 0.7)
