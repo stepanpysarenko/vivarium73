@@ -5,3 +5,4 @@
 - add obstacle awareness to nn
 - improve directional exploration
 - fix ws disconnetion after swith in ios pwa
+- add proper logging

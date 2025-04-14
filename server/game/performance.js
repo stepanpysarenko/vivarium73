@@ -2,7 +2,7 @@ const CONFIG = require("../config");
 const { initCreature, getScore } = require("./creature");
 const { mutateWeights } = require("./ai");
 
-function appendTopPerformers(state, creature) {
+function appendTopPerformers(creature, state) {
     creature.score = getScore(creature);
     state.topPerformers.push(creature);
     state.topPerformers.sort((a, b) => b.score - a.score);
@@ -20,7 +20,7 @@ async function restartPopulation(state) {
         return;
     }
 
-    console.log('Top performers score:', topPerformers.map(p => p.score));
+    console.log('Top performers score:', state.topPerformers.map(p => p.score));
     state.creatures = [];
     for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];

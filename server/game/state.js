@@ -98,7 +98,7 @@ async function updateState() {
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
             creature.justReproduced = true;
         } else if (creature.energy <= 0) {
-            appendTopPerformers(state, creature);
+            appendTopPerformers(creature, state);
             return null;
         }
 
