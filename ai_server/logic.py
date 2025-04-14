@@ -4,15 +4,9 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 5    
-HIDDEN_SIZE = 6   
-OUTPUT_SIZE = 2   
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def tanh(x):
-    return np.tanh(x)
+INPUT_SIZE = 11
+HIDDEN_SIZE = 8
+OUTPUT_SIZE = 2
 
 def init_weights():
     """Initialize a flat list of random weights for a new creature."""
@@ -30,26 +24,62 @@ def mutate_weights(weights):
     mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
     return {"weights": mutated_weights}
 
-def think(creature, grid_size, max_energy):
-    """Decides movement based on food, borders, and movement history."""
-    
-    if len(creature.visible_food) > 0:
-        closest_food = min(creature.visible_food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
-        food_dx = 2 * (closest_food.x - creature.x) / grid_size
-        food_dy = 2 * (closest_food.y - creature.y) / grid_size
-    else:
-        food_dx, food_dy = 0, 0
-    move_dx = 2 * (creature.x - creature.prev_x) / grid_size  
-    move_dy = 2 * (creature.y - creature.prev_y) / grid_size  
+def compute_vector(x, y, targets, grid_size, repulse=False):
+    """
+    Compute a directional vector and magnitude towards or away from a set of targets.
+    If repulse=True, vectors point away (used for obstacles).
+    """
+    vector_x, vector_y = 0.0, 0.0
+    for t in targets:
+        dx = t.x - x
+        dy = t.y - y
+        dist_sq = dx**2 + dy**2
+        if dist_sq > 0:
+            strength = 1 / dist_sq
+            if repulse:
+                vector_x -= dx * strength
+                vector_y -= dy * strength
+            else:
+                vector_x += dx * strength
+                vector_y += dy * strength
 
-    energy_level = 2 * (creature.energy / max_energy) - 1  
+    magnitude = np.hypot(vector_x, vector_y)
+    if magnitude > 0:
+        vector_x /= magnitude
+        vector_y /= magnitude
+
+    normalized_magnitude = 2 * (magnitude / np.sqrt(2)) - 1
+    return vector_x, vector_y, np.clip(normalized_magnitude, -1, 1)
+
+def think(creature, grid_size, max_energy):
+    """Decide next movement for a creature based on its context."""
+
+    energy_level = 2 * (creature.energy / max_energy) - 1
+    energy_dx = 2 * ((creature.energy - creature.prev_energy) / max_energy)
+    move_dx = 2 * (creature.x - creature.prev_x) / grid_size
+    move_dy = 2 * (creature.y - creature.prev_y) / grid_size
+    just_reproduced = 1.0 if creature.just_reproduced else -1.0
+
+    food_vector_x, food_vector_y, food_magnitude = compute_vector(
+        creature.x, creature.y, creature.food, grid_size, repulse=False
+    )
+
+    obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
+        creature.x, creature.y, creature.obstacles, grid_size, repulse=True
+    )
 
     inputs = np.array([
-        food_dx,
-        food_dy,
         energy_level,
+        energy_dx,
         move_dx,
-        move_dy
+        move_dy,
+        just_reproduced,
+        food_vector_x,
+        food_vector_y,
+        food_magnitude,
+        obstacle_vector_x,
+        obstacle_vector_y,
+        obstacle_magnitude 
     ])
 
     weights = np.array(creature.weights)
@@ -59,17 +89,15 @@ def think(creature, grid_size, max_energy):
 
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
-    move_x = output[0]
-    move_y = output[1] 
+    move_x, move_y = output
 
-    exploration_factor = tanh(output[0] + output[1])
-    if np.random.rand() < 0.3 + 0.4 * (1 - abs(exploration_factor)):
+    # exploration noise
+    exploration_factor = np.tanh(move_x + move_y)
+    if np.random.rand() < 0.2 + 0.3 * (1 - abs(exploration_factor)):
         angle = random.uniform(0, 2 * np.pi)
         magnitude = random.uniform(0.4, 0.7)
-
         move_x += magnitude * np.cos(angle)
         move_y += magnitude * np.sin(angle)
-
         move_x = np.clip(move_x, -1, 1)
         move_y = np.clip(move_y, -1, 1)
 

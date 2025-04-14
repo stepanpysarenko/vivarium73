@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 
 var socket;
 var wsServerUrl;
+let wakeLock = null;
 
 const ANIMATION_DURATION = 500;
 let lastCanvasUpdateTime = performance.now();
@@ -11,6 +12,13 @@ let animationProgress = 1;
 let state = {
     creatures: [],
     food: [],
+    obstacles : [],
+    stats: {
+        restarts: 0,
+        generation: 0,
+        creatureCount: 0,
+        foodCount: 0
+    },
     params: {
         gridSize: 0,
         maxEnergy: 0
@@ -35,6 +43,11 @@ function draw() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / state.params.gridSize;
+
+    ctx.fillStyle = "#f0f0f0";
+    state.obstacles.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
 
     ctx.fillStyle = "green";
     state.food.forEach(({ x, y }) => {
@@ -89,6 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         start();
         requestAnimationFrame(draw);
         setInterval(updateStats, 1000);
+        await requestWakeLock(); 
     } catch (error) {
         console.error("Error getting ws server url", error);
     }
@@ -101,18 +115,33 @@ function ensureWebSocketConnection() {
     }
 }
 
+async function requestWakeLock() {
+    if ('wakeLock' in navigator && wakeLock === null) {
+        wakeLock = await navigator.wakeLock.request('screen');
+    }
+}
+
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         ensureWebSocketConnection();
     }
 });
 
-window.addEventListener("focus", () => {
-    ensureWebSocketConnection();
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === "visible") {
+        ensureWebSocketConnection();
+        await requestWakeLock();
+    }
 });
 
-window.addEventListener("pageshow", () => {
+window.addEventListener("focus", async() => {
     ensureWebSocketConnection();
+    await requestWakeLock();
+});
+
+window.addEventListener("pageshow", async () => {
+    ensureWebSocketConnection();
+    await requestWakeLock();
 });
 
 window.addEventListener("beforeunload", () => {
@@ -120,7 +149,6 @@ window.addEventListener("beforeunload", () => {
         socket.close();
     }
 });
-
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

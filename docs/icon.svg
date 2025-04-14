@@ -1,0 +1,15 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P');
+        .text { font-family: 'Press Start 2P', monospace; }
+      </style>
+    </defs>
+    <rect width="512" height="512" fill="black" />
+    <!-- <line x1="0" y1="170" x2="512" y2="170" stroke="white" stroke-width="1" />
+    <line x1="0" y1="342" x2="512" y2="342" stroke="white" stroke-width="1" />
+    <line x1="100" y1="0" x2="100" y2="512" stroke="white" stroke-width="1" />
+    <line x1="412" y1="0" x2="412" y2="512" stroke="white" stroke-width="1" /> -->
+    <text x="266" y="292" fill="white" font-size="190" class="text" text-anchor="middle" dominant-baseline="middle">73</text>
+  </svg>
+  
