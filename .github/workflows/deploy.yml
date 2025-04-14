@@ -1,4 +1,4 @@
-name: deploy to prod
+name: Deploy to Prod
 
 on:
   push:
@@ -18,6 +18,15 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Clean remote directory (preserve /data)
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ vars.HOST }}
+        username: root
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          find /root/vivarium73 -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
 
     - name: Copy code to server via SSH
       uses: appleboy/scp-action@v0.1.4
