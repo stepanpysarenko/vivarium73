@@ -117,7 +117,7 @@ async function updateState() {
     state.creatures = state.creatures.filter(c => c !== null);
     state.creatures.push(...offsprings);
 
-    if (state.creatures.length === 0) {
+    if (state.creatures.length <= CONFIG.RESTART_MAX_CREATURE_COUNT) {
         await restartPopulation(state);
         state.stats.restarts++;
         saveState();

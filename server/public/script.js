@@ -5,7 +5,7 @@ var socket;
 var wsServerUrl;
 let wakeLock = null;
 
-const ANIMATION_DURATION = 500;
+const ANIMATION_DURATION = 250;
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
 
@@ -74,6 +74,10 @@ function updateStats() {
 }
 
 function start() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+
     socket = new WebSocket(wsServerUrl);
 
     socket.onopen = () => {
@@ -97,14 +101,23 @@ function start() {
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         const response = await fetch("/api/wsurl");
-        wsServerUrl = response.wsUrl;
+        const data = await response.json();
+        wsServerUrl = data.wsUrl;
 
         start();
         requestAnimationFrame(draw);
         setInterval(updateStats, 1000);
-        await requestWakeLock(); 
     } catch (error) {
         console.error("Error getting ws server url", error);
+    }
+});
+
+document.addEventListener('click', async () => {
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log("Wake lock acquired.");
+    } catch (err) {
+        console.error("Wake lock request failed:", err);
     }
 });
 
@@ -115,34 +128,16 @@ function ensureWebSocketConnection() {
     }
 }
 
-async function requestWakeLock() {
-    if ('wakeLock' in navigator && wakeLock === null) {
-        wakeLock = await navigator.wakeLock.request('screen');
-    }
-}
-
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         ensureWebSocketConnection();
     }
 });
 
-document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === "visible") {
-        ensureWebSocketConnection();
-        await requestWakeLock();
-    }
-});
+window.addEventListener("focus", async() => ensureWebSocketConnection());
+window.addEventListener("pageshow", async() => ensureWebSocketConnection());
+window.addEventListener("online", ensureWebSocketConnection);
 
-window.addEventListener("focus", async() => {
-    ensureWebSocketConnection();
-    await requestWakeLock();
-});
-
-window.addEventListener("pageshow", async () => {
-    ensureWebSocketConnection();
-    await requestWakeLock();
-});
 
 window.addEventListener("beforeunload", () => {
     if (socket) {
