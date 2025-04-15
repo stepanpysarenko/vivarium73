@@ -12,7 +12,7 @@ let animationProgress = 1;
 let state = {
     creatures: [],
     food: [],
-    obstacles : [],
+    obstacles: [],
     stats: {
         restarts: 0,
         generation: 0,
@@ -134,8 +134,8 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-window.addEventListener("focus", async() => ensureWebSocketConnection());
-window.addEventListener("pageshow", async() => ensureWebSocketConnection());
+window.addEventListener("focus", async () => ensureWebSocketConnection());
+window.addEventListener("pageshow", async () => ensureWebSocketConnection());
 window.addEventListener("online", ensureWebSocketConnection);
 
 
