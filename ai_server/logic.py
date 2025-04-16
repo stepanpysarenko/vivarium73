@@ -24,11 +24,8 @@ def mutate_weights(weights):
     mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
     return {"weights": mutated_weights}
 
-def compute_vector(x, y, targets, grid_size, repulse=False):
-    """
-    Compute a directional vector and magnitude towards or away from a set of targets.
-    If repulse=True, vectors point away (used for obstacles).
-    """
+def compute_vector(x, y, targets, grid_size):
+    """Computes a directional vector and magnitude toward a set of targets."""
     vector_x, vector_y = 0.0, 0.0
     for t in targets:
         dx = t.x - x
@@ -36,12 +33,8 @@ def compute_vector(x, y, targets, grid_size, repulse=False):
         dist_sq = dx**2 + dy**2
         if dist_sq > 0:
             strength = 1 / dist_sq
-            if repulse:
-                vector_x -= dx * strength
-                vector_y -= dy * strength
-            else:
-                vector_x += dx * strength
-                vector_y += dy * strength
+            vector_x += dx * strength
+            vector_y += dy * strength
 
     magnitude = np.hypot(vector_x, vector_y)
     if magnitude > 0:
@@ -61,11 +54,11 @@ def think(creature, grid_size, max_energy):
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
     food_vector_x, food_vector_y, food_magnitude = compute_vector(
-        creature.x, creature.y, creature.food, grid_size, repulse=False
+        creature.x, creature.y, creature.food, grid_size
     )
 
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
-        creature.x, creature.y, creature.obstacles, grid_size, repulse=True
+        creature.x, creature.y, creature.obstacles, grid_size
     )
 
     inputs = np.array([
