@@ -1,0 +1,24 @@
+name: Reset State
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reset-state:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: SSH and Reset State
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.HOST }}
+        username: root
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd /root/vivarium73
+          echo "Stopping containers..."
+          docker-compose down
+          echo "Removing state.json..."
+          rm -f ./data/state.json
+          echo "Starting containers..."
+          docker-compose up -d
