@@ -113,6 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 document.addEventListener('click', async () => {
+    ensureWebSocketConnection();
     try {
         wakeLock = await navigator.wakeLock.request('screen');
         console.log("Wake lock acquired.");
