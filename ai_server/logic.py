@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 11
+INPUT_SIZE = 13
 HIDDEN_SIZE = 8
 OUTPUT_SIZE = 2
 
@@ -53,6 +53,14 @@ def think(creature, grid_size, max_energy):
     move_dy = 2 * (creature.y - creature.prev_y) / grid_size
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
+    if creature.food:
+        closest_food = min(creature.food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
+        food_dx = 2 * (closest_food.x - creature.x) / grid_size
+        food_dy = 2 * (closest_food.y - creature.y) / grid_size
+    else:
+        food_dx = 0.0
+        food_dy = 0.0
+        
     food_vector_x, food_vector_y, food_magnitude = compute_vector(
         creature.x, creature.y, creature.food, grid_size
     )
@@ -68,6 +76,8 @@ def think(creature, grid_size, max_energy):
         move_dx,
         move_dy,
         just_reproduced,
+        food_dx,
+        food_dy,
         food_vector_x,
         food_vector_y,
         food_magnitude,
