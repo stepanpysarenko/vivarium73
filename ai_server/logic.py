@@ -60,6 +60,7 @@ def think(creature, grid_size, max_energy):
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
         creature.x, creature.y, creature.obstacles, grid_size
     )
+    obstacle_magnitude *= -1
 
     inputs = np.array([
         energy_level,
