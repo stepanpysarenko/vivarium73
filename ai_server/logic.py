@@ -4,28 +4,23 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 13
+INPUT_SIZE = 10
 HIDDEN_SIZE = 8
 OUTPUT_SIZE = 2
 
 def init_weights():
-    """Initialize a flat list of random weights for a new creature."""
     total_weights_hidden = HIDDEN_SIZE * INPUT_SIZE
     total_weights_output = OUTPUT_SIZE * HIDDEN_SIZE
-
     weights_hidden = np.random.uniform(-1, 1, total_weights_hidden)
     weights_output = np.random.uniform(-1, 1, total_weights_output)
-
     weights = np.concatenate([weights_hidden, weights_output]).tolist()
     return {"weights": weights}
 
 def mutate_weights(weights):
-    """Mutate the weights of a creature by adding a small random value."""
     mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
     return {"weights": mutated_weights}
 
 def compute_vector(x, y, targets, grid_size):
-    """Computes a directional vector and magnitude toward a set of targets."""
     vector_x, vector_y = 0.0, 0.0
     for t in targets:
         dx = t.x - x
@@ -45,8 +40,6 @@ def compute_vector(x, y, targets, grid_size):
     return vector_x, vector_y, np.clip(normalized_magnitude, -1, 1)
 
 def think(creature, grid_size, max_energy):
-    """Decide next movement for a creature based on its context."""
-
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = 2 * ((creature.energy - creature.prev_energy) / max_energy)
     move_dx = 2 * (creature.x - creature.prev_x) / grid_size
@@ -60,10 +53,6 @@ def think(creature, grid_size, max_energy):
     else:
         food_dx = 0.0
         food_dy = 0.0
-        
-    food_vector_x, food_vector_y, food_magnitude = compute_vector(
-        creature.x, creature.y, creature.food, grid_size
-    )
 
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
         creature.x, creature.y, creature.obstacles, grid_size
@@ -78,12 +67,9 @@ def think(creature, grid_size, max_energy):
         just_reproduced,
         food_dx,
         food_dy,
-        food_vector_x,
-        food_vector_y,
-        food_magnitude,
         obstacle_vector_x,
         obstacle_vector_y,
-        obstacle_magnitude 
+        obstacle_magnitude
     ])
 
     weights = np.array(creature.weights)

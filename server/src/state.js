@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const CONFIG = require('../config');
+const CONFIG = require('./config');
 const { initCreature } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
 const { initObstacles, updateFood } = require("./grid");
@@ -10,7 +10,6 @@ var state = null;
 
 async function initState() {
     state = loadState();
-
     if (!state) {
         state = {
             creatures: [],
@@ -38,6 +37,8 @@ async function initState() {
 
         console.log("New random state initialized");
     }
+
+    state.obstacles = initObstacles(); // dev
 }
 
 function getPublicState() {

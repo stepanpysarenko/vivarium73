@@ -1,5 +1,5 @@
 const axios = require("axios");
-const CONFIG = require("../config");
+const CONFIG = require("./config");
 const { getVisibleFood, getVisibleObstacles } = require("./grid");
 
 async function getMovements(state) {

@@ -1,4 +1,4 @@
-const CONFIG = require("../config");
+const CONFIG = require("./config");
 const { initCreature, getScore } = require("./creature");
 const { mutateWeights } = require("./ai");
 

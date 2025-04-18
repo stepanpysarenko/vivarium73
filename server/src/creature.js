@@ -1,4 +1,4 @@
-const CONFIG = require("../config");
+const CONFIG = require("./config");
 const { initWeights } = require("./ai");
 
 let lastCreatureId = 0;
