@@ -1,4 +1,4 @@
-name: Reset State
+name: Reset State in Prod
 
 on:
   workflow_dispatch:
@@ -6,6 +6,8 @@ on:
 jobs:
   reset-state:
     runs-on: ubuntu-latest
+
+    environment: prod
 
     steps:
     - name: SSH and Reset State
