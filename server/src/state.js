@@ -14,10 +14,11 @@ async function initState() {
         state = {
             creatures: [],
             food: [],
-            obstacles: initObstacles(),
+            obstacles: [],
             params: {
                 gridSize: CONFIG.GRID_SIZE,
-                maxEnergy: CONFIG.CREATURE_MAX_ENERGY
+                maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
+                visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS
             },
             stats: {
                 restarts: 0,
@@ -28,17 +29,16 @@ async function initState() {
             topPerformers: []
         };
 
+        initObstacles(state);
+        updateFood(state);
+
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
             const creature = await initCreature();
             state.creatures.push(creature);
         }
 
-        updateFood(state);
-
         console.log("New random state initialized");
     }
-
-    state.obstacles = initObstacles(); // dev
 }
 
 function getPublicState() {
@@ -53,7 +53,10 @@ function getPublicState() {
         })),
         food: state.food,
         obstacles: state.obstacles,
-        params: state.params,
+        params: {
+            gridSize: state.params.gridSize,
+            maxEnergy: state.params.maxEnergy
+        },
         stats: state.stats
     };
 }
@@ -67,7 +70,7 @@ async function updateState() {
         let new_x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + move.move_x));
         let new_y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + move.move_y));
 
-                const hitsObstacle = state.obstacles.some(o =>
+        const hitsObstacle = state.obstacles.some(o =>
             Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
         );
@@ -104,9 +107,9 @@ async function updateState() {
             }
         }
 
-        if (move.move_x !== 0 || move.move_y !== 0) creature.stats.totalMovesMade++;
         creature.stats.turnsSurvived++;
-        creature.energy -= CONFIG.CREATURE_ENERGY_LOSS * (0.2 + Math.hypot(move.move_x, move.move_y));
+        let activity = Math.min(1, Math.hypot(move.move_x, move.move_y));
+        creature.energy -= CONFIG.CREATURE_ENERGY_LOSS * (0.2 + 0.8 * activity);
 
         const foodIndex = state.food.findIndex(f =>
             Math.abs(f.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
@@ -120,7 +123,7 @@ async function updateState() {
 
         creature.justReproduced = false;
         if (creature.energy >= CONFIG.CREATURE_MAX_ENERGY) {
-            const weights = Math.random() <= CONFIG.MUTATION_RATE ? await mutateWeights(creature.weights) : creature.weights;
+            const weights = Math.random() <= CONFIG.MUTATION_CHANCE ? await mutateWeights(creature.weights) : creature.weights;
             const offspring = await initCreature(creature.x, creature.y, weights, creature.generation + 1);
             offsprings.push(offspring);
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
@@ -145,7 +148,7 @@ async function updateState() {
     state.creatures = state.creatures.filter(c => c !== null);
     state.creatures.push(...offsprings);
 
-    if (state.creatures.length <= CONFIG.RESTART_MAX_CREATURE_COUNT) {
+    if (state.creatures.length <= CONFIG.RESTART_ON_CREATURE_COUNT) {
         await restartPopulation(state);
         state.stats.restarts++;
         saveState();

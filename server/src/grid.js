@@ -24,8 +24,8 @@ function updateFood(state) {
     }
 }
 
-function initObstacles() {
-    return [
+function initObstacles(state) {
+    state.obstacles =  [
         { x: 5, y: 5 }, { x: 5, y: 6 }, { x: 5, y: 7 }, { x: 5, y: 8 }, { x: 6, y: 8 }, { x: 7, y: 8 }, { x: 8, y: 8 }, { x: 9, y: 8 },
         { x: 15, y: 15 }, { x: 16, y: 15 }, { x: 17, y: 15 }, { x: 18, y: 15 }, { x: 18, y: 16 }, { x: 18, y: 17 }, { x: 18, y: 18 }, { x: 18, y: 19 },
         { x: 43, y: 40 }, { x: 43, y: 39 }, { x: 43, y: 38 }, { x: 43, y: 37 }, { x: 42, y: 37 }, { x: 41, y: 37 }, { x: 40, y: 37 }, { x: 39, y: 37 },
@@ -70,5 +70,6 @@ module.exports = {
     initObstacles,
     updateFood,
     getVisibleFood,
-    getVisibleObstacles
+    getVisibleObstacles,
+    isCellOccupied
 };

@@ -1,5 +1,6 @@
 const CONFIG = require("./config");
 const { initWeights } = require("./ai");
+const { isCellOccupied } = require("./grid");
 
 let lastCreatureId = 0;
 
@@ -26,8 +27,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
         weights,
         stats: {
             turnsSurvived: 0,
-            totalFoodCollected: 0,
-            totalMovesMade: 0
+            totalFoodCollected: 0
         }
     };
 
@@ -35,7 +35,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
 }
 
 function getScore(creature) {
-    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.totalMovesMade);
+    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.turnsSurvived);
 }
 
 module.exports = {

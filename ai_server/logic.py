@@ -17,7 +17,10 @@ def init_weights():
     return {"weights": weights}
 
 def mutate_weights(weights):
-    mutated_weights = [w + (random.random() - 0.5) * 0.1 for w in weights]
+    mutated_weights = [
+        np.clip(w + (random.random() - 0.5) * 0.1, -1, 1)
+        for w in weights
+    ]
     return {"weights": mutated_weights}
 
 def compute_vector(x, y, targets, grid_size):
@@ -39,23 +42,23 @@ def compute_vector(x, y, targets, grid_size):
     normalized_magnitude = 2 * (magnitude / np.sqrt(2)) - 1
     return vector_x, vector_y, np.clip(normalized_magnitude, -1, 1)
 
-def think(creature, grid_size, max_energy):
+def think(creature, grid_size, max_energy, visibility_radius):
     energy_level = 2 * (creature.energy / max_energy) - 1
-    energy_dx = 2 * ((creature.energy - creature.prev_energy) / max_energy)
-    move_dx = np.tanh((creature.x - creature.prev_x) / grid_size)
-    move_dy = np.tanh((creature.y - creature.prev_y) / grid_size)
+    energy_dx = (creature.energy - creature.prev_energy) / max_energy
+    move_dx = creature.x - creature.prev_x
+    move_dy = creature.y - creature.prev_y
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
     if creature.food:
         closest_food = min(creature.food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
-        food_dx = np.tanh((closest_food.x - creature.x) / grid_size)
-        food_dy = np.tanh((closest_food.y - creature.y) / grid_size)
+        food_dx = np.tanh((closest_food.x - creature.x) / visibility_radius)
+        food_dy = np.tanh((closest_food.y - creature.y) / visibility_radius)
     else:
         food_dx = 0.0
         food_dy = 0.0
 
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
-        creature.x, creature.y, creature.obstacles, grid_size
+        creature.x, creature.y, creature.obstacles, visibility_radius
     )
     obstacle_magnitude *= -1
 
@@ -82,13 +85,14 @@ def think(creature, grid_size, max_energy):
     move_x, move_y = output
 
     # exploration noise
-    exploration_factor = np.tanh(move_x + move_y)
-    if np.random.rand() < 0.2 + 0.3 * (1 - abs(exploration_factor)):
+    exploration_factor = np.tanh(np.linalg.norm([move_x, move_y]))
+    if np.random.rand() < 0.3 * (1 - exploration_factor):
         angle = random.uniform(0, 2 * np.pi)
         magnitude = random.uniform(0.4, 0.7)
         move_x += magnitude * np.cos(angle)
         move_y += magnitude * np.sin(angle)
-        move_x = np.clip(move_x, -1, 1)
-        move_y = np.clip(move_y, -1, 1)
+
+    move_x = np.clip(move_x, -1, 1)
+    move_y = np.clip(move_y, -1, 1)
 
     return {"move_x": move_x, "move_y": move_y}

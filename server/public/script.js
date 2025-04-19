@@ -3,7 +3,6 @@ const ctx = canvas.getContext("2d");
 
 var socket;
 var wsServerUrl;
-let wakeLock = null;
 
 const ANIMATION_DURATION = 250;
 let lastCanvasUpdateTime = performance.now();
@@ -109,16 +108,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         setInterval(updateStats, 1000);
     } catch (error) {
         console.error("Error getting ws server url", error);
-    }
-});
-
-document.addEventListener('click', async () => {
-    ensureWebSocketConnection();
-    try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        console.log("Wake lock acquired.");
-    } catch (err) {
-        console.error("Wake lock request failed:", err);
     }
 });
 

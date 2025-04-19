@@ -26,6 +26,7 @@ class GameState(BaseModel):
     creatures: List[Creature]
     grid_size: int
     max_energy: int
+    visibility_radius: int
 
 class MutateRequest(BaseModel):
     weights: List[float]
@@ -46,6 +47,6 @@ def mutateweights(request: MutateRequest):
 def get_movements(state: GameState):
     movements = []
     for creature in state.creatures:
-        move = think(creature, state.grid_size, state.max_energy)
+        move = think(creature, state.grid_size, state.max_energy, state.visibility_radius)
         movements.append(move)
     return { "movements": movements }
