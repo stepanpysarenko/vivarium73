@@ -67,14 +67,41 @@ async function updateState() {
         let new_x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + move.move_x));
         let new_y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + move.move_y));
 
-        const hitsObstacle = state.obstacles.some(o =>
+                const hitsObstacle = state.obstacles.some(o =>
             Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
         );
+
         if (hitsObstacle) {
-            new_x = creature.x;
-            new_y = creature.y;
-            creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
+            // Try X-only movement
+            const try_x = !state.obstacles.some(o =>
+                Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+                Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
+            );
+
+            // Try Y-only movement
+            const try_y = !state.obstacles.some(o =>
+                Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+                Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
+            );
+
+            if (try_x && !try_y) {
+                new_y = creature.y; // slide along x
+            } else if (try_y && !try_x) {
+                new_x = creature.x; // slide along y
+            } else if (try_x && try_y) {
+                // Prefer sliding along axis with greater movement
+                if (Math.abs(move.move_x) > Math.abs(move.move_y)) {
+                    new_y = creature.y;
+                } else {
+                    new_x = creature.x;
+                }
+            } else {
+                // Fully blocked
+                new_x = creature.x;
+                new_y = creature.y;
+                creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
+            }
         }
 
         if (move.move_x !== 0 || move.move_y !== 0) creature.stats.totalMovesMade++;
