@@ -42,14 +42,14 @@ def compute_vector(x, y, targets, grid_size):
 def think(creature, grid_size, max_energy):
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = 2 * ((creature.energy - creature.prev_energy) / max_energy)
-    move_dx = 2 * (creature.x - creature.prev_x) / grid_size
-    move_dy = 2 * (creature.y - creature.prev_y) / grid_size
+    move_dx = np.tanh((creature.x - creature.prev_x) / grid_size)
+    move_dy = np.tanh((creature.y - creature.prev_y) / grid_size)
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
     if creature.food:
         closest_food = min(creature.food, key=lambda f: (f.x - creature.x)**2 + (f.y - creature.y)**2)
-        food_dx = 2 * (closest_food.x - creature.x) / grid_size
-        food_dy = 2 * (closest_food.y - creature.y) / grid_size
+        food_dx = np.tanh((closest_food.x - creature.x) / grid_size)
+        food_dy = np.tanh((closest_food.y - creature.y) / grid_size)
     else:
         food_dx = 0.0
         food_dy = 0.0
