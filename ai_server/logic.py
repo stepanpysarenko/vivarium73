@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 10
-HIDDEN_SIZE = 8
+INPUT_SIZE = 11
+HIDDEN_SIZE = 6
 OUTPUT_SIZE = 2
 
 def init_weights():
@@ -45,8 +45,8 @@ def compute_vector(x, y, targets, grid_size):
 def think(creature, grid_size, max_energy, visibility_radius):
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = (creature.energy - creature.prev_energy) / max_energy
-    move_dx = creature.x - creature.prev_x
-    move_dy = creature.y - creature.prev_y
+    move_dx = np.tanh((creature.x - creature.prev_x) / grid_size)
+    move_dy = np.tanh((creature.y - creature.prev_y) / grid_size)
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
     if creature.food:
@@ -54,8 +54,10 @@ def think(creature, grid_size, max_energy, visibility_radius):
         food_dx = np.tanh((closest_food.x - creature.x) / visibility_radius)
         food_dy = np.tanh((closest_food.y - creature.y) / visibility_radius)
     else:
-        food_dx = 0.0
-        food_dy = 0.0
+        # add noise
+        angle = random.uniform(0, 2 * np.pi)
+        food_dx = 0.3 * np.cos(angle)
+        food_dy = 0.3 * np.sin(angle)
 
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
         creature.x, creature.y, creature.obstacles, visibility_radius
@@ -72,7 +74,8 @@ def think(creature, grid_size, max_energy, visibility_radius):
         food_dy,
         obstacle_vector_x,
         obstacle_vector_y,
-        obstacle_magnitude
+        obstacle_magnitude,
+        1.0 # bias
     ])
 
     weights = np.array(creature.weights)
@@ -86,9 +89,9 @@ def think(creature, grid_size, max_energy, visibility_radius):
 
     # exploration noise
     exploration_factor = np.tanh(np.linalg.norm([move_x, move_y]))
-    if np.random.rand() < 0.3 * (1 - exploration_factor):
+    if np.random.rand() < 0.4 + 0.3 * (1 - exploration_factor):
         angle = random.uniform(0, 2 * np.pi)
-        magnitude = random.uniform(0.4, 0.7)
+        magnitude = random.uniform(0.5, 0.9)
         move_x += magnitude * np.cos(angle)
         move_y += magnitude * np.sin(angle)
 

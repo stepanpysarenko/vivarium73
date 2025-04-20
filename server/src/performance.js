@@ -1,6 +1,6 @@
 const CONFIG = require("./config");
 const { initCreature, getScore } = require("./creature");
-const { mutateWeights } = require("./ai");
+const { initWeights, mutateWeights } = require("./ai");
 
 function appendTopPerformers(creature, state) {
     creature.score = getScore(creature);
@@ -22,9 +22,15 @@ async function restartPopulation(state) {
     console.log('Top performers score:', state.topPerformers.map(p => p.score));
     state.creatures = [];
     for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
-        const parent = state.topPerformers[i % state.topPerformers.length];
-        var weights = Math.random() <= CONFIG.MUTATION_CHANCE ? await mutateWeights(parent.weights) : parent.weights;
-        const offspring = await initCreature(null, null, weights, parent.generation + 1);
+        let weights;
+        let parent;
+        if (Math.random() < (1 - CONFIG.RESTART_RANDOM_WEIGHTS_CHANCE) && state.topPerformers.length > 0) {
+            parent = state.topPerformers[i % state.topPerformers.length];
+            weights = await mutateWeights(parent.weights);
+        } else {
+            weights = await initWeights();
+        }
+        const offspring = await initCreature(null, null, weights, parent ? parent.generation + 1 : 1);
         state.creatures.push(offspring);
     }
 

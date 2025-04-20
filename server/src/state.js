@@ -76,13 +76,10 @@ async function updateState() {
         );
 
         if (hitsObstacle) {
-            // Try X-only movement
             const try_x = !state.obstacles.some(o =>
                 Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
             );
-
-            // Try Y-only movement
             const try_y = !state.obstacles.some(o =>
                 Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
@@ -102,9 +99,9 @@ async function updateState() {
             } else {
                 // Fully blocked
                 new_x = creature.x;
-                new_y = creature.y;
-                creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
+                new_y = creature.y;             
             }
+            creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
         }
 
         creature.stats.turnsSurvived++;
@@ -159,6 +156,9 @@ async function updateState() {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
     state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
+
+    // gradually remove old top performers
+    state.topPerformers.forEach(p => p.score *= 0.99);
 }
 
 function saveState() {
