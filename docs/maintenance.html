@@ -24,24 +24,38 @@
             padding: 20px;
         }
 
-        img.logo {
-            max-width: 100px;
-            height: auto;
-            margin-bottom: 30px;
+        .logo {
+            margin-bottom: 50px;
         }
 
         .message {
             display: block;
-            font-size: 22px;
+            font-size: 32px;
         }
-
     </style>
 </head>
 
 <body>
     <div class="wrapper">
-        <img src="data:image/png;base64,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"
-            alt="vivarium73 logo" class="logo">
+        <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" class="logo">
+            <rect width="512" height="512" fill="black" />
+
+            <rect x="88" y="172" width="48" height="48" fill="white" />
+            <rect x="136" y="172" width="72" height="24" fill="white" />
+            <rect x="208" y="172" width="48" height="48" fill="white" />
+            <rect x="184" y="220" width="48" height="24" fill="white" />
+            <rect x="160" y="244" width="48" height="24" fill="white" />
+            <rect x="136" y="268" width="48" height="72" fill="white" />
+
+            <rect x="280" y="172" width="144" height="24" fill="white" />
+            <rect x="352" y="196" width="48" height="24" fill="white" />
+            <rect x="328" y="220" width="48" height="24" fill="white" />
+            <rect x="304" y="244" width="96" height="24" fill="white" />
+            <rect x="376" y="268" width="48" height="48" fill="white" />
+            <rect x="256" y="292" width="48" height="24" fill="white" />
+            <rect x="280" y="316" width="120" height="24" fill="white" />
+
+        </svg>
         <span class="message">vivarium73 is evolving...</span>
     </div>
 </body>
