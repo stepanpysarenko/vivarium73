@@ -1,4 +1,4 @@
-const canvas = document.getElementById("game-canvas");
+const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 var socket;
@@ -7,6 +7,8 @@ var wsServerUrl;
 const ANIMATION_DURATION = 400;
 let lastCanvasUpdateTime = performance.now();
 let animationProgress = 1;
+
+let reconnectTimeout = null;
 
 let state = {
     creatures: [],
@@ -39,7 +41,6 @@ function draw() {
     animationProgress = Math.min(animationProgress, 1);
 
     ctx.globalAlpha = 1;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / state.params.gridSize;
 
@@ -55,7 +56,6 @@ function draw() {
 
     state.creatures.forEach(({ x, y, prev_x, prev_y, energy }) => {
         ctx.globalAlpha = energy / state.params.maxEnergy * 0.9 + 0.1;
-
         ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
@@ -72,7 +72,7 @@ function updateStats() {
     document.getElementById("food-count").textContent = state.stats.foodCount;
 }
 
-function start() {
+function start(retry = true) {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
     }
@@ -81,6 +81,10 @@ function start() {
 
     socket.onopen = () => {
         console.log("Connected to WebSocket server");
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
     };
 
     socket.onmessage = event => {
@@ -89,7 +93,13 @@ function start() {
     };
 
     socket.onclose = () => {
-        console.log("Connection to WebSocket server closed");
+        console.log("WebSocket closed");
+        if (retry) {
+            reconnectTimeout = setTimeout(() => {
+                console.log("Trying to reconnect...");
+                start(true);
+            }, 2000);
+        }
     };
 
     socket.onerror = error => {
@@ -111,23 +121,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-function ensureWebSocketConnection() {
-    if (!socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
-        console.log("Reconnecting to WebSocket server...");
-        start();
-    }
+function reconnect() {
+    setTimeout(() => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            console.log("Ensuring WS connection...");
+            start(true);
+        }
+    }, 250);
 }
 
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-        ensureWebSocketConnection();
+        reconnect();
     }
 });
 
-window.addEventListener("focus", async () => ensureWebSocketConnection());
-window.addEventListener("pageshow", async () => ensureWebSocketConnection());
-window.addEventListener("online", ensureWebSocketConnection);
-
+window.addEventListener("focus", reconnect);
+window.addEventListener("pageshow", reconnect);
+window.addEventListener("online", reconnect);
 
 window.addEventListener("beforeunload", () => {
     if (socket) {
@@ -142,4 +153,3 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('SW registration failed:', err));
     });
 }
-

@@ -28,7 +28,7 @@ wss.on("connection", (ws) => {
     });
 });
 
-async function gameLoop() {
+async function loop() {
     while (true) {
         await updateState();
         wss.clients.forEach(client => {
@@ -43,7 +43,7 @@ async function gameLoop() {
 server.listen(CONFIG.PORT, async () => {
     console.log(`Server running at http://localhost:${CONFIG.PORT}`);
     await initState();
-    gameLoop();
+    loop();
 
     if (CONFIG.STATE_SAVE_INTERVAL !== null) {
         setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);

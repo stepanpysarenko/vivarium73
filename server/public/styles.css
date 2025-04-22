@@ -33,7 +33,7 @@ body {
     flex-grow: 1;
 }
 
-#game-canvas {
+#canvas {
     border: 1px solid #cccccc;
     background-color: #ffffff;
     display: block;
@@ -68,7 +68,7 @@ button:hover {
     user-select: none;
 }
 
-.game-title {
+.title {
     font-size: 24px;
     line-height: 24px;
     margin: 0;
@@ -85,7 +85,7 @@ span.credits a:hover {
     text-decoration: none;
 }
 
-.game-stats {
+.stats {
     display: flex;
     gap: 20px;
     align-items: flex-start;
@@ -114,13 +114,13 @@ span.credits a:hover {
         text-align: center;
     }
 
-    .game-title {
+    .title {
         font-size: 18px;
         line-height: 18px;
         margin-bottom: 8px;
     }
 
-    .game-stats {
+    .stats {
         flex-direction: row;
         gap: 10px;
     }
