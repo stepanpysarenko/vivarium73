@@ -1,3 +1,11 @@
+* {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: none;
+}
+
 html,
 body {
     height: 100%;
@@ -5,7 +13,6 @@ body {
     padding: 0;
     height: 100%;
     overflow: hidden;
-    touch-action: none;
 }
 
 body {

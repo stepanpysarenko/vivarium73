@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 11
-HIDDEN_SIZE = 6
+INPUT_SIZE = 15
+HIDDEN_SIZE = 8
 OUTPUT_SIZE = 2
 
 def init_weights():
@@ -54,10 +54,12 @@ def think(creature, grid_size, max_energy, visibility_radius):
         food_dx = np.tanh((closest_food.x - creature.x) / visibility_radius)
         food_dy = np.tanh((closest_food.y - creature.y) / visibility_radius)
     else:
-        # add noise
-        angle = random.uniform(0, 2 * np.pi)
-        food_dx = 0.3 * np.cos(angle)
-        food_dy = 0.3 * np.sin(angle)
+        food_dx = 0
+        food_dy = 0
+
+    food_vector_x, food_vector_y, food_magnitude = compute_vector(
+        creature.x, creature.y, creature.food, visibility_radius
+    )
 
     obstacle_vector_x, obstacle_vector_y, obstacle_magnitude = compute_vector(
         creature.x, creature.y, creature.obstacles, visibility_radius
@@ -72,10 +74,14 @@ def think(creature, grid_size, max_energy, visibility_radius):
         just_reproduced,
         food_dx,
         food_dy,
+        food_vector_x,
+        food_vector_y,
+        food_magnitude,
         obstacle_vector_x,
         obstacle_vector_y,
         obstacle_magnitude,
-        1.0 # bias
+        random.uniform(-1, 1),  # exploration noise
+        1.0  # bias
     ])
 
     weights = np.array(creature.weights)
@@ -86,16 +92,5 @@ def think(creature, grid_size, max_energy, visibility_radius):
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
     move_x, move_y = output
-
-    # exploration noise
-    exploration_factor = np.tanh(np.linalg.norm([move_x, move_y]))
-    if np.random.rand() < 0.4 + 0.3 * (1 - exploration_factor):
-        angle = random.uniform(0, 2 * np.pi)
-        magnitude = random.uniform(0.5, 0.9)
-        move_x += magnitude * np.cos(angle)
-        move_y += magnitude * np.sin(angle)
-
-    move_x = np.clip(move_x, -1, 1)
-    move_y = np.clip(move_y, -1, 1)
 
     return {"move_x": move_x, "move_y": move_y}

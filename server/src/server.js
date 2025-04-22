@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
-app.get('/api/health', (req, res) => res.json({ status: "OK" })); // add ai-server health check endpoint ???
+app.get('/api/health', (req, res) => res.json({ status: "OK" }));
 
 app.get('/api/wsurl', (req, res) => res.json({ wsUrl: CONFIG.WEBSOCKET_URL }));
 
