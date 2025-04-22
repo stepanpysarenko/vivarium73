@@ -121,23 +121,27 @@ body {
     background-color: white;
     color: #333;
     font-size: 12px;
-    padding: 40px 20px;
+    padding: 20px 20px;
     box-sizing: border-box;
-    text-align: center;
-    overflow-y: auto;
+    text-align: left;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     display: none;
 }
 
 #about-content {
-    max-width: 90%;
+    overflow-y: auto;
+    max-height: 100%;
+    width: 100%;
+    padding-right: 15px;
     font-size: 10px;
     text-align: left;
     line-height: 1.5em;
-    ;
+    touch-action: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 #about-content ul {
