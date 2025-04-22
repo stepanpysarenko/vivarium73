@@ -43,10 +43,30 @@
                 </div>
             </div>
         </div>
-        <canvas id="canvas" width="800" height="800"></canvas>
+        <div class="content">
+            <canvas id="canvas" width="800" height="800"></canvas>
+            <div id="about-section">
+                <div id="about-content">
+                    <p><strong>vivarium73</strong> is an evolution simulation where creatures move, search for food,
+                        avoid obstacles, and evolve.<br>
+                        Each creature is controlled by a neural network that decides movement based on its environment.
+                    </p>
+                    <ul style="line-height: 1.6;">
+                        <li>creatures detect food and obstacles in their surroundings</li>
+                        <li>they gain energy by eating and lose energy by moving</li>
+                        <li>when a creature reaches full energy, it creates an offspring with a chance of mutation</li>
+                        <li>if a creature runs out of energy, it dies</li>
+                        <li>when all creatures are gone, the simulation restarts with the best-performing ones from the
+                            previous generation</li>
+                        <li>over time, mutations can lead to more effective survival strategies</li>
+                    </ul>
+                    <br />
+                    <p>more: <a href="https://github.com/stepanpysarenko/vivarium73" target="_blank">github</a></p>
+                </div>
+            </div>
+        </div>
         <div class="footer">
-            <span class="credits"><a href="https://github.com/stepanpysarenko/vivarium73"
-                    target="_blank">github</a></span>
+            <button id="about-toggle" onclick="toggleAbout();">about</button>
         </div>
     </div>
     <script src="script.js" defer></script>

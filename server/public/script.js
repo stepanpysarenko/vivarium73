@@ -153,3 +153,18 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('SW registration failed:', err));
     });
 }
+
+function toggleAbout() {
+    const aboutSection = document.getElementById("about-section");
+    const aboutToggle = document.getElementById("about-toggle");
+    const canvas = document.getElementById("canvas");
+    if (aboutSection.style.display === "block") {
+        aboutSection.style.display = "none";
+        canvas.style.display = "block";
+        aboutToggle.innerHTML = "about";
+    } else {
+        aboutSection.style.display = "block";
+        canvas.style.display = "none";
+        aboutToggle.innerHTML = "back";
+    }
+}

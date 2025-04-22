@@ -1,14 +1,15 @@
 # vivarium73
 
-**vivarium73** is a simulation where virtual creatures move, search for food, and avoid obstacles. Each creature is controlled by a simple neural network that decides what to do based on nearby food and obstacles.
+**vivarium73** is an evolution simulation where creatures move, search for food, avoid obstacles, and evolve.  
+Each creature is controlled by a neural network that decides movement based on its environment.
 
-Live version: [https://vivarium73.life](https://vivarium73.life)
+### Mechanics
+- Creatures detect food and obstacles in their surroundings  
+- They gain energy by eating and lose energy by moving  
+- When a creature reaches full energy, it creates an offspring with a chance of mutation  
+- If a creature runs out of energy, it dies  
+- When all creatures are gone, the simulation restarts with the best-performing ones from the previous generation  
+- Over time, mutations can lead to more effective survival strategies
 
-### Simulation mechanics
-- creatures detect food and obstacles in their surroundings  
-- they gain energy by eating and lose energy by moving  
-- when a creature reaches full energy, it creates an offspring, which may have small mutations  
-- if a creature runs out of energy, it dies  
-- when all creatures are gone, the simulation restarts with the best-performing ones from the previous generation  
-- over time, mutations can lead to more effective survival strategies
-
+### Live version
+🌐 [vivarium73.life](https://vivarium73.life)
