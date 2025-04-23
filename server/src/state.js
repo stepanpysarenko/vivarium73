@@ -39,6 +39,11 @@ async function initState() {
 
         console.log("New random state initialized");
     }
+
+    // migration only
+    state.food = [];
+    initObstacles(state); 
+    updateFood(state);
 }
 
 function getPublicState() {
@@ -57,7 +62,12 @@ function getPublicState() {
             gridSize: state.params.gridSize,
             maxEnergy: state.params.maxEnergy
         },
-        stats: state.stats
+        stats: {
+            restarts: state.stats.restarts,
+            generation: state.stats.generation,
+            creatureCount: state.stats.creatureCount,
+            foodCount: state.stats.foodCount
+        }
     };
 }
 
