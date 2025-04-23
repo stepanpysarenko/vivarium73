@@ -57,7 +57,7 @@ function initObstacles(state) {
         ...Array.from({ length: 7 }, (_, i) => ({ x: 7 + i, y: 18 })),
         ...Array.from({ length: 6 }, (_, i) => ({ x: 13, y: 18 + i })),
         ...Array.from({ length: 8 }, (_, i) => ({ x: 5, y: 18 + i })),
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 6 + i, y: 25 })),
+        ...Array.from({ length: 6 }, (_, i) => ({ x: 6 + i, y: 25 })),
     ];
 }
 
