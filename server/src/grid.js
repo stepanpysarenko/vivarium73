@@ -26,40 +26,28 @@ function updateFood(state) {
 
 function initObstacles(state) {
     state.obstacles = [
-        // horizontal lines
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 3 + i, y: 3 })),
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 10 + i, y: 10 })),
-        ...Array.from({ length: 9 }, (_, i) => ({ x: 20 + i, y: 25 })),
-        ...Array.from({ length: 10 }, (_, i) => ({ x: 5 + i, y: 40 })),
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 30 + i, y: 5 })),
-
         // vertical lines
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 12, y: 2 + i })),
-        ...Array.from({ length: 9 }, (_, i) => ({ x: 22, y: 10 + i })),
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 18, y: 35 + i })),
-        ...Array.from({ length: 10 }, (_, i) => ({ x: 35, y: 15 + i })),
-        ...Array.from({ length: 10 }, (_, i) => ({ x: 38, y: 17 + i })),
+        { x: 5, y: 5 }, { x: 5, y: 6 }, { x: 5, y: 7 },
+        { x: 10, y: 12 }, { x: 10, y: 13 }, { x: 10, y: 14 }, { x: 10, y: 15 },
+        { x: 20, y: 8 }, { x: 20, y: 9 }, { x: 20, y: 10 }, { x: 20, y: 11 }, { x: 20, y: 12 },
+        { x: 30, y: 20 }, { x: 30, y: 21 }, { x: 30, y: 22 },
+        { x: 38, y: 5 }, { x: 38, y: 6 }, { x: 38, y: 7 }, { x: 38, y: 8 },
+
+        // horizontal lines
+        { x: 6, y: 18 }, { x: 7, y: 18 }, { x: 8, y: 18 },
+        { x: 14, y: 25 }, { x: 15, y: 25 }, { x: 16, y: 25 }, { x: 17, y: 25 },
+        { x: 23, y: 15 }, { x: 24, y: 15 }, { x: 25, y: 15 }, { x: 26, y: 15 },
+        { x: 33, y: 30 }, { x: 34, y: 30 }, { x: 35, y: 30 },
+        { x: 10, y: 35 }, { x: 11, y: 35 }, { x: 12, y: 35 }, { x: 13, y: 35 },
 
         // L-shapes
-        ...Array.from({ length: 6 }, (_, i) => ({ x: 45 + i, y: 5 })),
-        ...Array.from({ length: 6 }, (_, i) => ({ x: 50, y: 5 + i })),
-
-        ...Array.from({ length: 5 }, (_, i) => ({ x: 25 + i, y: 45 })),
-        ...Array.from({ length: 5 }, (_, i) => ({ x: 30, y: 45 + i })),
-
-        ...Array.from({ length: 4 }, (_, i) => ({ x: 38 + i, y: 12 })),
-        ...Array.from({ length: 4 }, (_, i) => ({ x: 41, y: 12 + i })),
-
-        ...Array.from({ length: 6 }, (_, i) => ({ x: 38 + i, y: 33 })),
-        ...Array.from({ length: 7 }, (_, i) => ({ x: 44, y: 33 + i })),
-
-        // room
-        ...Array.from({ length: 7 }, (_, i) => ({ x: 7 + i, y: 18 })),
-        ...Array.from({ length: 6 }, (_, i) => ({ x: 13, y: 18 + i })),
-        ...Array.from({ length: 8 }, (_, i) => ({ x: 5, y: 18 + i })),
-        ...Array.from({ length: 6 }, (_, i) => ({ x: 6 + i, y: 25 })),
+        { x: 6, y: 40 }, { x: 7, y: 40 }, { x: 6, y: 41 }, { x: 6, y: 42 },
+        { x: 40, y: 10 }, { x: 39, y: 10 }, { x: 40, y: 11 }, { x: 40, y: 12 },
+        { x: 36, y: 35 }, { x: 37, y: 35 }, { x: 37, y: 36 }, { x: 37, y: 37 },
+        { x: 15, y: 40 }, { x: 16, y: 40 }, { x: 15, y: 41 }, { x: 15, y: 42 }
     ];
 }
+
 
 function getVisibleFood(creature, state) {
     return state.food.filter(f =>
