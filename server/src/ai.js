@@ -3,17 +3,17 @@ const CONFIG = require("./config");
 const { getVisibleFood, getVisibleObstacles } = require("./grid");
 
 async function initWeights() {
-    const response = await axios.get(CONFIG.AI_SERVER_URL + "/api/weights/init");
+    const response = await axios.get(CONFIG.AI_SERVER_URL + "/weights/init");
     return response.data.weights;
 }
 
 async function mutateWeights(weights) {
-    const response = await axios.post(CONFIG.AI_SERVER_URL + "/api/weights/mutate", { weights });
+    const response = await axios.post(CONFIG.AI_SERVER_URL + "/weights/mutate", { weights });
     return response.data.weights;
 }
 
 async function getMovements(state) {
-    const response = await axios.post(CONFIG.AI_SERVER_URL + "/api/think", {
+    const response = await axios.post(CONFIG.AI_SERVER_URL + "/think", {
         creatures: state.creatures.map(c => ({
             id: c.id,
             x: c.x,

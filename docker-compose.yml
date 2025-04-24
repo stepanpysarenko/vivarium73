@@ -6,7 +6,7 @@ services:
       - .env
     environment:
       - PORT=3000
-      - AI_SERVER_URL=http://ai_server:8000     
+      - AI_SERVER_URL=http://ai_server:8000/api 
     ports:
       - "3000:3000"
     volumes:
