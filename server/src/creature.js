@@ -12,14 +12,16 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
     x = (x !== null) ? x : Math.floor(Math.random() * CONFIG.GRID_SIZE);
     y = (y !== null) ? y : Math.floor(Math.random() * CONFIG.GRID_SIZE);
 
-    var creature =  {
+    var creature = {
         id: lastCreatureId++,
         x,
         y,
+        facingAngle: 0.0,
         energy: CONFIG.CREATURE_INITIAL_ENERGY,
         prev: {
             x,
             y,
+            facingAngle: 0.0,
             energy: CONFIG.CREATURE_INITIAL_ENERGY
         },
         generation,

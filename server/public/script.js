@@ -54,12 +54,28 @@ function draw() {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    state.creatures.forEach(({ x, y, prev_x, prev_y, energy }) => {
+    state.creatures.forEach(({ x, y, facing_angle, prev_x, prev_y, prev_facing_angle, energy }) => {
         ctx.globalAlpha = energy / state.params.maxEnergy * 0.9 + 0.1;
         ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
-        ctx.fillRect(drawX * scale, drawY * scale, scale, scale);
+        let angle = lerp(prev_facing_angle, facing_angle, animationProgress);
+
+        ctx.save();
+        ctx.translate(drawX * scale + scale, drawY * scale);
+        ctx.rotate(angle);
+
+        ctx.beginPath();
+        ctx.moveTo(scale, 0);
+        ctx.lineTo(-scale, scale * 0.7);
+        ctx.lineTo(-scale, -scale * 0.7);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(0, 0, 1, 1);
+
+        ctx.restore();
     });
 
     requestAnimationFrame(draw);

@@ -39,11 +39,6 @@ async function initState() {
 
         console.log("New random state initialized");
     }
-
-    // migration only
-    state.food = [];
-    initObstacles(state); 
-    updateFood(state);
 }
 
 function getPublicState() {
@@ -52,9 +47,11 @@ function getPublicState() {
             id: c.id,
             x: c.x,
             y: c.y,
+            facing_angle: c.facingAngle,
             energy: c.energy,
             prev_x: c.prev.x,
-            prev_y: c.prev.y
+            prev_y: c.prev.y,
+            prev_facing_angle: c.prev.facingAngle
         })),
         food: state.food,
         obstacles: state.obstacles,
@@ -72,55 +69,58 @@ function getPublicState() {
 }
 
 async function updateState() {
-    const movements = await getMovements(state);
     const offsprings = [];
 
+    const movements = await getMovements(state);
     state.creatures = await Promise.all(state.creatures.map(async (creature, i) => {
         const move = movements[i];
-        let new_x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + move.move_x));
-        let new_y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + move.move_y));
+        let angle = creature.facingAngle + move.angle_delta;
+        let moveX = move.speed * Math.cos(angle);
+        let moveY = move.speed * Math.sin(angle);
+        let newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + moveX));
+        let newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + moveY));
 
         const hitsObstacle = state.obstacles.some(o =>
-            Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-            Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
+            Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+            Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
         );
 
         if (hitsObstacle) {
             const try_x = !state.obstacles.some(o =>
-                Math.abs(o.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+                Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
             );
             const try_y = !state.obstacles.some(o =>
                 Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-                Math.abs(o.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
+                Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
             );
 
             if (try_x && !try_y) {
-                new_y = creature.y; // slide along x
+                newY = creature.y; // slide along x
             } else if (try_y && !try_x) {
-                new_x = creature.x; // slide along y
+                newX = creature.x; // slide along y
             } else if (try_x && try_y) {
                 // Prefer sliding along axis with greater movement
-                if (Math.abs(move.move_x) > Math.abs(move.move_y)) {
-                    new_y = creature.y;
+                if (Math.abs(move.moveX) > Math.abs(move.moveY)) {
+                    newY = creature.y;
                 } else {
-                    new_x = creature.x;
+                    newX = creature.x;
                 }
             } else {
                 // Fully blocked
-                new_x = creature.x;
-                new_y = creature.y;             
+                newX = creature.x;
+                newY = creature.y;             
             }
             creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
         }
 
         creature.stats.turnsSurvived++;
-        let activity = Math.min(1, Math.hypot(move.move_x, move.move_y));
+        let activity = Math.min(1, Math.hypot(moveX, moveY));
         creature.energy -= CONFIG.CREATURE_ENERGY_LOSS * (0.2 + 0.8 * activity);
 
         const foodIndex = state.food.findIndex(f =>
-            Math.abs(f.x - new_x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-            Math.abs(f.y - new_y) < CONFIG.CREATURE_INTERACTION_RADIUS
+            Math.abs(f.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+            Math.abs(f.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
         );
         if (foodIndex !== -1) {
             creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
@@ -142,11 +142,13 @@ async function updateState() {
 
         return {
             ...creature,
-            x: new_x,
-            y: new_y,
+            x: newX,
+            y: newY,
+            facingAngle: angle,
             prev: {
                 x: creature.x,
                 y: creature.y,
+                facingAngle: creature.facingAngle,
                 energy: creature.energy
             }
         };
