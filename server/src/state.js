@@ -74,9 +74,12 @@ async function updateState() {
     const movements = await getMovements(state);
     state.creatures = await Promise.all(state.creatures.map(async (creature, i) => {
         const move = movements[i];
-        let angle = creature.facingAngle + move.angle_delta;
-        let moveX = move.speed * Math.cos(angle);
-        let moveY = move.speed * Math.sin(angle);
+
+        let newAngle = creature.facingAngle + move.angle_delta;
+        // newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+        let moveX = move.speed * Math.cos(newAngle);
+        let moveY = move.speed * Math.sin(newAngle);
         let newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + moveX));
         let newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + moveY));
 
@@ -144,7 +147,7 @@ async function updateState() {
             ...creature,
             x: newX,
             y: newY,
-            facingAngle: angle,
+            facingAngle: newAngle,
             prev: {
                 x: creature.x,
                 y: creature.y,
