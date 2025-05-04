@@ -13,9 +13,11 @@ class Creature(BaseModel):
     id: int
     x: float
     y: float
+    facing_angle: float
     energy: float
     prev_x: float
     prev_y: float
+    prev_facing_angle: float
     prev_energy: float
     just_reproduced: bool
     weights: List[float]

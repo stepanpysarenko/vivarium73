@@ -80,8 +80,8 @@ def think(creature, grid_size, max_energy, visibility_radius):
         obstacle_vector_x,
         obstacle_vector_y,
         obstacle_magnitude,
-        random.uniform(-1, 1),  # exploration noise
-        1.0  # bias
+        random.uniform(-1, 1), # exploration noise
+        1.0 # bias
     ])
 
     weights = np.array(creature.weights)
@@ -91,6 +91,13 @@ def think(creature, grid_size, max_energy, visibility_radius):
 
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
-    move_x, move_y = output
+    angle_delta_normalized = output[0]  # [-1, 1]
+    speed_normalized = (output[1] + 1) / 2  # [0, 1]
 
-    return {"move_x": move_x, "move_y": move_y}
+    MAX_TURN_ANGLE = np.pi / 4  # 45 degrees
+    angle_delta = angle_delta_normalized * MAX_TURN_ANGLE
+
+    return {
+        "angle_delta": angle_delta,
+        "speed": speed_normalized
+    }
