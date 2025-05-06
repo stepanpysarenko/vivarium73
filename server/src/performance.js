@@ -14,7 +14,7 @@ function appendTopPerformers(creature, state) {
 
 async function restartPopulation(state) {
     if (state.topPerformers.length === 0) {
-        console.log("No top performers - nitializing from scratch...");
+        console.log("No top performers - initializing from scratch...");
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
             state.creatures.push(await initCreature());
         }

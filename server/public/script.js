@@ -67,13 +67,10 @@ function draw() {
 
         ctx.beginPath();
         ctx.moveTo(scale, 0);
-        ctx.lineTo(-scale, scale * 0.7);
-        ctx.lineTo(-scale, -scale * 0.7);
+        ctx.lineTo(-scale * 0.8, scale * 0.6);
+        ctx.lineTo(-scale * 0.8, -scale * 0.6);
         ctx.closePath();
         ctx.fill();
-
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(0, 0, 1, 1);
 
         ctx.restore();
     });
@@ -114,7 +111,7 @@ function start(retry = true) {
             reconnectTimeout = setTimeout(() => {
                 console.log("Trying to reconnect...");
                 start(true);
-            }, 2000);
+            }, 1000);
         }
     };
 

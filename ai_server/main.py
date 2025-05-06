@@ -6,8 +6,8 @@ from logic import (init_weights, mutate_weights, think)
 app = FastAPI()
 
 class Position(BaseModel):
-    x: int
-    y: int
+    x: float
+    y: float
 
 class Creature(BaseModel):
     id: int
@@ -18,6 +18,7 @@ class Creature(BaseModel):
     prev_x: float
     prev_y: float
     prev_facing_angle: float
+    recent_path: List[Position]
     prev_energy: float
     just_reproduced: bool
     weights: List[float]

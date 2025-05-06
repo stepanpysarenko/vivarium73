@@ -24,6 +24,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
             facingAngle: 0.0,
             energy: CONFIG.CREATURE_INITIAL_ENERGY
         },
+        recentPath: [{ x, y }],
         generation,
         justReproduced: false,
         weights,
