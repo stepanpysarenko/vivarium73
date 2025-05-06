@@ -23,6 +23,7 @@ async function getMovements(state) {
             prev_x: c.prev.x,
             prev_y: c.prev.y,
             prev_facing_angle: c.prev.facingAngle,
+            recent_path: c.recentPath,
             prev_energy: c.prev.energy,
             just_reproduced: c.justReproduced,
             weights: c.weights,

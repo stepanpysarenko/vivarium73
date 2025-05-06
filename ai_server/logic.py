@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 15
-HIDDEN_SIZE = 8
+INPUT_SIZE = 17
+HIDDEN_SIZE = 9
 OUTPUT_SIZE = 2
 
 def init_weights():
@@ -42,6 +42,14 @@ def compute_vector(x, y, targets, grid_size):
     normalized_magnitude = 2 * (magnitude / np.sqrt(2)) - 1
     return vector_x, vector_y, np.clip(normalized_magnitude, -1, 1)
 
+def get_net_movement_vector(path, visibility_radius):
+    if len(path) < 2:
+        return 0.0, 0.0
+
+    dx = path[-1].x - path[0].x
+    dy = path[-1].y - path[0].y
+    return np.tanh(dx / visibility_radius), np.tanh(dy / visibility_radius)
+
 def think(creature, grid_size, max_energy, visibility_radius):
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = (creature.energy - creature.prev_energy) / max_energy
@@ -66,6 +74,8 @@ def think(creature, grid_size, max_energy, visibility_radius):
     )
     obstacle_magnitude *= -1
 
+    net_dx, net_dy = get_net_movement_vector(creature.recent_path, visibility_radius)
+
     inputs = np.array([
         energy_level,
         energy_dx,
@@ -80,6 +90,8 @@ def think(creature, grid_size, max_energy, visibility_radius):
         obstacle_vector_x,
         obstacle_vector_y,
         obstacle_magnitude,
+        net_dx,
+        net_dy,
         random.uniform(-1, 1), # exploration noise
         1.0 # bias
     ])
@@ -94,7 +106,7 @@ def think(creature, grid_size, max_energy, visibility_radius):
     angle_delta_normalized = output[0]  # [-1, 1]
     speed_normalized = (output[1] + 1) / 2  # [0, 1]
 
-    MAX_TURN_ANGLE = np.pi / 4  # 45 degrees
+    MAX_TURN_ANGLE = np.pi / 2  # 90 degrees
     angle_delta = angle_delta_normalized * MAX_TURN_ANGLE
 
     return {

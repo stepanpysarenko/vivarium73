@@ -112,7 +112,7 @@ async function updateState() {
             } else {
                 // Fully blocked
                 newX = creature.x;
-                newY = creature.y;             
+                newY = creature.y;
             }
             creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
         }
@@ -143,6 +143,9 @@ async function updateState() {
             return null;
         }
 
+        const path = [...creature.recentPath, { x: newX, y: newY }];
+        if (path.length > 5) path.shift(); 
+
         return {
             ...creature,
             x: newX,
@@ -153,7 +156,8 @@ async function updateState() {
                 y: creature.y,
                 facingAngle: creature.facingAngle,
                 energy: creature.energy
-            }
+            },
+            recentPath: path
         };
     }));
 
