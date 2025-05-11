@@ -1,6 +1,5 @@
 const CONFIG = require("./config");
 const { initWeights } = require("./ai");
-const { isCellOccupied } = require("./grid");
 
 let lastCreatureId = 0;
 

@@ -44,33 +44,31 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = canvas.width / state.params.gridSize;
 
-    ctx.fillStyle = "#f0f0f0";
+    ctx.fillStyle = "#f0f0f0"; // light gray
     state.obstacles.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    ctx.fillStyle = "green";
+    ctx.fillStyle = "#008000"; // green
     state.food.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
     state.creatures.forEach(({ x, y, facing_angle, prev_x, prev_y, prev_facing_angle, energy }) => {
-        ctx.globalAlpha = energy / state.params.maxEnergy * 0.9 + 0.1;
-        ctx.fillStyle = "blue";
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
         let angle = lerp(prev_facing_angle, facing_angle, animationProgress);
+        angle = angle + Math.PI * 0.75;
 
         ctx.save();
-        ctx.translate(drawX * scale + scale, drawY * scale);
+        ctx.translate(drawX * scale + scale * 0.5, drawY * scale + scale * 0.5);
         ctx.rotate(angle);
 
-        ctx.beginPath();
-        ctx.moveTo(scale, 0);
-        ctx.lineTo(-scale * 0.8, scale * 0.6);
-        ctx.lineTo(-scale * 0.8, -scale * 0.6);
-        ctx.closePath();
-        ctx.fill();
+        ctx.globalAlpha = energy / state.params.maxEnergy * 0.8 + 0.2;
+        ctx.fillStyle = "#0000ff"; // blue
+        ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
+        ctx.fillStyle = "#ffdd00"; // yellow
+        ctx.fillRect(-scale * 0.5, -scale * 0.5, scale * 0.5, scale * 0.5);
 
         ctx.restore();
     });

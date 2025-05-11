@@ -103,14 +103,14 @@ async function updateState() {
             } else if (try_y && !try_x) {
                 newX = creature.x; // slide along y
             } else if (try_x && try_y) {
-                // Prefer sliding along axis with greater movement
+                // sliding along axis with greater movement
                 if (Math.abs(move.moveX) > Math.abs(move.moveY)) {
                     newY = creature.y;
                 } else {
                     newX = creature.x;
                 }
             } else {
-                // Fully blocked
+                // fully blocked
                 newX = creature.x;
                 newY = creature.y;
             }
