@@ -104,7 +104,7 @@ def think(creature, grid_size, max_energy, visibility_radius):
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
 
-    MAX_TURN_ANGLE = np.pi / 2  # 90 degrees
+    MAX_TURN_ANGLE = np.pi  # 180 degrees
     angle_delta = output[0] * MAX_TURN_ANGLE
     speed = (output[1] + 1) / 2
 
