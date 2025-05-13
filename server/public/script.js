@@ -58,7 +58,7 @@ function draw() {
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
         let angle = lerp(prev_facing_angle, facing_angle, animationProgress);
-        angle = angle + Math.PI * 0.75;
+        angle = angle + Math.PI * 0.75; // rotate towards positive x-axis
 
         ctx.save();
         ctx.translate(drawX * scale + scale * 0.5, drawY * scale + scale * 0.5);
