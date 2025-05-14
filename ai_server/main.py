@@ -28,8 +28,10 @@ class Creature(BaseModel):
 class State(BaseModel):
     creatures: List[Creature]
     grid_size: int
-    max_energy: int
     visibility_radius: int
+    max_energy: float
+    max_turn_angle: float
+    max_speed: float
 
 class MutateRequest(BaseModel):
     weights: List[float]
@@ -48,8 +50,16 @@ def mutateweights(request: MutateRequest):
 
 @app.post("/api/think")
 def get_movements(state: State):
-    movements = []
-    for creature in state.creatures:
-        move = think(creature, state.grid_size, state.max_energy, state.visibility_radius)
-        movements.append(move)
-    return { "movements": movements }
+    return {
+        "movements": [
+            think(
+                creature,
+                state.grid_size,
+                state.visibility_radius,
+                state.max_energy,
+                state.max_turn_angle,
+                state.max_speed
+            )
+            for creature in state.creatures
+        ]
+    }

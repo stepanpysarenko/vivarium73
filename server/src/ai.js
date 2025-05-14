@@ -31,8 +31,10 @@ async function getMovements(state) {
             obstacles: getVisibleObstacles(c, state)
         })),
         grid_size: state.params.gridSize,
+        visibility_radius: state.params.visibilityRadius,
         max_energy: state.params.maxEnergy,
-        visibility_radius: state.params.visibilityRadius
+        max_turn_angle: state.params.maxTurnAngle,
+        max_speed: state.params.maxSpeed
     });
 
     return response.data.movements;

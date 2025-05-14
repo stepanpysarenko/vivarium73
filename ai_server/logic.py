@@ -59,7 +59,7 @@ def get_net_movement_vector(path, visibility_radius):
     dy = path[-1].y - path[0].y
     return np.tanh(dx / visibility_radius), np.tanh(dy / visibility_radius)
 
-def think(creature, grid_size, max_energy, visibility_radius):
+def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, max_speed):
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = np.clip((creature.energy - creature.prev_energy) / max_energy, -1, 1)
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
@@ -104,9 +104,8 @@ def think(creature, grid_size, max_energy, visibility_radius):
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
 
-    MAX_TURN_ANGLE = np.pi / 3 * 2  # 120 degrees
-    angle_delta = output[0] * MAX_TURN_ANGLE
-    speed = (output[1] + 1) / 2
+    angle_delta = output[0] * max_turn_angle
+    speed = ((output[1] + 1) / 2) * max_speed
 
     return {
         "angle_delta": angle_delta,

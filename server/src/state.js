@@ -18,7 +18,9 @@ async function initState() {
             params: {
                 gridSize: CONFIG.GRID_SIZE,
                 maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
-                visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS
+                visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
+                maxSpeed: CONFIG.CREATURE_MAX_SPEED,
+                maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE
             },
             stats: {
                 restarts: 0,
@@ -76,7 +78,7 @@ async function updateState() {
         const move = movements[i];
 
         let newAngle = creature.facingAngle + move.angle_delta;
-        // newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
         let moveX = move.speed * Math.cos(newAngle);
         let moveY = move.speed * Math.sin(newAngle);
@@ -114,12 +116,15 @@ async function updateState() {
                 newX = creature.x;
                 newY = creature.y;
             }
-            creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
+            creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
         }
 
         creature.stats.turnsSurvived++;
-        let activity = Math.min(1, Math.hypot(moveX, moveY));
-        creature.energy -= CONFIG.CREATURE_ENERGY_LOSS * (0.2 + 0.8 * activity);
+
+        const speedPenalty = move.speed / CONFIG.CREATURE_MAX_SPEED;
+        const turnPenalty = Math.abs(move.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
+        const activityCost = 0.2 + 0.4 * speedPenalty + 0.4 * turnPenalty;
+        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 
         const foodIndex = state.food.findIndex(f =>
             Math.abs(f.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
@@ -144,7 +149,7 @@ async function updateState() {
         }
 
         const path = [...creature.recentPath, { x: newX, y: newY }];
-        if (path.length > 5) path.shift(); 
+        if (path.length > 5) path.shift();
 
         return {
             ...creature,

@@ -30,6 +30,15 @@ function lerp(a, b, t) {
     return a + (b - a) * t;
 }
 
+function lerpAngle(from, to, t) {
+    let delta = to - from;
+
+    if (delta > Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+
+    return from + delta * t;
+}
+
 function draw() {
     const now = performance.now();
     const deltaTime = now - lastCanvasUpdateTime;
@@ -57,7 +66,7 @@ function draw() {
     state.creatures.forEach(({ x, y, facing_angle, prev_x, prev_y, prev_facing_angle, energy }) => {
         let drawX = lerp(prev_x, x, animationProgress);
         let drawY = lerp(prev_y, y, animationProgress);
-        let angle = lerp(prev_facing_angle, facing_angle, animationProgress);
+        let angle = lerpAngle(prev_facing_angle, facing_angle, animationProgress);
         angle = angle + Math.PI * 0.75; // rotate towards positive x-axis
 
         ctx.save();
