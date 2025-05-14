@@ -149,7 +149,7 @@ async function updateState() {
         }
 
         const path = [...creature.recentPath, { x: newX, y: newY }];
-        if (path.length > 5) path.shift();
+        if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
 
         return {
             ...creature,
