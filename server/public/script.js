@@ -110,6 +110,7 @@ function start(retry = true) {
     socket.onmessage = event => {
         state = JSON.parse(event.data);
         animationProgress = 0;
+        updateStats();
     };
 
     socket.onclose = () => {
@@ -135,7 +136,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         start();
         requestAnimationFrame(draw);
-        setInterval(updateStats, 1000);
     } catch (error) {
         console.error("Error getting ws server url", error);
     }

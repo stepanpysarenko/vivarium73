@@ -20,7 +20,7 @@ async function initState() {
                 maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
                 visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
                 maxSpeed: CONFIG.CREATURE_MAX_SPEED,
-                maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE
+                maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE / 180 * Math.PI
             },
             stats: {
                 restarts: 0,
@@ -72,41 +72,45 @@ function getPublicState() {
 
 async function updateState() {
     const offsprings = [];
-
     const movements = await getMovements(state);
+
     state.creatures = await Promise.all(state.creatures.map(async (creature, i) => {
-        const move = movements[i];
+        const movement = movements[i];
 
-        let newAngle = creature.facingAngle + move.angle_delta;
-        newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        let newAngle = creature.facingAngle + movement.angle_delta;
+        newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI; // wrap to [-pi, pi]
 
-        let moveX = move.speed * Math.cos(newAngle);
-        let moveY = move.speed * Math.sin(newAngle);
+        let moveX = movement.speed * Math.cos(newAngle);
+        let moveY = movement.speed * Math.sin(newAngle);
         let newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + moveX));
         let newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + moveY));
+
+        const speedPenalty = movement.speed / CONFIG.CREATURE_MAX_SPEED;
+        const turnPenalty = Math.abs(movement.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
+        const activityCost = 0.2 + 0.4 * speedPenalty + 0.4 * turnPenalty;
+        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 
         const hitsObstacle = state.obstacles.some(o =>
             Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
         );
-
         if (hitsObstacle) {
-            const try_x = !state.obstacles.some(o =>
+            const tryX = !state.obstacles.some(o =>
                 Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
             );
-            const try_y = !state.obstacles.some(o =>
+            const tryY = !state.obstacles.some(o =>
                 Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
             );
 
-            if (try_x && !try_y) {
+            if (tryX && !tryY) {
                 newY = creature.y; // slide along x
-            } else if (try_y && !try_x) {
+            } else if (tryY && !tryX) {
                 newX = creature.x; // slide along y
-            } else if (try_x && try_y) {
+            } else if (tryX && tryY) {
                 // sliding along axis with greater movement
-                if (Math.abs(move.moveX) > Math.abs(move.moveY)) {
+                if (Math.abs(moveX) > Math.abs(moveY)) {
                     newY = creature.y;
                 } else {
                     newX = creature.x;
@@ -118,13 +122,6 @@ async function updateState() {
             }
             creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
         }
-
-        creature.stats.turnsSurvived++;
-
-        const speedPenalty = move.speed / CONFIG.CREATURE_MAX_SPEED;
-        const turnPenalty = Math.abs(move.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
-        const activityCost = 0.2 + 0.4 * speedPenalty + 0.4 * turnPenalty;
-        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 
         const foodIndex = state.food.findIndex(f =>
             Math.abs(f.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
@@ -150,6 +147,8 @@ async function updateState() {
 
         const path = [...creature.recentPath, { x: newX, y: newY }];
         if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
+
+        creature.stats.turnsSurvived++;
 
         return {
             ...creature,
