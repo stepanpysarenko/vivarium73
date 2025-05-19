@@ -191,9 +191,12 @@ function toggleAbout() {
 
 canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scale = canvas.width / state.params.gridSize;
-    const gridX = Math.floor((e.clientX - rect.left) / scale);
-    const gridY = Math.floor((e.clientY - rect.top) / scale);
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+    const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
+    const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
 
     try {
         const res = await fetch("/api/place-food", {

@@ -119,6 +119,7 @@ body {
     height: auto;
     pointer-events: auto;
     touch-action: auto;
+    cursor: pointer;
 }
 
 #about-section {
