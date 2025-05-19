@@ -148,6 +148,7 @@ body {
     font-size: 12px;
     text-align: left;
     line-height: 1.6;
+    pointer-events: auto;
     touch-action: auto;
     -webkit-overflow-scrolling: touch;
 }
