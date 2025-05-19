@@ -17,6 +17,7 @@ async function initState() {
             obstacles: [],
             params: {
                 gridSize: CONFIG.GRID_SIZE,
+                maxFoodCount: CONFIG.FOOD_MAX_COUNT,
                 maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
                 visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
                 maxSpeed: CONFIG.CREATURE_MAX_SPEED,
@@ -59,6 +60,7 @@ function getPublicState() {
         obstacles: state.obstacles,
         params: {
             gridSize: state.params.gridSize,
+            maxFoodCount: state.params.maxFoodCount,
             maxEnergy: state.params.maxEnergy
         },
         stats: {

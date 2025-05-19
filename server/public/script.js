@@ -22,7 +22,8 @@ let state = {
     },
     params: {
         gridSize: 0,
-        maxEnergy: 0
+        maxEnergy: 0,
+        maxFoodCount: 0
     }
 };
 
@@ -89,7 +90,7 @@ function updateStats() {
     document.getElementById("restarts").textContent = state.stats.restarts;
     document.getElementById("generation").textContent = state.stats.generation;
     document.getElementById("creature-count").textContent = state.stats.creatureCount;
-    document.getElementById("food-count").textContent = state.stats.foodCount;
+    document.getElementById("food-count").textContent = state.stats.foodCount + "/" + state.params.maxFoodCount;
 }
 
 function start(retry = true) {
