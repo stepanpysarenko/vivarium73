@@ -3,7 +3,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const { initCreature } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
-const { initObstacles, updateFood } = require("./grid");
+const { initObstacles, updateFood, isCellOccupied } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 
 var state = null;
@@ -184,6 +184,17 @@ async function updateState() {
     state.topPerformers.forEach(p => p.score *= 0.99);
 }
 
+function addFood(x, y) {
+    if (!isCellOccupied(x, y, state)) {
+        state.food.push({ x, y });
+        state.stats.foodCount = state.food.length;
+    }
+}
+
+function getFoodCount() {
+    return state.food.length;
+}
+
 function saveState() {
     const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
@@ -212,4 +223,11 @@ function loadState() {
     }
 }
 
-module.exports = { initState, updateState, getPublicState, saveState };
+module.exports = {
+    initState,
+    updateState,
+    getPublicState,
+    saveState,
+    addFood,
+    getFoodCount
+};

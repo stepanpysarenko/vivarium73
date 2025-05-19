@@ -188,3 +188,24 @@ function toggleAbout() {
         aboutToggle.innerHTML = "back";
     }
 }
+
+canvas.addEventListener("click", async (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / state.params.gridSize;
+    const gridX = Math.floor((e.clientX - rect.left) / scale);
+    const gridY = Math.floor((e.clientY - rect.top) / scale);
+
+    try {
+        const res = await fetch("/api/place-food", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ x: gridX, y: gridY }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+            console.error(data.error);
+        }
+    } catch (err) {
+        console.error("Failed to place food", err);
+    }
+});

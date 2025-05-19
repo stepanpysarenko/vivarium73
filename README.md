@@ -7,6 +7,7 @@
 - if a creature runs out of energy, it dies  
 - when all creatures are gone, the simulation restarts by reviving the best-performing ones 
 - over time, mutations can lead to more effective survival strategies
+- click on any empty spot to place extra food
 
 ### Live version
 🌐 [vivarium73.life](https://vivarium73.life)
