@@ -3,8 +3,8 @@
     "short_name": "vivarium73",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#fafafa",
-    "theme_color": "#fafafa",
+    "background_color": "#f8f8f8",
+    "theme_color": "#f8f8f8",
     "orientation": "portrait",
     "scope": ".",
     "icons": [
