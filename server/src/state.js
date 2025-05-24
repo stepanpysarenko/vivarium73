@@ -50,11 +50,14 @@ function getPublicState() {
             id: c.id,
             x: c.x,
             y: c.y,
-            facing_angle: c.facingAngle,
+            facingAngle: c.facingAngle,
             energy: c.energy,
-            prev_x: c.prev.x,
-            prev_y: c.prev.y,
-            prev_facing_angle: c.prev.facingAngle
+            prev: {
+                x: c.prev.x,
+                y: c.prev.y,
+                facingAngle: c.prev.facingAngle,
+            },
+            updatesToFlash: c.updatesToFlash || 0
         })),
         food: state.food,
         obstacles: state.obstacles,
@@ -84,8 +87,8 @@ async function updateState() {
 
         let moveX = movement.speed * Math.cos(newAngle);
         let moveY = movement.speed * Math.sin(newAngle);
-        let newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.x + moveX));
-        let newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, creature.y + moveY));
+        let newX = creature.x + moveX;
+        let newY = creature.y + moveY;
 
         const speedPenalty = movement.speed / CONFIG.CREATURE_MAX_SPEED;
         const turnPenalty = Math.abs(movement.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
@@ -95,8 +98,10 @@ async function updateState() {
         const hitsObstacle = state.obstacles.some(o =>
             Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
-        );
-        if (hitsObstacle) {
+        )
+        const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE || newY < 0 || newY >= CONFIG.GRID_SIZE;
+
+        if (hitsObstacle || hitsBorder) {
             const tryX = !state.obstacles.some(o =>
                 Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
                 Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
@@ -111,7 +116,7 @@ async function updateState() {
             } else if (tryY && !tryX) {
                 newX = creature.x; // slide along y
             } else if (tryX && tryY) {
-                // sliding along axis with greater movement
+                // slide along axis with greater movement
                 if (Math.abs(moveX) > Math.abs(moveY)) {
                     newY = creature.y;
                 } else {
@@ -123,7 +128,14 @@ async function updateState() {
                 newY = creature.y;
             }
             creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
+            creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
         }
+        else if (creature.updatesToFlash > 0) {
+            creature.updatesToFlash--;
+        }
+
+        newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
+        newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
 
         const foodIndex = state.food.findIndex(f =>
             Math.abs(f.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&

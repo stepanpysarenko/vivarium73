@@ -64,10 +64,10 @@ function draw() {
         ctx.fillRect(x * scale, y * scale, scale, scale);
     });
 
-    state.creatures.forEach(({ x, y, facing_angle, prev_x, prev_y, prev_facing_angle, energy }) => {
-        let drawX = lerp(prev_x, x, animationProgress);
-        let drawY = lerp(prev_y, y, animationProgress);
-        let angle = lerpAngle(prev_facing_angle, facing_angle, animationProgress);
+    state.creatures.forEach(({ x, y, facingAngle, energy, prev, updatesToFlash }) => {
+        let drawX = lerp(prev.x, x, animationProgress);
+        let drawY = lerp(prev.y, y, animationProgress);
+        let angle = lerpAngle(prev.facingAngle, facingAngle, animationProgress);
         angle = angle + Math.PI * 0.75; // rotate towards positive x-axis
 
         ctx.save();
@@ -75,7 +75,7 @@ function draw() {
         ctx.rotate(angle);
 
         ctx.globalAlpha = energy / state.params.maxEnergy * 0.8 + 0.2;
-        ctx.fillStyle = "#0000ff"; // blue
+        ctx.fillStyle = updatesToFlash > 0 && (Math.floor(now / 200) % 2 == 0) ? "#ff0000" : "#0000ff"; // red : blue
         ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
         ctx.fillStyle = "#ffdd00"; // yellow
         ctx.fillRect(-scale * 0.5, -scale * 0.5, scale * 0.5, scale * 0.5);
@@ -198,6 +198,11 @@ canvas.addEventListener("click", async (e) => {
     const canvasY = (e.clientY - rect.top) * scaleY;
     const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
     const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
+
+    // for instant visual feedback
+    if (!state.obstacles.some(o => o.x === gridX && o.y === gridY)) {
+        state.food.push({ x: gridX, y: gridY });
+    }
 
     try {
         const res = await fetch("/api/place-food", {
