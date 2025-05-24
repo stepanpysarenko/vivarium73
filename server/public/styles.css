@@ -63,6 +63,8 @@ body {
 }
 
 .footer {
+    flex-direction: column;
+    gap: 5px;
     padding: 20px 0;
     margin-bottom: 10px;
     width: 100%;
@@ -205,8 +207,6 @@ body {
     }
 
     .footer {
-        flex-direction: column;
-        gap: 5px;
         padding-top: 24px;
     }
 
