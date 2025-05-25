@@ -199,14 +199,6 @@ canvas.addEventListener("click", async (e) => {
     const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
     const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
 
-    // for instant visual feedback
-    var isFood = state.food.some(f => f.x == gridX && f.y == gridY);
-    var isObstacle = state.obstacles.some(o => o.x == gridX && o.y == gridY);
-    var foodLimitReached = state.food.length >= state.params.maxFoodCount;
-    if (!isFood && !isObstacle && !foodLimitReached) {
-        state.food.push({ x: gridX, y: gridY });
-    }
-
     try {
         const res = await fetch("/api/place-food", {
             method: "POST",
