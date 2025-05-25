@@ -99,7 +99,7 @@ async function updateState() {
             Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
         )
-        const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE || newY < 0 || newY >= CONFIG.GRID_SIZE;
+        const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1 || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
 
         if (hitsObstacle || hitsBorder) {
             const tryX = !state.obstacles.some(o =>
