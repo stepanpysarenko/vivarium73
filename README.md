@@ -2,6 +2,7 @@
 
 **vivarium73** is an evolution simulation where neural-network-controlled creatures move around searching for food, avoid obstacles, and evolve over time.
 - creatures detect food and obstacles in their surroundings  
+- when a creatures collides with another creature, obstacle or wall, it looses energy
 - they gain energy by eating and lose it by moving and hitting obstacles
 - when a creature reaches full energy, it creates an offspring with a chance of mutation  
 - if a creature runs out of energy, it dies  
