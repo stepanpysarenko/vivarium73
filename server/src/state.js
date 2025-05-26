@@ -99,17 +99,20 @@ async function updateState() {
             Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
             Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
         )
-        const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1 || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
+        const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1
+            || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
 
         if (hitsObstacle || hitsBorder) {
-            const tryX = !state.obstacles.some(o =>
-                Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-                Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
-            );
-            const tryY = !state.obstacles.some(o =>
-                Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-                Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
-            );
+            const tryX = newX >= 0 && newX <= CONFIG.GRID_SIZE - 1
+                && !state.obstacles.some(o =>
+                    Math.abs(o.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+                    Math.abs(o.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
+                );
+            const tryY = newY >= 0 && newY <= CONFIG.GRID_SIZE - 1
+                && !state.obstacles.some(o =>
+                    Math.abs(o.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
+                    Math.abs(o.y - newY) < CONFIG.CREATURE_INTERACTION_RADIUS
+                );
 
             if (tryX && !tryY) {
                 newY = creature.y; // slide along x
