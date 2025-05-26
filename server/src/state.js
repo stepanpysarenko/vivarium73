@@ -79,9 +79,17 @@ async function updateState() {
     const offsprings = [];
     const movements = await getMovements(state);
 
-    state.creatures = await Promise.all(state.creatures.map(async (creature, i) => {
-        const movement = movements[i];
+    const creatureMap = new Map();
+    state.creatures.forEach(c => {
+        const key = `${Math.floor(c.x)},${Math.floor(c.y)}`;
+        if (!creatureMap.has(key)) creatureMap.set(key, []);
+        creatureMap.get(key).push(c.id);
+    });
 
+    state.creatures = await Promise.all(state.creatures.map(async (creature, i) => {
+        creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
+        
+        const movement = movements[i];
         let newAngle = creature.facingAngle + movement.angle_delta;
         newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI; // wrap to [-pi, pi]
 
@@ -133,12 +141,29 @@ async function updateState() {
             creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
             creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
         }
-        else if (creature.updatesToFlash > 0) {
-            creature.updatesToFlash--;
+
+        var collided = false;
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const key = `${Math.floor(newX) + dx},${Math.floor(newY) + dy}`;
+                const ids = creatureMap.get(key);
+                if (!ids) continue;
+
+                for (const otherId of ids) {
+                    if (otherId === creature.id) continue;
+                    const other = state.creatures.find(c => c.id === otherId);
+                    const dist = Math.hypot(other.x - newX, other.y - newY);
+                    if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
+                        collided = true;
+                    }
+                }
+            }
         }
 
-        newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
-        newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
+        if (collided) {
+            creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
+            creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
+        }
 
         const foodIndex = state.food.findIndex(f =>
             Math.abs(f.x - newX) < CONFIG.CREATURE_INTERACTION_RADIUS &&
@@ -166,6 +191,9 @@ async function updateState() {
         if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
 
         creature.stats.turnsSurvived++;
+
+        newX = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
+        newY = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
 
         return {
             ...creature,

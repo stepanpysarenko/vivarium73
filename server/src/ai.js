@@ -1,6 +1,6 @@
 const axios = require("axios");
 const CONFIG = require("./config");
-const { getVisibleFood, getVisibleObstacles } = require("./grid");
+const { getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
 
 async function initWeights() {
     const response = await axios.get(CONFIG.AI_SERVER_URL + "/weights/init");
@@ -28,7 +28,8 @@ async function getMovements(state) {
             just_reproduced: c.justReproduced,
             weights: c.weights,
             food: getVisibleFood(c, state),
-            obstacles: getVisibleObstacles(c, state)
+            obstacles: getVisibleObstacles(c, state),
+            creatures: getVisibleCreatures(c, state)
         })),
         grid_size: state.params.gridSize,
         visibility_radius: state.params.visibilityRadius,

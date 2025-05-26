@@ -79,10 +79,17 @@ function getVisibleObstacles(creature, state) {
     return obstacles;
 }
 
+function getVisibleCreatures(creature, state) {
+    return state.creatures.filter(c =>
+        Math.hypot(c.x - creature.x, c.y - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS
+    );
+}
+
 module.exports = {
     initObstacles,
     updateFood,
     getVisibleFood,
     getVisibleObstacles,
+    getVisibleCreatures,
     isCellOccupied
 };

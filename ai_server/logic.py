@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-INPUT_SIZE = 14
-HIDDEN_SIZE = 8
+INPUT_SIZE = 16
+HIDDEN_SIZE = 9
 OUTPUT_SIZE = 2
 
 HIDDEN_SHAPE = (HIDDEN_SIZE, INPUT_SIZE)
@@ -29,16 +29,22 @@ def mutate_weights(weights):
     ]
     return {"weights": mutated_weights}
 
-def compute_vector(x, y, targets):
+def compute_vector(x, y, targets, repel=False):
     vector_x, vector_y = 0.0, 0.0
     for t in targets:
-        dx = t.x - x
-        dy = t.y - y
+        dx = (x - t.x) if repel else (t.x - x)
+        dy = (y - t.y) if repel else (t.y - y)
         dist_sq = dx**2 + dy**2
         if dist_sq > 0:
             strength = 1 / dist_sq
             vector_x += dx * strength
             vector_y += dy * strength
+
+    magnitude = np.hypot(vector_x, vector_y)
+    if magnitude > 0:
+        vector_x /= magnitude
+        vector_y /= magnitude
+
     return vector_x, vector_y
 
 def compute_angle_and_magnitude(x, y, facing_angle=0.0):
@@ -67,9 +73,11 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     fx, fy = compute_vector(creature.x, creature.y, creature.food)
     food_angle, food_magnitude = compute_angle_and_magnitude(fx, fy, creature.facing_angle)
 
-    ox, oy = compute_vector(creature.x, creature.y, creature.obstacles)
+    ox, oy = compute_vector(creature.x, creature.y, creature.obstacles, True)
     obstacle_angle, obstacle_magnitude = compute_angle_and_magnitude(ox, oy, creature.facing_angle)
-    obstacle_magnitude *= -1  # repulsion
+
+    cx, cy = compute_vector(creature.x, creature.y, creature.creatures, repel=True)
+    creature_angle, creature_magnitude = compute_angle_and_magnitude(cx, cy, creature.facing_angle)
 
     net_dx, net_dy = get_net_movement_vector(creature.recent_path, visibility_radius)
     net_angle, net_magnitude = compute_angle_and_magnitude(net_dx, net_dy, creature.facing_angle)
@@ -88,6 +96,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
         food_magnitude,
         obstacle_angle,
         obstacle_magnitude,
+        creature_angle, 
+        creature_magnitude,
         net_angle,
         net_magnitude,
         facing_delta,

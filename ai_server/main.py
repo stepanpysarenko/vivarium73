@@ -24,6 +24,7 @@ class Creature(BaseModel):
     weights: List[float]
     food: List[Position]
     obstacles: List[Position]
+    creatures: List[Position] 
 
 class State(BaseModel):
     creatures: List[Creature]
