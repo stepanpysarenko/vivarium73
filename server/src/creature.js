@@ -26,6 +26,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
         recentPath: [{ x, y }],
         generation,
         justReproduced: false,
+        updatesToFlash: 0,
         weights,
         stats: {
             turnsSurvived: 0,

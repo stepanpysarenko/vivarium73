@@ -16,11 +16,22 @@ function initFood(state) {
     return food;
 }
 
+function getTotalEnergy(state) {
+    const creatureEnergy = state.creatures.reduce((sum, c) => sum + c.energy, 0);
+    const foodEnergy = state.food.length * CONFIG.FOOD_ENERGY;
+    return creatureEnergy + foodEnergy;
+}
+
 function updateFood(state) {
-    const totalEnergy = state.creatures.reduce((sum, c) => sum + c.energy, 0);
-    while ((totalEnergy + state.food.length * CONFIG.FOOD_ENERGY < CONFIG.TOTAL_ENERGY) &&
-        state.food.length < CONFIG.FOOD_MAX_COUNT) {
+    let attempts = 0;
+
+    while (
+        getTotalEnergy(state) < CONFIG.GRID_TARGET_ENERGY
+        && state.food.length < CONFIG.FOOD_MAX_COUNT
+        && attempts < 100
+    ) {
         state.food.push(initFood(state));
+        attempts++;
     }
 }
 

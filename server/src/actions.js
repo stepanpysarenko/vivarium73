@@ -12,7 +12,9 @@ function placeFood(x, y) {
          throw new Error("Max food count reached");
     }
 
-    addFood(x, y);
+    if(!addFood(x, y)) {
+        throw new Error("Cell is occupied");
+    }
 }
 
 module.exports = {

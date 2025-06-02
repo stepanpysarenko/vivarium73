@@ -44,241 +44,6 @@ async function initState() {
     }
 }
 
-function getPublicState() {
-    return {
-        creatures: state.creatures.map(c => ({
-            id: c.id,
-            x: c.x,
-            y: c.y,
-            facingAngle: c.facingAngle,
-            energy: c.energy,
-            prev: {
-                x: c.prev.x,
-                y: c.prev.y,
-                facingAngle: c.prev.facingAngle,
-            },
-            updatesToFlash: c.updatesToFlash || 0
-        })),
-        food: state.food,
-        obstacles: state.obstacles,
-        params: {
-            gridSize: state.params.gridSize,
-            maxFoodCount: state.params.maxFoodCount,
-            maxEnergy: state.params.maxEnergy
-        },
-        stats: {
-            restarts: state.stats.restarts,
-            generation: state.stats.generation,
-            creatureCount: state.stats.creatureCount,
-            foodCount: state.stats.foodCount
-        }
-    };
-}
-
-async function updateState() {
-    const movements = await getMovements(state);
-    for (let i = 0; i < state.creatures.length; i++) {
-        state.creatures[i] = applyMovement(state.creatures[i], movements[i]);
-        state.creatures[i] = handleObstacleCollisions(state.creatures[i]);
-        handleEating(state.creatures[i]);
-    }
-
-    const creatureMap = buildCreatureMap();
-    for (let i = 0; i < state.creatures.length; i++) {
-        state.creatures[i] = handleCreatureCollision(state.creatures[i], creatureMap);
-    }
-
-    await handleLifecycle();
-    if (state.creatures.length <= CONFIG.RESTART_ON_CREATURE_COUNT) {
-        await restartPopulation(state);
-        state.stats.restarts++;
-        saveState();
-    }
-
-    updateFood(state);
-    updateStats();
-}
-
-function applyMovement(creature, movement) {
-    let newAngle = creature.facingAngle + movement.angle_delta;
-    newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
-
-    let moveX = movement.speed * Math.cos(newAngle);
-    let moveY = movement.speed * Math.sin(newAngle);
-    let newX = creature.x + moveX;
-    let newY = creature.y + moveY;
-
-    const speedPenalty = movement.speed / CONFIG.CREATURE_MAX_SPEED;
-    const turnPenalty = Math.abs(movement.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
-    const activityCost = 0.2 + 0.4 * speedPenalty + 0.4 * turnPenalty;
-    const energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
-
-    const path = [...creature.recentPath, { x: newX, y: newY }];
-    if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
-
-    return {
-        ...creature,
-        x: newX,
-        y: newY,
-        facingAngle: newAngle,
-        energy,
-        prev: {
-            x: creature.x,
-            y: creature.y,
-            facingAngle: creature.facingAngle,
-            energy: creature.energy
-        },
-        recentPath: path
-    };
-}
-
-function buildCreatureMap() {
-    const map = new Map();
-    for (const c of state.creatures) {
-        const key = `${Math.floor(c.x)},${Math.floor(c.y)}`;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key).push(c);
-    }
-    return map;
-}
-
-function hitsObstacle(x, y) {
-    return state.obstacles.some(o =>
-        Math.abs(o.x - x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-        Math.abs(o.y - y) < CONFIG.CREATURE_INTERACTION_RADIUS
-    );
-}
-
-function handleObstacleCollisions(creature) {
-    let { x: newX, y: newY } = creature;
-
-    const moveX = newX - creature.prev.x;
-    const moveY = newY - creature.prev.y;
-
-    const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1 || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
-
-    if (hitsObstacle(newX, newY) || hitsBorder) {
-        const tryX = newX >= 0 && newX <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(newX, creature.y);
-        const tryY = newY >= 0 && newY <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(creature.x, newY);
-
-        if (tryX && !tryY) {
-            newY = creature.y;
-        }
-        else if (tryY && !tryX) {
-            newX = creature.x;
-        }
-        else if (tryX && tryY) {
-            if (Math.abs(moveX) > Math.abs(moveY)) newY = creature.y;
-            else newX = creature.x;
-        } else {
-            newX = creature.x;
-            newY = creature.y;
-        }
-
-        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
-        creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
-    }
-    else {
-        creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
-    }
-
-    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
-    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
-
-    return creature;
-}
-
-function handleCreatureCollision(creature, creatureMap) {
-    let collided = false;
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const key = `${Math.floor(creature.x) + dx},${Math.floor(creature.y) + dy}`;
-            const others = creatureMap.get(key) || [];
-            for (const other of others) {
-                if (other.id === creature.id) continue;
-                const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
-                if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
-                    collided = true;
-                    break;
-                }
-            }
-            if (collided) break;
-        }
-    }
-
-    if (collided) {
-        creature.energy -= CONFIG.CREATURE_COLLISION_PENALTY;
-        creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
-    }
-    else {
-        creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
-    }
-
-    return creature;
-}
-
-function handleEating(creature) {
-    const foodIndex = state.food.findIndex(f =>
-        Math.abs(f.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS &&
-        Math.abs(f.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
-    );
-
-    if (foodIndex !== -1) {
-        creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
-        creature.stats.totalFoodCollected++;
-        state.food.splice(foodIndex, 1);
-    }
-
-    creature.stats.turnsSurvived++;
-}
-
-async function handleLifecycle() {
-    const survivors = [];
-    const offsprings = [];
-
-    for (const creature of state.creatures) {
-        creature.justReproduced = false;
-
-        if (creature.energy >= CONFIG.CREATURE_MAX_ENERGY) {
-            const weights = Math.random() <= CONFIG.MUTATION_CHANCE
-                ? await mutateWeights(creature.weights)
-                : creature.weights;
-
-            const offspring = await initCreature(creature.x, creature.y, weights, creature.generation + 1);
-            offsprings.push(offspring);
-
-            creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
-            creature.justReproduced = true;
-        } else if (creature.energy <= 0) {
-            appendTopPerformers(creature, state);
-            continue;
-        }
-
-        survivors.push(creature);
-    }
-
-    return [...survivors, ...offsprings];
-}
-
-function updateStats() {
-    state.stats.creatureCount = state.creatures.length;
-    state.stats.foodCount = state.food.length;
-    state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
-
-    state.topPerformers.forEach(p => p.score *= 0.99); // gradually remove old top performers
-}
-
-function addFood(x, y) {
-    if (!isCellOccupied(x, y, state)) {
-        state.food.push({ x, y });
-        state.stats.foodCount = state.food.length;
-    }
-}
-
-function getFoodCount() {
-    return state.food.length;
-}
-
 function saveState() {
     const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
@@ -307,11 +72,247 @@ function loadState() {
     }
 }
 
+function getPublicState() {
+    return {
+        creatures: state.creatures.map(c => ({
+            id: c.id,
+            x: c.x,
+            y: c.y,
+            facingAngle: c.facingAngle,
+            energy: c.energy,
+            prev: {
+                x: c.prev.x,
+                y: c.prev.y,
+                facingAngle: c.prev.facingAngle,
+            },
+            updatesToFlash: c.updatesToFlash
+        })),
+        food: state.food,
+        obstacles: state.obstacles,
+        params: {
+            gridSize: state.params.gridSize,
+            maxFoodCount: state.params.maxFoodCount,
+            maxEnergy: state.params.maxEnergy
+        },
+        stats: {
+            restarts: state.stats.restarts,
+            generation: state.stats.generation,
+            creatureCount: state.stats.creatureCount,
+            foodCount: state.stats.foodCount
+        }
+    };
+}
+
+async function updateState() {
+    const movements = await getMovements(state);
+    for (let i = 0; i < state.creatures.length; i++) {
+        state.creatures[i] = applyMovement(state.creatures[i], movements[i]);
+        state.creatures[i] = handleObstacleCollision(state.creatures[i]);
+        handleEating(state.creatures[i]);
+    }
+
+    const creatureMap = buildCreatureMap(state.creatures);
+    for (let i = 0; i < state.creatures.length; i++) {
+        state.creatures[i] = handleCreatureCollision(state.creatures[i], creatureMap);
+    }
+
+    for (const creature of state.creatures) {
+        if (creature._collisionOccurred) {
+            creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
+        } else {
+            creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
+        }
+        delete creature._collisionOccurred;
+    }
+
+    state.creatures = await handleLifecycle();
+    if (state.creatures.length <= CONFIG.POPULATION_RESTART_THRESHOLD) {
+        await restartPopulation(state);
+        state.stats.restarts++;
+        saveState();
+    }
+
+    updateFood(state);
+    updateStats();
+}
+
+function applyMovement(creature, movement) {
+    let newAngle = creature.facingAngle + movement.angle_delta;
+    newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+    let moveX = movement.speed * Math.cos(newAngle);
+    let moveY = movement.speed * Math.sin(newAngle);
+    let newX = creature.x + moveX;
+    let newY = creature.y + moveY;
+
+    const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
+    const turnPLoss = Math.abs(movement.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
+    const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
+        + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
+        + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
+    const energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
+
+    const path = [...creature.recentPath, { x: newX, y: newY }];
+    if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
+
+    return {
+        ...creature,
+        x: newX,
+        y: newY,
+        facingAngle: newAngle,
+        energy,
+        prev: {
+            x: creature.x,
+            y: creature.y,
+            facingAngle: creature.facingAngle,
+            energy: creature.energy
+        },
+        recentPath: path
+    };
+}
+
+function hitsObstacle(x, y) {
+    return state.obstacles.some(o =>
+        Math.abs(o.x - x) < CONFIG.CREATURE_INTERACTION_RADIUS
+        && Math.abs(o.y - y) < CONFIG.CREATURE_INTERACTION_RADIUS
+    );
+}
+
+// function isOutOfBounds(x, y) {
+//     return x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE;
+//     // return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
+// }
+
+function handleObstacleCollision(creature) {
+    let { x: newX, y: newY } = creature;
+
+    const moveX = newX - creature.prev.x;
+    const moveY = newY - creature.prev.y;
+
+    const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1 || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
+
+    if (hitsObstacle(newX, newY) || hitsBorder) {
+        const tryX = newX >= 0 && newX <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(newX, creature.y);
+        const tryY = newY >= 0 && newY <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(creature.x, newY);
+
+        if (tryX && !tryY) {
+            newY = creature.y;
+        }
+        else if (tryY && !tryX) {
+            newX = creature.x;
+        }
+        else if (tryX && tryY) {
+            if (Math.abs(moveX) > Math.abs(moveY)) newY = creature.y;
+            else newX = creature.x;
+        } else {
+            newX = creature.x;
+            newY = creature.y;
+        }
+
+        creature._collisionOccurred = true;
+    }
+
+    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
+    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
+
+    return creature;
+}
+
+function buildCreatureMap(creatures) {
+    const map = new Map();
+    for (const c of creatures) {
+        const key = `${Math.floor(c.x)},${Math.floor(c.y)}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(c);
+    }
+    return map;
+}
+
+function handleCreatureCollision(creature, creatureMap) {
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const key = `${Math.floor(creature.x) + dx},${Math.floor(creature.y) + dy}`;
+            const others = creatureMap.get(key) || [];
+            for (const other of others) {
+                if (other.id === creature.id) continue;
+                const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
+                if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
+                    creature._collisionOccurred = true;
+                    return creature;
+                }
+            }
+        }
+    }
+    return creature;
+}
+
+function handleEating(creature) {
+    const foodIndex = state.food.findIndex(f =>
+        Math.abs(f.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS
+            && Math.abs(f.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
+    );
+
+    if (foodIndex !== -1) {
+        creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
+        creature.stats.totalFoodCollected++;
+        state.food.splice(foodIndex, 1);
+    }
+}
+
+async function handleLifecycle() {
+    const survivors = [];
+    const offsprings = [];
+
+    for (const creature of state.creatures) {
+        creature.justReproduced = false;
+
+        if (creature.energy >= CONFIG.CREATURE_MAX_ENERGY) {
+            const weights = Math.random() <= CONFIG.MUTATION_CHANCE
+                ? await mutateWeights(creature.weights)
+                : creature.weights;
+
+            const offspring = await initCreature(creature.x, creature.y, weights, creature.generation + 1);
+            offsprings.push(offspring);
+
+            creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
+            creature.justReproduced = true;
+        } else if (creature.energy <= 0) {
+            appendTopPerformers(creature, state);
+            continue;
+        }
+
+        creature.stats.turnsSurvived++;
+        survivors.push(creature);
+    }
+
+    return [...survivors, ...offsprings];
+}
+
+function updateStats() {
+    state.stats.creatureCount = state.creatures.length;
+    state.stats.foodCount = state.food.length;
+    state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
+
+    state.topPerformers.forEach(p => p.score *= 0.99); // gradually remove old top performers
+}
+
+function addFood(x, y) {
+    if (isCellOccupied(x, y, state)) return false;
+
+    state.food.push({ x, y });
+    state.stats.foodCount = state.food.length;
+    return true;
+}
+
+function getFoodCount() {
+    return state.food.length;
+}
+
 module.exports = {
     initState,
-    updateState,
-    getPublicState,
     saveState,
+    getPublicState,
+    updateState,
     addFood,
     getFoodCount
 };

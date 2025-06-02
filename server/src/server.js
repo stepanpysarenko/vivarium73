@@ -4,7 +4,7 @@ const path = require("path");
 const http = require("http");
 const WebSocket = require("../node_modules/ws");
 const CONFIG = require("./config");
-const { initState, updateState, getPublicState, saveState } = require("./state");
+const { initState, saveState, getPublicState, updateState } = require("./state");
 const { placeFood } = require("./actions");
 
 const app = express();

@@ -24,11 +24,11 @@ async function restartPopulation(state) {
     console.log("Restarting population with top performers...");
     console.log('Top performers scores:', state.topPerformers.map(p => p.score));
     state.creatures = [];
-    const eliteCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * 0.2);
-    const mutatedCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * 0.6);
-    const randomCount = CONFIG.CREATURE_INITIAL_COUNT - eliteCount - mutatedCount;
+    const topPerformersCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * CONFIG.POPULATION_TOP_RATIO);
+    const mutatedCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * CONFIG.POPULATION_MUTATED_RATIO);
+    const randomCount = CONFIG.CREATURE_INITIAL_COUNT - topPerformersCount - mutatedCount;
 
-    for (let i = 0; i < eliteCount; i++) {
+    for (let i = 0; i < topPerformersCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
         const clone = await initCreature(null, null, parent.weights, parent.generation + 1);
         state.creatures.push(clone);
@@ -45,7 +45,7 @@ async function restartPopulation(state) {
         state.creatures.push(await initCreature());
     }
 
-    console.log("Population restarted.");
+    console.log("Population restarted");
 }
 
 module.exports = {
