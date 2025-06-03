@@ -24,19 +24,20 @@ function getTotalEnergy(state) {
 
 function updateFood(state) {
     let attempts = 0;
+    const maxAttempts = Math.pow(CONFIG.GRID_SIZE, 2) - state.food.length - state.obstacles.length;
 
     while (
         getTotalEnergy(state) < CONFIG.GRID_TARGET_ENERGY
         && state.food.length < CONFIG.FOOD_MAX_COUNT
-        && attempts < 100
+        && attempts < maxAttempts
     ) {
         state.food.push(initFood(state));
         attempts++;
     }
 }
 
-function initObstacles(state) {
-    state.obstacles = [
+function getObstacles() {
+    return [
         // vertical segments (6)
         { x: 6, y: 6 }, { x: 6, y: 7 }, { x: 6, y: 8 }, { x: 6, y: 9 },
         { x: 22, y: 6 }, { x: 22, y: 7 }, { x: 22, y: 8 }, { x: 22, y: 9 },
@@ -64,41 +65,47 @@ function initObstacles(state) {
     ];
 }
 
-function getVisibleFood(creature, state) {
-    return state.food.filter(f =>
-        Math.hypot(f.x - creature.x, f.y - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS
-    );
-}
-
-function getVisibleObstacles(creature, state) {
-    const obstacles = state.obstacles.filter(o =>
-        Math.hypot(o.x - creature.x, o.y - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS
-    );
-
-    // add borders
+function getBorderObstaces() {
+    var obstacles = [];
     for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
-        if (Math.hypot(i - creature.x, 0 - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS)
-            obstacles.push({ x: i, y: 0 });
-        if (Math.hypot(i - creature.x, CONFIG.GRID_SIZE - 1 - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS)
-            obstacles.push({ x: i, y: CONFIG.GRID_SIZE - 1 });
-        if (Math.hypot(0 - creature.x, i - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS)
-            obstacles.push({ x: 0, y: i });
-        if (Math.hypot(CONFIG.GRID_SIZE - 1 - creature.x, i - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS)
-            obstacles.push({ x: CONFIG.GRID_SIZE - 1, y: i });
+        obstacles.push({ x: i, y: 0 }, { x: i, y: CONFIG.GRID_SIZE - 1 });
+        obstacles.push({ x: 0, y: i }, { x: CONFIG.GRID_SIZE - 1, y: i });
     }
-
     return obstacles;
 }
 
+function isWithinRadius(x1, y1, x2, y2, r2) {
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    return dx * dx + dy * dy <= r2;
+}
+
+function getVisibleObjects(objects, x, y) {
+    return objects.filter(e => isWithinRadius(e.x, e.y, x, y, CONFIG.CREATURE_VISIBILITY_RADIUS ** 2));
+}
+
+function getVisibleFood(creature, state) {
+    return getVisibleObjects(state.obstacles, creature.x, creature.y)
+}
+
+function getVisibleObstacles(creature, state) {
+    const { x: cx, y: cy } = creature;
+    const r2 = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
+
+    const visible = getVisibleObjects(state.obstacles, cx, cy, r2);
+    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, r2)));
+    return visible;
+}
+
 function getVisibleCreatures(creature, state) {
-    return state.creatures.filter(c =>
-        Math.hypot(c.x - creature.x, c.y - creature.y) <= CONFIG.CREATURE_VISIBILITY_RADIUS
-    );
+    return getVisibleObjects(state.creatures.filter(c => c.id != creature.id), creature.x, creature.y)
 }
 
 module.exports = {
-    initObstacles,
+    getObstacles,
+    getBorderObstaces,
     updateFood,
+    isWithinRadius,
     getVisibleFood,
     getVisibleObstacles,
     getVisibleCreatures,

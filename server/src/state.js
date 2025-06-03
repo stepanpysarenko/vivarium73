@@ -3,7 +3,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const { initCreature } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
-const { initObstacles, updateFood, isCellOccupied } = require("./grid");
+const { getObstacles, getBorderObstaces, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 
 var state = null;
@@ -14,7 +14,8 @@ async function initState() {
         state = {
             creatures: [],
             food: [],
-            obstacles: [],
+            obstacles: getObstacles(),
+            borderObstacles: getBorderObstaces(),
             params: {
                 gridSize: CONFIG.GRID_SIZE,
                 maxFoodCount: CONFIG.FOOD_MAX_COUNT,
@@ -32,7 +33,6 @@ async function initState() {
             topPerformers: []
         };
 
-        initObstacles(state);
         updateFood(state);
 
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
@@ -171,42 +171,37 @@ function applyMovement(creature, movement) {
     };
 }
 
-function hitsObstacle(x, y) {
-    return state.obstacles.some(o =>
-        Math.abs(o.x - x) < CONFIG.CREATURE_INTERACTION_RADIUS
-        && Math.abs(o.y - y) < CONFIG.CREATURE_INTERACTION_RADIUS
-    );
+function isObstacleCollision(x, y) {
+    return state.obstacles.some(o => isWithinRadius(o.x, o.y, x, y, CONFIG.CREATURE_INTERACTION_RADIUS ** 2));
 }
 
-// function isOutOfBounds(x, y) {
-//     return x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE;
-//     // return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
-// }
+function isOutOfBounds(x, y) {
+    return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
+}
 
 function handleObstacleCollision(creature) {
-    let { x: newX, y: newY } = creature;
+    let newX = creature.x;
+    let newY = creature.y;
+    let prevX = creature.prev.x;
+    let prevY = creature.prev.y;
 
-    const moveX = newX - creature.prev.x;
-    const moveY = newY - creature.prev.y;
-
-    const hitsBorder = newX < 0 || newX >= CONFIG.GRID_SIZE - 1 || newY < 0 || newY >= CONFIG.GRID_SIZE - 1;
-
-    if (hitsObstacle(newX, newY) || hitsBorder) {
-        const tryX = newX >= 0 && newX <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(newX, creature.y);
-        const tryY = newY >= 0 && newY <= CONFIG.GRID_SIZE - 1 && !hitsObstacle(creature.x, newY);
+    if (isObstacleCollision(newX, newY) || isOutOfBounds(newX, newY)) {
+        const tryX = !isObstacleCollision(newX, prevY) && !isOutOfBounds(newX, prevY);
+        const tryY = !isObstacleCollision(prevX, newY) && !isOutOfBounds(prevX, newY);
 
         if (tryX && !tryY) {
-            newY = creature.y;
-        }
-        else if (tryY && !tryX) {
-            newX = creature.x;
-        }
-        else if (tryX && tryY) {
-            if (Math.abs(moveX) > Math.abs(moveY)) newY = creature.y;
-            else newX = creature.x;
+            newY = prevY;
+        } else if (tryY && !tryX) {
+            newX = prevX;
+        } else if (tryX && tryY) {
+            if (Math.abs(newX - prevX) > Math.abs(newY - prevY)) {
+                newY = prevY;
+            } else {
+                newX = prevX;
+            }
         } else {
-            newX = creature.x;
-            newY = creature.y;
+            newX = prevX;
+            newY = prevY;
         }
 
         creature._collisionOccurred = true;
@@ -247,10 +242,12 @@ function handleCreatureCollision(creature, creatureMap) {
 }
 
 function handleEating(creature) {
-    const foodIndex = state.food.findIndex(f =>
-        Math.abs(f.x - creature.x) < CONFIG.CREATURE_INTERACTION_RADIUS
-            && Math.abs(f.y - creature.y) < CONFIG.CREATURE_INTERACTION_RADIUS
-    );
+    const rSquared = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
+    const foodIndex = state.food.findIndex(f => {
+        const dx = f.x - creature.x;
+        const dy = f.y - creature.y;
+        return dx * dx + dy * dy < rSquared;
+    });
 
     if (foodIndex !== -1) {
         creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
