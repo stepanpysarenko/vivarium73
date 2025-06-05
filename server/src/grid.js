@@ -1,8 +1,16 @@
 const CONFIG = require("./config");
 
+const visibilityR2 = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2; 
+
 function isCellOccupied(x, y, state) {
     return state.food.some(f => f.x === x && f.y === y) ||
         state.obstacles.some(o => o.x === x && o.y === y);
+}
+
+function getTotalEnergy(state) {
+    const creatureEnergy = state.creatures.reduce((sum, c) => sum + c.energy, 0);
+    const foodEnergy = state.food.length * CONFIG.FOOD_ENERGY;
+    return creatureEnergy + foodEnergy;
 }
 
 function initFood(state) {
@@ -14,12 +22,6 @@ function initFood(state) {
         };
     }
     return food;
-}
-
-function getTotalEnergy(state) {
-    const creatureEnergy = state.creatures.reduce((sum, c) => sum + c.energy, 0);
-    const foodEnergy = state.food.length * CONFIG.FOOD_ENERGY;
-    return creatureEnergy + foodEnergy;
 }
 
 function updateFood(state) {
@@ -81,33 +83,33 @@ function isWithinRadius(x1, y1, x2, y2, r2) {
 }
 
 function getVisibleObjects(objects, x, y) {
-    return objects.filter(e => isWithinRadius(e.x, e.y, x, y, CONFIG.CREATURE_VISIBILITY_RADIUS ** 2));
+    return objects.filter(o => isWithinRadius(o.x, o.y, x, y, visibilityR2));
 }
 
 function getVisibleFood(creature, state) {
-    return getVisibleObjects(state.obstacles, creature.x, creature.y)
+    return getVisibleObjects(state.obstacles, creature.x, creature.y);
+}
+
+function getVisibleCreatures(creature, state) {
+    return getVisibleObjects(state.creatures.filter(c => c.id != creature.id), creature.x, creature.y);
 }
 
 function getVisibleObstacles(creature, state) {
     const { x: cx, y: cy } = creature;
-    const r2 = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
-
-    const visible = getVisibleObjects(state.obstacles, cx, cy, r2);
-    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, r2)));
+    const visible = getVisibleObjects(state.obstacles, cx, cy);
+    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, visibilityR2)));
     return visible;
 }
 
-function getVisibleCreatures(creature, state) {
-    return getVisibleObjects(state.creatures.filter(c => c.id != creature.id), creature.x, creature.y)
-}
-
 module.exports = {
+    isCellOccupied,
+    getTotalEnergy,
+    initFood,
+    updateFood,
     getObstacles,
     getBorderObstaces,
-    updateFood,
     isWithinRadius,
     getVisibleFood,
-    getVisibleObstacles,
     getVisibleCreatures,
-    isCellOccupied
+    getVisibleObstacles
 };
