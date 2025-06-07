@@ -190,6 +190,21 @@ function toggleAbout() {
     }
 }
 
+document.getElementById("about-toggle").addEventListener("click", () => {
+    const aboutSection = document.getElementById("about-section");
+    const aboutToggle = document.getElementById("about-toggle");
+    const canvas = document.getElementById("canvas");
+    if (aboutSection.style.display === "block") {
+        aboutSection.style.display = "none";
+        canvas.style.display = "block";
+        aboutToggle.innerHTML = "about";
+    } else {
+        aboutSection.style.display = "block";
+        canvas.style.display = "none";
+        aboutToggle.innerHTML = "back";
+    }
+});
+
 canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
