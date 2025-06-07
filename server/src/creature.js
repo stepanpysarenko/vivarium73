@@ -1,9 +1,7 @@
 const CONFIG = require("./config");
 const { initWeights } = require("./ai");
 
-let lastCreatureId = 0;
-
-async function initCreature(x = null, y = null, weights = null, generation = 1) {
+async function initCreature(id, x = null, y = null, weights = null, generation = 1) {
     if (!weights) {
         weights = await initWeights();
     }
@@ -12,7 +10,7 @@ async function initCreature(x = null, y = null, weights = null, generation = 1) 
     y = (y !== null) ? y : Math.floor(Math.random() * CONFIG.GRID_SIZE);
 
     var creature = {
-        id: lastCreatureId++,
+        id,
         x,
         y,
         facingAngle: 0.0,
@@ -41,7 +39,14 @@ function getScore(creature) {
     return creature.stats.totalFoodCollected / Math.max(1, creature.stats.turnsSurvived);
 }
 
+function getNextCreatureId(state) {
+    if (!state.creatures || state.creatures.length === 0) return 0;
+    let maxId = Math.max(...state.creatures.map(c => c.id));
+    return maxId + 1;
+}   
+
 module.exports = {
     initCreature,
-    getScore
+    getScore,
+    getNextCreatureId
 };

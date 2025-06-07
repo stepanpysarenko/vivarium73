@@ -1,5 +1,5 @@
 const CONFIG = require("./config");
-const { initCreature, getScore } = require("./creature");
+const { initCreature, getScore, getNextCreatureId } = require("./creature");
 const { mutateWeights } = require("./ai");
 
 function appendTopPerformers(creature, state) {
@@ -16,7 +16,7 @@ async function restartPopulation(state) {
     if (state.topPerformers.length === 0) {
         console.log("No top performers - initializing from scratch...");
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
-            state.creatures.push(await initCreature());
+            state.creatures.push(await initCreature(getNextCreatureId(state)));
         }
         return;
     }
@@ -30,19 +30,19 @@ async function restartPopulation(state) {
 
     for (let i = 0; i < topPerformersCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const clone = await initCreature(null, null, parent.weights, parent.generation + 1);
+        const clone = await initCreature(getNextCreatureId(state), null, null, parent.weights, parent.generation + 1);
         state.creatures.push(clone);
     }
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
         const mutated = await mutateWeights(parent.weights);
-        const offspring = await initCreature(null, null, mutated, parent.generation + 1);
+        const offspring = await initCreature(getNextCreatureId(state), null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }
 
     for (let i = 0; i < randomCount; i++) {
-        state.creatures.push(await initCreature());
+        state.creatures.push(await initCreature(getNextCreatureId(state)));
     }
 
     console.log("Population restarted");

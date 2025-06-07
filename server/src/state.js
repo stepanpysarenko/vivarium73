@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
-const { initCreature } = require("./creature");
+const { initCreature, getNextCreatureId } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
 const { getObstacles, getBorderObstaces, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
@@ -36,7 +36,7 @@ async function initState() {
         updateFood(state);
 
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
-            const creature = await initCreature();
+            const creature = await initCreature(getNextCreatureId(state));
             state.creatures.push(creature);
         }
 
@@ -80,17 +80,11 @@ function getPublicState() {
             y: c.y,
             facingAngle: c.facingAngle,
             energy: c.energy,
-            prev: {
-                x: c.prev.x,
-                y: c.prev.y,
-                facingAngle: c.prev.facingAngle,
-            },
             updatesToFlash: c.updatesToFlash
         })),
         food: state.food,
         obstacles: state.obstacles,
         params: {
-            gridSize: state.params.gridSize,
             maxFoodCount: state.params.maxFoodCount,
             maxEnergy: state.params.maxEnergy
         },
@@ -268,7 +262,7 @@ async function handleLifecycle() {
                 ? await mutateWeights(creature.weights)
                 : creature.weights;
 
-            const offspring = await initCreature(creature.x, creature.y, weights, creature.generation + 1);
+            const offspring = await initCreature(getNextCreatureId(state), creature.x, creature.y, weights, creature.generation + 1);
             offsprings.push(offspring);
 
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;

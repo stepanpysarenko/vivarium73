@@ -1,31 +1,17 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-var socket;
-var wsServerUrl;
-
-const ANIMATION_DURATION = 500;
-let lastCanvasUpdateTime = performance.now();
-let animationProgress = 1;
-
+let socket;
+let wsServerUrl;
 let reconnectTimeout = null;
 
-let state = {
-    creatures: [],
-    food: [],
-    obstacles: [],
-    stats: {
-        restarts: 0,
-        generation: 0,
-        creatureCount: 0,
-        foodCount: 0
-    },
-    params: {
-        gridSize: 0,
-        maxEnergy: 0,
-        maxFoodCount: 0
-    }
-};
+const GRID_SIZE = 50;
+const SCALE = canvas.width / GRID_SIZE;
+const ANIMATION_DURATION = 500;
+
+let state = null;
+let prevMap = null;
+let lastUpdateTime = performance.now();
 
 function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -33,55 +19,55 @@ function lerp(a, b, t) {
 
 function lerpAngle(from, to, t) {
     let delta = to - from;
-
     if (delta > Math.PI) delta -= 2 * Math.PI;
     if (delta < -Math.PI) delta += 2 * Math.PI;
-
     return from + delta * t;
 }
 
 function draw() {
     const now = performance.now();
-    const deltaTime = now - lastCanvasUpdateTime;
-    lastCanvasUpdateTime = now;
+    const t = Math.min((now - lastUpdateTime) / ANIMATION_DURATION, 1);
 
-    if (animationProgress < 1) {
-        animationProgress += deltaTime / ANIMATION_DURATION;
+    if (state && prevMap) {
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#e8e8e8"; // light gray
+        state.obstacles.forEach(({ x, y }) => {
+            ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+        });
+
+        ctx.fillStyle = "#008000"; // green
+        state.food.forEach(({ x, y }) => {
+            ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+        });
+
+        state.creatures.forEach((creature) => {
+            let drawX, drawY, angle;
+            const prev = prevMap.get(creature.id);
+            if (prev) {
+                drawX = lerp(prev.x, creature.x, t);
+                drawY = lerp(prev.y, creature.y, t);
+                angle = lerpAngle(prev.facingAngle, creature.facingAngle, t);
+            } else {
+                drawX = creature.x;
+                drawY = creature.y;
+                angle = creature.facingAngle;
+            }
+
+            ctx.save();
+            ctx.translate(drawX * SCALE + SCALE * 0.5, drawY * SCALE + SCALE * 0.5);
+            ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
+
+            ctx.globalAlpha = creature.energy / state.params.maxEnergy * 0.8 + 0.2;
+            let flash = creature.updatesToFlash > 0 && (Math.floor(now / 200) % 2 == 0);
+            ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
+            ctx.fillRect(-SCALE * 0.5, -SCALE * 0.5, SCALE, SCALE);
+            ctx.fillStyle = "#ffdd00"; // yellow
+            ctx.fillRect(-SCALE * 0.5, -SCALE * 0.5, SCALE * 0.5, SCALE * 0.5);
+            ctx.restore();
+        });
     }
-    animationProgress = Math.min(animationProgress, 1);
-
-    ctx.globalAlpha = 1;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = canvas.width / state.params.gridSize;
-
-    ctx.fillStyle = "#e8e8e8"; // light gray
-    state.obstacles.forEach(({ x, y }) => {
-        ctx.fillRect(x * scale, y * scale, scale, scale);
-    });
-
-    ctx.fillStyle = "#008000"; // green
-    state.food.forEach(({ x, y }) => {
-        ctx.fillRect(x * scale, y * scale, scale, scale);
-    });
-
-    state.creatures.forEach(({ x, y, facingAngle, energy, prev, updatesToFlash }) => {
-        let drawX = lerp(prev.x, x, animationProgress);
-        let drawY = lerp(prev.y, y, animationProgress);
-        let angle = lerpAngle(prev.facingAngle, facingAngle, animationProgress);
-        angle = angle + Math.PI * 0.75; // rotate towards positive x-axis
-
-        ctx.save();
-        ctx.translate(drawX * scale + scale * 0.5, drawY * scale + scale * 0.5);
-        ctx.rotate(angle);
-
-        ctx.globalAlpha = energy / state.params.maxEnergy * 0.8 + 0.2;
-        ctx.fillStyle = updatesToFlash > 0 && (Math.floor(now / 200) % 2 == 0) ? "#ff0000" : "#0000ff"; // red : blue
-        ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
-        ctx.fillStyle = "#ffdd00"; // yellow
-        ctx.fillRect(-scale * 0.5, -scale * 0.5, scale * 0.5, scale * 0.5);
-
-        ctx.restore();
-    });
 
     requestAnimationFrame(draw);
 }
@@ -101,7 +87,7 @@ function start(retry = true) {
     socket = new WebSocket(wsServerUrl);
 
     socket.onopen = () => {
-        console.log("Connected to WebSocket server");
+        console.log("Connected to WS server");
         if (reconnectTimeout) {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
@@ -109,13 +95,16 @@ function start(retry = true) {
     };
 
     socket.onmessage = event => {
+        if (state) {
+            prevMap = new Map(state.creatures.map(c => [c.id, { x: c.x, y: c.y, facingAngle: c.facingAngle }]));
+        }
         state = JSON.parse(event.data);
-        animationProgress = 0;
+        lastUpdateTime = performance.now();
         updateStats();
     };
 
     socket.onclose = () => {
-        console.log("WebSocket closed");
+        console.log("WS closed");
         if (retry) {
             reconnectTimeout = setTimeout(() => {
                 console.log("Trying to reconnect...");
@@ -125,7 +114,7 @@ function start(retry = true) {
     };
 
     socket.onerror = error => {
-        console.error("WebSocket error:", error);
+        console.error("WS error:", error);
     };
 }
 
@@ -145,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 function reconnect() {
     setTimeout(() => {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            console.log("Ensuring WS connection...");
+            console.log("Reconnecting WS...");
             start(true);
         }
     }, 250);
@@ -192,10 +181,10 @@ function toggleAbout() {
 
 canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const canvasX = (e.clientX - rect.left) * scaleX;
-    const canvasY = (e.clientY - rect.top) * scaleY;
+    const SCALEX = canvas.width / rect.width;
+    const SCALEY = canvas.height / rect.height;
+    const canvasX = (e.clientX - rect.left) * SCALEX;
+    const canvasY = (e.clientY - rect.top) * SCALEY;
     const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
     const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
 
