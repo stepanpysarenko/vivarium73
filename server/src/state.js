@@ -3,7 +3,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const { initCreature, getNextCreatureId } = require("./creature");
 const { getMovements, mutateWeights } = require("./ai");
-const { getObstacles, getBorderObstaces, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
+const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 
 var state = null;
@@ -15,7 +15,7 @@ async function initState() {
             creatures: [],
             food: [],
             obstacles: getObstacles(),
-            borderObstacles: getBorderObstaces(),
+            borderObstacles: getBorderObstacles(),
             params: {
                 gridSize: CONFIG.GRID_SIZE,
                 maxFoodCount: CONFIG.FOOD_MAX_COUNT,

@@ -7,11 +7,12 @@ let reconnectTimeout = null;
 
 const GRID_SIZE = 50;
 const SCALE = canvas.width / GRID_SIZE;
-const ANIMATION_DURATION = 500;
+const ANIMATION_DURATION = 550;
 
 let state = null;
 let prevMap = null;
 let lastUpdateTime = performance.now();
+let estimatedInterval = ANIMATION_DURATION;
 
 function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -26,7 +27,7 @@ function lerpAngle(from, to, t) {
 
 function draw() {
     const now = performance.now();
-    const t = Math.min((now - lastUpdateTime) / ANIMATION_DURATION, 1);
+    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1);
 
     if (state && prevMap) {
         ctx.globalAlpha = 1;
@@ -95,11 +96,21 @@ function start(retry = true) {
     };
 
     socket.onmessage = event => {
+        const now = performance.now();
+        const interval = now - lastUpdateTime;
+        lastUpdateTime = now;
+        estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
+
+        let newState = JSON.parse(event.data);
         if (state) {
-            prevMap = new Map(state.creatures.map(c => [c.id, { x: c.x, y: c.y, facingAngle: c.facingAngle }]));
+            if (state.stats.restarts !== newState.stats.restarts) {
+                prevMap = null;
+            }
+            else {
+                prevMap = new Map(state.creatures.map(c => [c.id, { x: c.x, y: c.y, facingAngle: c.facingAngle }]));
+            }
         }
-        state = JSON.parse(event.data);
-        lastUpdateTime = performance.now();
+        state = newState;
         updateStats();
     };
 
@@ -159,8 +170,8 @@ window.addEventListener("beforeunload", () => {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('SW registered:', reg))
-            .catch(err => console.error('SW registration failed:', err));
+            .then(reg => console.log('ServiceWorker registered:', reg))
+            .catch(err => console.error('ServiceWorker registration failed:', err));
     });
 }
 
@@ -181,10 +192,10 @@ function toggleAbout() {
 
 canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
-    const SCALEX = canvas.width / rect.width;
-    const SCALEY = canvas.height / rect.height;
-    const canvasX = (e.clientX - rect.left) * SCALEX;
-    const canvasY = (e.clientY - rect.top) * SCALEY;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
     const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
     const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
 

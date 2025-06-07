@@ -67,7 +67,7 @@ function getObstacles() {
     ];
 }
 
-function getBorderObstaces() {
+function getBorderObstacles() {
     var obstacles = [];
     for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
         obstacles.push({ x: i, y: 0 }, { x: i, y: CONFIG.GRID_SIZE - 1 });
@@ -107,7 +107,7 @@ module.exports = {
     initFood,
     updateFood,
     getObstacles,
-    getBorderObstaces,
+    getBorderObstacles,
     isWithinRadius,
     getVisibleFood,
     getVisibleCreatures,
