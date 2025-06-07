@@ -11,7 +11,7 @@ const ANIMATION_DURATION = 550;
 
 let state = null;
 let prevMap = null;
-let lastUpdateTime = performance.now();
+let lastUpdateTime = null;
 let estimatedInterval = ANIMATION_DURATION;
 
 function lerp(a, b, t) {
@@ -101,6 +101,7 @@ function start(retry = true) {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
         }
+        lastUpdateTime = performance.now();
     };
 
     socket.onmessage = event => {
