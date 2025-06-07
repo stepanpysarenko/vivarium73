@@ -80,6 +80,14 @@ function updateStats() {
     document.getElementById("food-count").textContent = state.stats.foodCount + "/" + state.params.maxFoodCount;
 }
 
+function createCreatureMap(creatures) {
+    return new Map(creatures.map(c => [c.id, {
+        x: c.x,
+        y: c.y,
+        facingAngle: c.facingAngle
+    }]));
+}
+
 function start(retry = true) {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
@@ -101,15 +109,14 @@ function start(retry = true) {
         lastUpdateTime = now;
         estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
 
-        let newState = JSON.parse(event.data);
-        if (state) {
-            if (state.stats.restarts !== newState.stats.restarts) {
-                prevMap = null;
-            }
-            else {
-                prevMap = new Map(state.creatures.map(c => [c.id, { x: c.x, y: c.y, facingAngle: c.facingAngle }]));
-            }
+        const newState = JSON.parse(event.data);
+
+        if (!state || state.stats.restarts !== newState.stats.restarts) {
+            prevMap = createCreatureMap(newState.creatures);
+        } else {
+            prevMap = createCreatureMap(state.creatures);
         }
+
         state = newState;
         updateStats();
     };
@@ -211,8 +218,8 @@ canvas.addEventListener("click", async (e) => {
     const scaleY = canvas.height / rect.height;
     const canvasX = (e.clientX - rect.left) * scaleX;
     const canvasY = (e.clientY - rect.top) * scaleY;
-    const gridX = Math.floor(canvasX / (canvas.width / state.params.gridSize));
-    const gridY = Math.floor(canvasY / (canvas.height / state.params.gridSize));
+    const gridX = Math.floor(canvasX / (canvas.width / GRID_SIZE));
+    const gridY = Math.floor(canvasY / (canvas.height / GRID_SIZE));
 
     try {
         const res = await fetch("/api/place-food", {
