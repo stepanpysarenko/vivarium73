@@ -1,18 +1,19 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let socket;
-let wsServerUrl;
-let reconnectTimeout = null;
-
 const GRID_SIZE = 50;
 const SCALE = canvas.width / GRID_SIZE;
 const ANIMATION_DURATION = 550;
 
-let state = null;
-let prevMap = null;
-let lastUpdateTime = null;
-let estimatedInterval = ANIMATION_DURATION;
+let socket, wsServerUrl, reconnectTimeout;
+let state, prevMap, lastUpdateTime, estimatedInterval;
+
+function resetAnimation() {
+    state = null;
+    prevMap = null;
+    lastUpdateTime = null;
+    estimatedInterval = ANIMATION_DURATION;
+}
 
 function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -101,7 +102,7 @@ function start(retry = true) {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
         }
-        lastUpdateTime = performance.now();
+        resetAnimation();
     };
 
     socket.onmessage = event => {
@@ -112,10 +113,11 @@ function start(retry = true) {
 
         const newState = JSON.parse(event.data);
 
-        if (!state || state.stats.restarts !== newState.stats.restarts) {
-            prevMap = createCreatureMap(newState.creatures);
-        } else {
+        if (state && state.stats.restarts === newState.stats.restarts) {
             prevMap = createCreatureMap(state.creatures);
+        }
+        else {
+            prevMap = createCreatureMap(newState.creatures);
         }
 
         state = newState;
