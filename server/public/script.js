@@ -11,7 +11,7 @@ let state, prevMap, lastUpdateTime, estimatedInterval;
 function resetAnimation() {
     state = null;
     prevMap = null;
-    lastUpdateTime = null;
+    lastUpdateTime = performance.now();
     estimatedInterval = ANIMATION_DURATION;
 }
 
@@ -28,7 +28,7 @@ function lerpAngle(from, to, t) {
 
 function draw() {
     const now = performance.now();
-    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1);
+    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 2);
 
     if (state && prevMap) {
         ctx.globalAlpha = 1;
