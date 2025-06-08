@@ -103,6 +103,7 @@ function start(retry = true) {
             reconnectTimeout = null;
         }
         resetAnimation();
+        requestAnimationFrame(draw);
     };
 
     socket.onmessage = event => {
@@ -146,7 +147,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         wsServerUrl = data.wsUrl;
 
         start();
-        requestAnimationFrame(draw);
     } catch (error) {
         console.error("Error getting ws server url", error);
     }
