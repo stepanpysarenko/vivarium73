@@ -2,17 +2,28 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const GRID_SIZE = 50;
-const SCALE = canvas.width / GRID_SIZE;
 const ANIMATION_DURATION = 550;
 
-let socket, wsServerUrl, reconnectTimeout;
-let state, prevMap, lastUpdateTime, estimatedInterval;
+const scale = canvas.width / GRID_SIZE;
 
-function resetAnimation() {
+let socket;
+let wsServerUrl;
+let reconnectTimeout;
+
+let state;
+let nextState;
+let prevMap;
+let lastUpdateTime;
+let estimatedInterval;
+let resetInterval;
+
+function resetAnimationState() {
     state = null;
+    nextState = null;
     prevMap = new Map();
-    lastUpdateTime = performance.now();
+    lastUpdateTime = null;
     estimatedInterval = ANIMATION_DURATION;
+    resetInterval = false;
 }
 
 function lerp(a, b, t) {
@@ -28,7 +39,25 @@ function lerpAngle(from, to, t) {
 
 function draw() {
     const now = performance.now();
-    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 2);
+
+    if (nextState) {
+        if (state) {
+            prevMap = createCreatureMap(state.creatures);
+            const interval = now - lastUpdateTime;
+            estimatedInterval = resetInterval ? ANIMATION_DURATION : 0.8 * estimatedInterval + 0.2 * interval;
+            resetInterval = false;
+        } else {
+            prevMap = createCreatureMap(nextState.creatures);
+            estimatedInterval = ANIMATION_DURATION;
+        }
+
+        state = nextState;
+        nextState = null;
+        lastUpdateTime = now;
+        updateStats();
+    }
+
+    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1);
 
     if (state) {
         ctx.globalAlpha = 1;
@@ -36,36 +65,37 @@ function draw() {
 
         ctx.fillStyle = "#e8e8e8"; // light gray
         state.obstacles.forEach(({ x, y }) => {
-            ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+            ctx.fillRect(x * scale, y * scale, scale, scale);
         });
 
         ctx.fillStyle = "#008000"; // green
         state.food.forEach(({ x, y }) => {
-            ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+            ctx.fillRect(x * scale, y * scale, scale, scale);
         });
 
         state.creatures.forEach((creature) => {
-            let drawX, drawY, angle;
+            let drawX, drawY, drawAngle;
             const prev = prevMap.get(creature.id);
             if (prev) {
                 drawX = lerp(prev.x, creature.x, t);
                 drawY = lerp(prev.y, creature.y, t);
-                angle = lerpAngle(prev.angle, creature.angle, t);
+                drawAngle = lerpAngle(prev.angle, creature.angle, t);
             } else {
                 drawX = creature.x;
                 drawY = creature.y;
-                angle = creature.angle;
+                drawAngle = creature.angle;
             }
 
             ctx.save();
-            ctx.translate(drawX * SCALE + SCALE * 0.5, drawY * SCALE + SCALE * 0.5);
-            ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
+            ctx.translate(drawX * scale + scale * 0.5, drawY * scale + scale * 0.5);
+            ctx.rotate(drawAngle + Math.PI * 0.75); // rotate towards positive x-axis
+
             ctx.globalAlpha = creature.energy / state.params.maxEnergy * 0.8 + 0.2;
             const flash = creature.updatesToFlash > 0 && (Math.floor(now / 200) % 2 === 0);
             ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
-            ctx.fillRect(-SCALE * 0.5, -SCALE * 0.5, SCALE, SCALE);
+            ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
             ctx.fillStyle = "#ffdd00"; // yellow
-            ctx.fillRect(-SCALE * 0.5, -SCALE * 0.5, SCALE * 0.5, SCALE * 0.5);
+            ctx.fillRect(-scale * 0.5, -scale * 0.5, scale * 0.5, scale * 0.5);
             ctx.restore();
         });
     }
@@ -101,25 +131,11 @@ function start(retry = true) {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
         }
-        resetAnimation();
+        resetAnimationState();
     };
 
     socket.onmessage = event => {
-        const now = performance.now();
-        const interval = now - lastUpdateTime;
-        lastUpdateTime = now;
-        estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
-
-        const newState = JSON.parse(event.data);
-
-        if (state) {
-            prevMap = createCreatureMap(state.creatures);
-        } else {
-            prevMap = createCreatureMap(newState.creatures);
-        }
-
-        state = newState;
-        updateStats();
+        nextState = JSON.parse(event.data);
     };
 
     socket.onclose = () => {
@@ -162,6 +178,7 @@ function reconnect() {
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         reconnect();
+        resetInterval = true;
     }
 });
 
@@ -186,7 +203,7 @@ if ('serviceWorker' in navigator) {
 function toggleAbout() {
     const aboutSection = document.getElementById("about-section");
     const aboutToggle = document.getElementById("about-toggle");
-    const canvas = document.getElementById("canvas");
+
     if (aboutSection.style.display === "block") {
         aboutSection.style.display = "none";
         canvas.style.display = "block";
@@ -201,7 +218,7 @@ function toggleAbout() {
 document.getElementById("about-toggle").addEventListener("click", () => {
     const aboutSection = document.getElementById("about-section");
     const aboutToggle = document.getElementById("about-toggle");
-    const canvas = document.getElementById("canvas");
+
     if (aboutSection.style.display === "block") {
         aboutSection.style.display = "none";
         canvas.style.display = "block";
@@ -213,14 +230,20 @@ document.getElementById("about-toggle").addEventListener("click", () => {
     }
 });
 
-canvas.addEventListener("click", async (e) => {
+function getGridCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const canvasX = (e.clientX - rect.left) * scaleX;
     const canvasY = (e.clientY - rect.top) * scaleY;
-    const gridX = Math.floor(canvasX / (canvas.width / GRID_SIZE));
-    const gridY = Math.floor(canvasY / (canvas.height / GRID_SIZE));
+    return {
+        x: Math.floor(canvasX / (canvas.width / GRID_SIZE)),
+        y: Math.floor(canvasY / (canvas.height / GRID_SIZE))
+    };
+}
+
+canvas.addEventListener("click", async (e) => {
+    const { x: gridX, y: gridY } = getGridCoordinates(e);
 
     try {
         const res = await fetch("/api/place-food", {

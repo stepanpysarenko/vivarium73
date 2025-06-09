@@ -40,10 +40,9 @@ function getScore(creature) {
 }
 
 function getNextCreatureId(state) {
-    if (!state.creatures || state.creatures.length === 0) return 0;
-    let maxId = Math.max(...state.creatures.map(c => c.id));
-    return maxId + 1;
-}   
+    state.lastCreatureId++;
+    return state.lastCreatureId;
+}
 
 module.exports = {
     initCreature,

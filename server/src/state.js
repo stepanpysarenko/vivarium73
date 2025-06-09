@@ -30,6 +30,7 @@ async function initState() {
                 creatureCount: 0,
                 foodCount: 0
             },
+            lastCreatureId: 0,
             topPerformers: []
         };
 
