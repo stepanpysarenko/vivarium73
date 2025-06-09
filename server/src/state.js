@@ -78,7 +78,7 @@ function getPublicState() {
             id: c.id,
             x: c.x,
             y: c.y,
-            facingAngle: c.facingAngle,
+            angle: c.angle,
             energy: c.energy,
             updatesToFlash: c.updatesToFlash
         })),
@@ -131,7 +131,7 @@ async function updateState() {
 }
 
 function applyMovement(creature, movement) {
-    let newAngle = creature.facingAngle + movement.angle_delta;
+    let newAngle = creature.angle + movement.angle_delta;
     newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
     let moveX = movement.speed * Math.cos(newAngle);
@@ -153,12 +153,12 @@ function applyMovement(creature, movement) {
         ...creature,
         x: newX,
         y: newY,
-        facingAngle: newAngle,
+        angle: newAngle,
         energy,
         prev: {
             x: creature.x,
             y: creature.y,
-            facingAngle: creature.facingAngle,
+            angle: creature.angle,
             energy: creature.energy
         },
         recentPath: path

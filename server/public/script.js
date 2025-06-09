@@ -10,7 +10,7 @@ let state, prevMap, lastUpdateTime, estimatedInterval;
 
 function resetAnimation() {
     state = null;
-    prevMap = null;
+    prevMap = new Map();
     lastUpdateTime = performance.now();
     estimatedInterval = ANIMATION_DURATION;
 }
@@ -30,7 +30,7 @@ function draw() {
     const now = performance.now();
     const t = Math.min((now - lastUpdateTime) / estimatedInterval, 2);
 
-    if (state && prevMap) {
+    if (state) {
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -50,19 +50,18 @@ function draw() {
             if (prev) {
                 drawX = lerp(prev.x, creature.x, t);
                 drawY = lerp(prev.y, creature.y, t);
-                angle = lerpAngle(prev.facingAngle, creature.facingAngle, t);
+                angle = lerpAngle(prev.angle, creature.angle, t);
             } else {
                 drawX = creature.x;
                 drawY = creature.y;
-                angle = creature.facingAngle;
+                angle = creature.angle;
             }
 
             ctx.save();
             ctx.translate(drawX * SCALE + SCALE * 0.5, drawY * SCALE + SCALE * 0.5);
             ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
-
             ctx.globalAlpha = creature.energy / state.params.maxEnergy * 0.8 + 0.2;
-            let flash = creature.updatesToFlash > 0 && (Math.floor(now / 200) % 2 == 0);
+            const flash = creature.updatesToFlash > 0 && (Math.floor(now / 200) % 2 === 0);
             ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
             ctx.fillRect(-SCALE * 0.5, -SCALE * 0.5, SCALE, SCALE);
             ctx.fillStyle = "#ffdd00"; // yellow
@@ -85,7 +84,7 @@ function createCreatureMap(creatures) {
     return new Map(creatures.map(c => [c.id, {
         x: c.x,
         y: c.y,
-        facingAngle: c.facingAngle
+        angle: c.angle
     }]));
 }
 
@@ -103,7 +102,6 @@ function start(retry = true) {
             reconnectTimeout = null;
         }
         resetAnimation();
-        requestAnimationFrame(draw);
     };
 
     socket.onmessage = event => {
@@ -114,10 +112,9 @@ function start(retry = true) {
 
         const newState = JSON.parse(event.data);
 
-        if (state && state.stats.restarts === newState.stats.restarts) {
+        if (state) {
             prevMap = createCreatureMap(state.creatures);
-        }
-        else {
+        } else {
             prevMap = createCreatureMap(newState.creatures);
         }
 
@@ -147,6 +144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         wsServerUrl = data.wsUrl;
 
         start();
+        requestAnimationFrame(draw);
     } catch (error) {
         console.error("Error getting ws server url", error);
     }

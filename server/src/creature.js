@@ -13,12 +13,12 @@ async function initCreature(id, x = null, y = null, weights = null, generation =
         id,
         x,
         y,
-        facingAngle: 0.0,
+        angle: 0.0,
         energy: CONFIG.CREATURE_INITIAL_ENERGY,
         prev: {
             x,
             y,
-            facingAngle: 0.0,
+            angle: 0.0,
             energy: CONFIG.CREATURE_INITIAL_ENERGY
         },
         recentPath: [{ x, y }],

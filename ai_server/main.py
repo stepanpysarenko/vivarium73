@@ -13,11 +13,11 @@ class Creature(BaseModel):
     id: int
     x: float
     y: float
-    facing_angle: float
+    angle: float
     energy: float
     prev_x: float
     prev_y: float
-    prev_facing_angle: float
+    prev_angle: float
     recent_path: List[Position]
     prev_energy: float
     just_reproduced: bool
