@@ -2,7 +2,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const GRID_SIZE = 50;
-const ANIMATION_DURATION = 600;
+const ANIMATION_DURATION = 520;
 
 const scale = canvas.width / GRID_SIZE;
 
