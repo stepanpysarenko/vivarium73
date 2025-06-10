@@ -17,8 +17,8 @@ function initFood(state) {
     let food = null;
     while (!food || isCellOccupied(food.x, food.y, state)) {
         food = {
-            x: Math.floor(Math.random() * (CONFIG.GRID_SIZE - 2)) + 1,
-            y: Math.floor(Math.random() * (CONFIG.GRID_SIZE - 2)) + 1
+            x: Math.floor(Math.random() * (CONFIG.GRID_SIZE)),
+            y: Math.floor(Math.random() * (CONFIG.GRID_SIZE))
         };
     }
     return food;

@@ -2,7 +2,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const GRID_SIZE = 50;
-const ANIMATION_DURATION = 550;
+const ANIMATION_DURATION = 600;
 
 const scale = canvas.width / GRID_SIZE;
 
@@ -15,7 +15,6 @@ let nextState;
 let prevMap;
 let lastUpdateTime;
 let estimatedInterval;
-let resetInterval;
 
 function resetAnimationState() {
     state = null;
@@ -23,7 +22,6 @@ function resetAnimationState() {
     prevMap = new Map();
     lastUpdateTime = null;
     estimatedInterval = ANIMATION_DURATION;
-    resetInterval = false;
 }
 
 function lerp(a, b, t) {
@@ -43,9 +41,7 @@ function draw() {
     if (nextState) {
         if (state) {
             prevMap = createCreatureMap(state.creatures);
-            const interval = now - lastUpdateTime;
-            estimatedInterval = resetInterval ? ANIMATION_DURATION : 0.8 * estimatedInterval + 0.2 * interval;
-            resetInterval = false;
+            estimatedInterval = 0.8 * estimatedInterval + 0.2 * (now - lastUpdateTime);
         } else {
             prevMap = createCreatureMap(nextState.creatures);
             estimatedInterval = ANIMATION_DURATION;
@@ -57,9 +53,9 @@ function draw() {
         updateStats();
     }
 
-    const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1);
-
     if (state) {
+        const t = Math.min((now - state.timestamp) / estimatedInterval, 1);
+
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -136,6 +132,7 @@ function start(retry = true) {
 
     socket.onmessage = event => {
         nextState = JSON.parse(event.data);
+        nextState.timestamp = performance.now();
     };
 
     socket.onclose = () => {
@@ -177,8 +174,8 @@ function reconnect() {
 
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
+        resetAnimationState();
         reconnect();
-        resetInterval = true;
     }
 });
 
