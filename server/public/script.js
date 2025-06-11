@@ -41,7 +41,7 @@ function draw() {
     if (nextState) {
         if (state) {
             prevMap = createCreatureMap(state.creatures);
-            estimatedInterval = 0.8 * estimatedInterval + 0.2 * (now - lastUpdateTime);
+            estimatedInterval = 0.8 * estimatedInterval + 0.2 * (now - state.timestamp);
         } else {
             prevMap = createCreatureMap(nextState.creatures);
             estimatedInterval = ANIMATION_DURATION;
