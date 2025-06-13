@@ -2,7 +2,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const GRID_SIZE = 50;
-const ANIMATION_DURATION = 275;
+const ANIMATION_DURATION = 300;
 
 const scale = canvas.width / GRID_SIZE;
 
@@ -13,15 +13,11 @@ let reconnectTimeout;
 let state;
 let nextState;
 let prevMap;
-let lastUpdateTime;
-let estimatedInterval;
 
 function resetAnimationState() {
     state = null;
     nextState = null;
     prevMap = new Map();
-    lastUpdateTime = null;
-    estimatedInterval = ANIMATION_DURATION;
 }
 
 function lerp(a, b, t) {
@@ -39,22 +35,14 @@ function draw() {
     const now = performance.now();
 
     if (nextState) {
-        if (state) {
-            prevMap = createCreatureMap(state.creatures);
-            estimatedInterval = 0.8 * estimatedInterval + 0.2 * (now - state.timestamp);
-        } else {
-            prevMap = createCreatureMap(nextState.creatures);
-            estimatedInterval = ANIMATION_DURATION;
-        }
-
+        prevMap = createCreatureMap(state ? state.creatures : nextState.creatures);
         state = nextState;
         nextState = null;
-        lastUpdateTime = now;
         updateStats();
     }
 
     if (state) {
-        const t = Math.min((now - state.timestamp) / estimatedInterval, 1);
+        const t = Math.min((now - state.timestamp) / ANIMATION_DURATION, 1);
 
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -87,7 +75,7 @@ function draw() {
             ctx.rotate(drawAngle + Math.PI * 0.75); // rotate towards positive x-axis
 
             ctx.globalAlpha = creature.energy / state.params.maxEnergy * 0.8 + 0.2;
-            const flash = creature.updatesToFlash > 0 && (Math.floor(now / 200) % 2 === 0);
+            const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
             ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
             ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
             ctx.fillStyle = "#ffdd00"; // yellow

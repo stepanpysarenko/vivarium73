@@ -39,15 +39,30 @@ wss.on("connection", (ws) => {
     });
 });
 
+function sendState(state) {
+    const data = JSON.stringify(state);
+    for (const client of wss.clients) {
+        if (client.readyState === WebSocket.OPEN) {
+            try {
+                client.send(data);
+            } catch (err) {
+                console.warn("WebSocket send failed:", err.message);
+            }
+        }
+    }
+}
+
 async function loop() {
     while (true) {
+        const start = performance.now();
+
         await updateState();
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(getPublicState()));
-            }
-        });
-        await new Promise(resolve => setTimeout(resolve, CONFIG.STATE_UPDATE_INTERVAL));
+        await sendState(getPublicState());
+
+        const elapsed = performance.now() - start;
+        const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, sleepTime));
     }
 }
 

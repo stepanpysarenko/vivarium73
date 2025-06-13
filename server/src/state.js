@@ -81,7 +81,7 @@ function getPublicState() {
             y: c.y,
             angle: c.angle,
             energy: c.energy,
-            updatesToFlash: c.updatesToFlash
+            flashing: c.updatesToFlash > 0
         })),
         food: state.food,
         obstacles: state.obstacles,
