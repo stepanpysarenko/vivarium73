@@ -13,11 +13,15 @@ let reconnectTimeout;
 let state;
 let nextState;
 let prevMap;
+let estimatedInterval;
+let lastUpdateTime;
 
 function resetAnimationState() {
     state = null;
     nextState = null;
     prevMap = new Map();
+    estimatedInterval = ANIMATION_DURATION;
+    lastUpdateTime = null;
 }
 
 function lerp(a, b, t) {
@@ -42,7 +46,7 @@ function draw() {
     }
 
     if (state) {
-        const t = Math.min((now - state.timestamp) / ANIMATION_DURATION, 1);
+        const t = Math.min((now - state.timestamp) / estimatedInterval, 1);
 
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -121,6 +125,12 @@ function start(retry = true) {
     socket.onmessage = event => {
         nextState = JSON.parse(event.data);
         nextState.timestamp = performance.now();
+
+        if (lastUpdateTime !== null) {
+            const interval = nextState.timestamp - lastUpdateTime;
+            estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
+        }
+        lastUpdateTime = nextState.timestamp;
     };
 
     socket.onclose = () => {
