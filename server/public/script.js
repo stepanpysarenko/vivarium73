@@ -46,7 +46,7 @@ function draw() {
     }
 
     if (state) {
-        const t = Math.min((now - state.timestamp) / estimatedInterval, 1);
+        const t = Math.min((now - state.timestamp) / estimatedInterval, 1.2);
 
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
