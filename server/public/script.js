@@ -39,14 +39,25 @@ function draw() {
     const now = performance.now();
 
     if (nextState) {
-        prevMap = createCreatureMap(state ? state.creatures : nextState.creatures);
+        if (state) {
+            prevMap = createCreatureMap(state.creatures);
+        } else {
+            prevMap = createCreatureMap(nextState.creatures);
+        }
+
+        if (lastUpdateTime !== null) {
+            const interval = nextState.timestamp - lastUpdateTime;
+            estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
+        }
+        lastUpdateTime = nextState.timestamp;
+
         state = nextState;
         nextState = null;
         updateStats();
     }
 
     if (state) {
-        const t = Math.min((now - state.timestamp) / estimatedInterval, 1.2);
+        const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1.2);
 
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -107,8 +118,17 @@ function createCreatureMap(creatures) {
 }
 
 function start(retry = true) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
+    if (socket) {
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+            console.log("WS is already open or connecting - skipping new start");
+            return;
+        }
+
+        try {
+            socket.close();
+        } catch (e) {
+            console.warn("Failed to close existing WS:", e.message);
+        }
     }
 
     socket = new WebSocket(wsServerUrl);
@@ -125,12 +145,6 @@ function start(retry = true) {
     socket.onmessage = event => {
         nextState = JSON.parse(event.data);
         nextState.timestamp = performance.now();
-
-        if (lastUpdateTime !== null) {
-            const interval = nextState.timestamp - lastUpdateTime;
-            estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
-        }
-        lastUpdateTime = nextState.timestamp;
     };
 
     socket.onclose = () => {
