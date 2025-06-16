@@ -1,5 +1,7 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const aboutSection = document.getElementById("about-section");
+const aboutToggle = document.getElementById("about-toggle");
 
 const GRID_SIZE = 50;
 const ANIMATION_DURATION = 300;
@@ -36,8 +38,6 @@ function lerpAngle(from, to, t) {
 }
 
 function draw() {
-    const now = performance.now();
-
     if (nextState) {
         if (state) {
             prevMap = createCreatureMap(state.creatures);
@@ -57,6 +57,7 @@ function draw() {
     }
 
     if (state) {
+        const now = performance.now();
         const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1.2);
 
         ctx.globalAlpha = 1;
@@ -209,25 +210,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-function toggleAbout() {
-    const aboutSection = document.getElementById("about-section");
-    const aboutToggle = document.getElementById("about-toggle");
-
-    if (aboutSection.style.display === "block") {
-        aboutSection.style.display = "none";
-        canvas.style.display = "block";
-        aboutToggle.innerHTML = "about";
-    } else {
-        aboutSection.style.display = "block";
-        canvas.style.display = "none";
-        aboutToggle.innerHTML = "back";
-    }
-}
-
-document.getElementById("about-toggle").addEventListener("click", () => {
-    const aboutSection = document.getElementById("about-section");
-    const aboutToggle = document.getElementById("about-toggle");
-
+aboutToggle.addEventListener("click", () => {
     if (aboutSection.style.display === "block") {
         aboutSection.style.display = "none";
         canvas.style.display = "block";
