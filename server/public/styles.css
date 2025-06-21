@@ -163,7 +163,7 @@ body {
 
 #about-toggle {
     font-family: inherit;
-    font-size: 12px;
+    font-size: 10px;
     color: #c8c8c8;
     padding: 7px 10px;
     border: none;
@@ -177,6 +177,14 @@ body {
 
 #about-toggle:hover {
     color: #333333;
+}
+
+body.about-visible #about-section {
+    display: block;
+}
+
+body.about-visible #canvas {
+    display: none;
 }
 
 @media (max-width: 850px) {
@@ -208,10 +216,6 @@ body {
 
     .footer {
         padding-top: 24px;
-    }
-
-    #about-toggle {
-        font-size: 9px;
     }
 
     #about-content {

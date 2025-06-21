@@ -1,29 +1,42 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
+const restartsEl = document.getElementById("restarts");
+const generationEl = document.getElementById("generation");
+const creatureCountEl = document.getElementById("creature-count");
+const foodCountEl = document.getElementById("food-count");
+
 const aboutSection = document.getElementById("about-section");
 const aboutToggle = document.getElementById("about-toggle");
 
-const GRID_SIZE = 50;
-const ANIMATION_DURATION = 300;
-
-const scale = canvas.width / GRID_SIZE;
+let config = null;
 
 let socket;
 let wsServerUrl;
-let reconnectTimeout;
+let reconnectScheduled = false;
 
 let state;
 let nextState;
 let prevMap;
 let estimatedInterval;
 let lastUpdateTime;
+let scale;
+let halfScale;
 
 function resetAnimationState() {
+    if (!config) {
+        console.warn("config is not loaded yet, cannot reset animation state");
+        return;
+    }
+
     state = null;
     nextState = null;
     prevMap = new Map();
-    estimatedInterval = ANIMATION_DURATION;
+    estimatedInterval = config.stateUpdateInterval;
     lastUpdateTime = null;
+
+    scale = canvas.width / config.params.gridSize;
+    halfScale = scale * 0.5;
 }
 
 function lerp(a, b, t) {
@@ -35,6 +48,53 @@ function lerpAngle(from, to, t) {
     if (delta > Math.PI) delta -= 2 * Math.PI;
     if (delta < -Math.PI) delta += 2 * Math.PI;
     return from + delta * t;
+}
+
+function clearCanvas() {
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawObstacles() {
+    ctx.fillStyle = "#e8e8e8"; // light gray
+    state.obstacles.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
+}
+
+function drawFood() {
+    ctx.fillStyle = "#008000"; // green
+    state.food.forEach(({ x, y }) => {
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
+}
+
+function drawCreatures(t, now) {
+    state.creatures.forEach((creature) => {
+        let x, y, angle;
+        const prev = prevMap.get(creature.id);
+        if (prev) {
+            x = lerp(prev.x, creature.x, t);
+            y = lerp(prev.y, creature.y, t);
+            angle = lerpAngle(prev.angle, creature.angle, t);
+        } else {
+            x = creature.x;
+            y = creature.y;
+            angle = creature.angle;
+        }
+
+        ctx.save();
+        ctx.translate(x * scale + halfScale, y * scale + halfScale);
+        ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
+
+        ctx.globalAlpha = creature.energy / config.params.maxEnergy * 0.8 + 0.2;
+        const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
+        ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
+        ctx.fillRect(-halfScale, -halfScale, scale, scale);
+        ctx.fillStyle = "#ffdd00"; // yellow
+        ctx.fillRect(-halfScale, -halfScale, halfScale, halfScale);
+        ctx.restore();
+    });
 }
 
 function draw() {
@@ -60,54 +120,20 @@ function draw() {
         const now = performance.now();
         const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1.2);
 
-        ctx.globalAlpha = 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#e8e8e8"; // light gray
-        state.obstacles.forEach(({ x, y }) => {
-            ctx.fillRect(x * scale, y * scale, scale, scale);
-        });
-
-        ctx.fillStyle = "#008000"; // green
-        state.food.forEach(({ x, y }) => {
-            ctx.fillRect(x * scale, y * scale, scale, scale);
-        });
-
-        state.creatures.forEach((creature) => {
-            let drawX, drawY, drawAngle;
-            const prev = prevMap.get(creature.id);
-            if (prev) {
-                drawX = lerp(prev.x, creature.x, t);
-                drawY = lerp(prev.y, creature.y, t);
-                drawAngle = lerpAngle(prev.angle, creature.angle, t);
-            } else {
-                drawX = creature.x;
-                drawY = creature.y;
-                drawAngle = creature.angle;
-            }
-
-            ctx.save();
-            ctx.translate(drawX * scale + scale * 0.5, drawY * scale + scale * 0.5);
-            ctx.rotate(drawAngle + Math.PI * 0.75); // rotate towards positive x-axis
-
-            ctx.globalAlpha = creature.energy / state.params.maxEnergy * 0.8 + 0.2;
-            const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
-            ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
-            ctx.fillRect(-scale * 0.5, -scale * 0.5, scale, scale);
-            ctx.fillStyle = "#ffdd00"; // yellow
-            ctx.fillRect(-scale * 0.5, -scale * 0.5, scale * 0.5, scale * 0.5);
-            ctx.restore();
-        });
+        clearCanvas();
+        drawObstacles();
+        drawFood();
+        drawCreatures(t, now);
     }
 
     requestAnimationFrame(draw);
 }
 
 function updateStats() {
-    document.getElementById("restarts").textContent = state.stats.restarts;
-    document.getElementById("generation").textContent = state.stats.generation;
-    document.getElementById("creature-count").textContent = state.stats.creatureCount;
-    document.getElementById("food-count").textContent = state.stats.foodCount + "/" + state.params.maxFoodCount;
+    restartsEl.textContent = state.stats.restarts;
+    generationEl.textContent = state.stats.generation;
+    creatureCountEl.textContent = state.stats.creatureCount;
+    foodCountEl.textContent = `${state.stats.foodCount}/${config.params.maxFoodCount}`;
 }
 
 function createCreatureMap(creatures) {
@@ -118,7 +144,7 @@ function createCreatureMap(creatures) {
     }]));
 }
 
-function start(retry = true) {
+function start() {
     if (socket) {
         if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
             console.log("WS is already open or connecting - skipping new start");
@@ -132,14 +158,10 @@ function start(retry = true) {
         }
     }
 
-    socket = new WebSocket(wsServerUrl);
+    socket = new WebSocket(config.webSocketUrl);
 
     socket.onopen = () => {
         console.log("Connected to WS server");
-        if (reconnectTimeout) {
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = null;
-        }
         resetAnimationState();
     };
 
@@ -150,12 +172,7 @@ function start(retry = true) {
 
     socket.onclose = () => {
         console.log("WS closed");
-        if (retry) {
-            reconnectTimeout = setTimeout(() => {
-                console.log("Trying to reconnect...");
-                start(true);
-            }, 1000);
-        }
+        reconnect();
     };
 
     socket.onerror = error => {
@@ -165,10 +182,8 @@ function start(retry = true) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const response = await fetch("/api/wsurl");
-        const data = await response.json();
-        wsServerUrl = data.wsUrl;
-
+        const response = await fetch("/api/config");
+        config = await response.json();
         start();
         requestAnimationFrame(draw);
     } catch (error) {
@@ -177,11 +192,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function reconnect() {
+    if (reconnectScheduled) return;
+    reconnectScheduled = true;
     setTimeout(() => {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
             console.log("Reconnecting WS...");
-            start(true);
+            start();
         }
+        reconnectScheduled = false;
     }, 250);
 }
 
@@ -211,15 +229,8 @@ if ('serviceWorker' in navigator) {
 }
 
 aboutToggle.addEventListener("click", () => {
-    if (aboutSection.style.display === "block") {
-        aboutSection.style.display = "none";
-        canvas.style.display = "block";
-        aboutToggle.innerHTML = "about";
-    } else {
-        aboutSection.style.display = "block";
-        canvas.style.display = "none";
-        aboutToggle.innerHTML = "back";
-    }
+    document.body.classList.toggle("about-visible");
+    aboutToggle.textContent = document.body.classList.contains("about-visible") ? "back" : "about";
 });
 
 function getGridCoordinates(e) {
@@ -229,8 +240,8 @@ function getGridCoordinates(e) {
     const canvasX = (e.clientX - rect.left) * scaleX;
     const canvasY = (e.clientY - rect.top) * scaleY;
     return {
-        x: Math.floor(canvasX / (canvas.width / GRID_SIZE)),
-        y: Math.floor(canvasY / (canvas.height / GRID_SIZE))
+        x: Math.floor(canvasX / (canvas.width / config.params.gridSize)),
+        y: Math.floor(canvasY / (canvas.height / config.params.gridSize))
     };
 }
 

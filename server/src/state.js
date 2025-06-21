@@ -73,28 +73,36 @@ function loadState() {
     }
 }
 
+function round2(x) {
+    return Math.round(x * 100) / 100;
+}
+
 function getPublicState() {
     return {
         creatures: state.creatures.map(c => ({
             id: c.id,
-            x: c.x,
-            y: c.y,
-            angle: c.angle,
-            energy: c.energy,
+            x: round2(c.x),
+            y: round2(c.y),
+            angle: round2(c.angle),
+            energy: round2(c.energy),
             flashing: c.updatesToFlash > 0
         })),
         food: state.food,
         obstacles: state.obstacles,
-        params: {
-            maxFoodCount: state.params.maxFoodCount,
-            maxEnergy: state.params.maxEnergy
-        },
         stats: {
             restarts: state.stats.restarts,
             generation: state.stats.generation,
             creatureCount: state.stats.creatureCount,
             foodCount: state.stats.foodCount
         }
+    };
+}
+
+function getPublicParams() {
+    return {
+        gridSize: state.params.gridSize,
+        maxFoodCount: state.params.maxFoodCount,
+        maxEnergy: state.params.maxEnergy
     };
 }
 
@@ -145,7 +153,7 @@ function applyMovement(creature, movement) {
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
         + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
-    const energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
+    const newEnergy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 
     const path = [...creature.recentPath, { x: newX, y: newY }];
     if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
@@ -155,7 +163,7 @@ function applyMovement(creature, movement) {
         x: newX,
         y: newY,
         angle: newAngle,
-        energy,
+        newEnergy,
         prev: {
             x: creature.x,
             y: creature.y,
@@ -304,6 +312,7 @@ module.exports = {
     initState,
     saveState,
     getPublicState,
+    getPublicParams,
     updateState,
     addFood,
     getFoodCount

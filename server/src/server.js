@@ -4,7 +4,7 @@ const path = require("path");
 const http = require("http");
 const WebSocket = require("../node_modules/ws");
 const CONFIG = require("./config");
-const { initState, saveState, getPublicState, updateState } = require("./state");
+const { initState, saveState, getPublicState, getPublicParams, updateState } = require("./state");
 const { placeFood } = require("./actions");
 
 const app = express();
@@ -16,7 +16,11 @@ app.get("/", (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: "OK" }));
-app.get('/api/wsurl', (req, res) => res.json({ wsUrl: CONFIG.WEBSOCKET_URL }));
+app.get('/api/config', (req, res) => res.json({ 
+    webSocketUrl: CONFIG.WEBSOCKET_URL,
+    stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
+    params: getPublicParams()
+}));
 
 app.post("/api/place-food", (req, res) => {
     const { x, y } = req.body;
