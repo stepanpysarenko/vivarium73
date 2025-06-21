@@ -118,6 +118,6 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     speed = ((output[1] + 1) / 2) * max_speed
 
     return {
-        "angle_delta": angle_delta,
+        "angleDelta": angle_delta,
         "speed": speed
     }

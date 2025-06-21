@@ -20,22 +20,22 @@ async function getMovements(state) {
             y: c.y,
             angle: c.angle,
             energy: c.energy,
-            prev_x: c.prev.x,
-            prev_y: c.prev.y,
-            prev_angle: c.prev.angle,
-            recent_path: c.recentPath,
-            prev_energy: c.prev.energy,
-            just_reproduced: c.justReproduced,
+            prevX: c.prev.x,
+            prevY: c.prev.y,
+            prevAngle: c.prev.angle,
+            recentPath: c.recentPath,
+            prevEnergy: c.prev.energy,
+            justReproduced: c.justReproduced,
             weights: c.weights,
             food: getVisibleFood(c, state),
             obstacles: getVisibleObstacles(c, state),
             creatures: getVisibleCreatures(c, state)
         })),
-        grid_size: state.params.gridSize,
-        visibility_radius: state.params.visibilityRadius,
-        max_energy: state.params.maxEnergy,
-        max_turn_angle: state.params.maxTurnAngle,
-        max_speed: state.params.maxSpeed
+        gridSize: state.params.gridSize,
+        visibilityRadius: state.params.visibilityRadius,
+        maxEnergy: state.params.maxEnergy,
+        maxTurnAngle: state.params.maxTurnAngle,
+        maxSpeed: state.params.maxSpeed
     });
 
     return response.data.movements;

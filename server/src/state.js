@@ -140,7 +140,7 @@ async function updateState() {
 }
 
 function applyMovement(creature, movement) {
-    let newAngle = creature.angle + movement.angle_delta;
+    let newAngle = creature.angle + movement.angleDelta;
     newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
     let moveX = movement.speed * Math.cos(newAngle);
@@ -149,7 +149,7 @@ function applyMovement(creature, movement) {
     let newY = creature.y + moveY;
 
     const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
-    const turnPLoss = Math.abs(movement.angle_delta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
+    const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
         + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;

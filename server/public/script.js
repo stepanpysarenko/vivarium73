@@ -10,9 +10,7 @@ const aboutSection = document.getElementById("about-section");
 const aboutToggle = document.getElementById("about-toggle");
 
 let config = null;
-
 let socket;
-let wsServerUrl;
 let reconnectScheduled = false;
 
 let state;
