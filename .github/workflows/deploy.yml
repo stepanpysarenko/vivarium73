@@ -47,5 +47,5 @@ jobs:
           cd /root/vivarium73
           echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > .env
           docker-compose down --volumes --remove-orphans
-          docker-compose build --no-cache
+          docker-compose build
           docker-compose up -d

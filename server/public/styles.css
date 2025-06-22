@@ -1,14 +1,8 @@
-* {
-    -webkit-user-select: none;
-    user-select: none;
-}
-
 html,
 body {
     height: 100%;
     margin: 0;
     padding: 0;
-    height: 100%;
     overflow: hidden;
 }
 
@@ -22,8 +16,20 @@ body {
     flex-direction: column;
     min-height: 100dvh;
     overflow: hidden;
-    touch-action: none;
-    pointer-events: none;
+}
+
+html,
+body,
+.container,
+.header,
+.footer,
+.stats,
+.stat,
+#canvas {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .container {
@@ -47,12 +53,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
     touch-action: none;
+    pointer-events: none;
 }
 
 .content {
@@ -72,7 +74,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    user-select: none;
+    touch-action: none;
+    pointer-events: none;
 }
 
 .title {
@@ -115,7 +118,7 @@ body {
 }
 
 #canvas {
-    border: 1px solid #c8c8c8;
+    border: 1px solid #e8e8e8;
     background-color: #f8f8f8;
     display: block;
     width: 100%;
@@ -124,6 +127,8 @@ body {
     pointer-events: auto;
     touch-action: auto;
     cursor: pointer;
+    touch-action: none;
+    pointer-events: auto;
 }
 
 #about-section {
@@ -133,7 +138,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    border: 1px solid #c8c8c8;
+    border: 1px solid #e8e8e8;
     padding: 20px 20px;
     box-sizing: border-box;
     text-align: left;

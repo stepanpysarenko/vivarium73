@@ -1,1 +1,4 @@
 vivarium73.code-workspace
+
+/data/*
+!/data/.gitkeep

@@ -1,15 +1,15 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const restartsEl = document.getElementById("restarts");
-const generationEl = document.getElementById("generation");
-const creatureCountEl = document.getElementById("creature-count");
-const foodCountEl = document.getElementById("food-count");
+const elements = {
+    restarts: document.getElementById("restarts"),
+    generation: document.getElementById("generation"),
+    creatureCount: document.getElementById("creature-count"),
+    foodCount: document.getElementById("food-count"),
+    aboutToggle: document.getElementById("about-toggle")
+};
 
-const aboutSection = document.getElementById("about-section");
-const aboutToggle = document.getElementById("about-toggle");
-
-let config = null;
+let config;
 let socket;
 let reconnectScheduled = false;
 
@@ -22,11 +22,6 @@ let scale;
 let halfScale;
 
 function resetAnimationState() {
-    if (!config) {
-        console.warn("config is not loaded yet, cannot reset animation state");
-        return;
-    }
-
     state = null;
     nextState = null;
     prevMap = new Map();
@@ -54,6 +49,7 @@ function clearCanvas() {
 }
 
 function drawObstacles() {
+    ctx.globalAlpha = 1;
     ctx.fillStyle = "#e8e8e8"; // light gray
     state.obstacles.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
@@ -61,6 +57,7 @@ function drawObstacles() {
 }
 
 function drawFood() {
+    ctx.globalAlpha = 1;
     ctx.fillStyle = "#008000"; // green
     state.food.forEach(({ x, y }) => {
         ctx.fillRect(x * scale, y * scale, scale, scale);
@@ -128,10 +125,10 @@ function draw() {
 }
 
 function updateStats() {
-    restartsEl.textContent = state.stats.restarts;
-    generationEl.textContent = state.stats.generation;
-    creatureCountEl.textContent = state.stats.creatureCount;
-    foodCountEl.textContent = `${state.stats.foodCount}/${config.params.maxFoodCount}`;
+    elements.restarts.textContent = state.stats.restarts;
+    elements.generation.textContent = state.stats.generation;
+    elements.creatureCount.textContent = state.stats.creatureCount;
+    elements.foodCount.textContent = `${state.stats.foodCount}/${config.params.maxFoodCount}`;
 }
 
 function createCreatureMap(creatures) {
@@ -226,9 +223,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-aboutToggle.addEventListener("click", () => {
+elements.aboutToggle.addEventListener("click", () => {
     document.body.classList.toggle("about-visible");
-    aboutToggle.textContent = document.body.classList.contains("about-visible") ? "back" : "about";
+    elements.aboutToggle.textContent = document.body.classList.contains("about-visible") ? "back" : "about";
 });
 
 function getGridCoordinates(e) {
@@ -244,13 +241,11 @@ function getGridCoordinates(e) {
 }
 
 canvas.addEventListener("click", async (e) => {
-    const { x: gridX, y: gridY } = getGridCoordinates(e);
-
     try {
         const res = await fetch("/api/place-food", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ x: gridX, y: gridY }),
+            body: JSON.stringify(getGridCoordinates(e)),
         });
         const data = await res.json();
         if (!data.success) {
