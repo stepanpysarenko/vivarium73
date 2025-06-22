@@ -1,6 +1,6 @@
 # vivarium73
 
-**vivarium73** is a real-time evolution simulation where autonomous creatures search for food, avoid obstacles, and evolve over generations.
+**vivarium73** is a real-time evolutionary simulation where autonomous creatures search for food, avoid obstacles, and evolve over generations.
 
 ### Features
 - Creatures sense nearby food, obstacles, and other creatures  
