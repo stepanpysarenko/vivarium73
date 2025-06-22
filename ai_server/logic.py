@@ -48,8 +48,9 @@ def compute_vector(x, y, targets, repel=False):
     return vector_x, vector_y
 
 def compute_angle_and_magnitude(x, y, angle=0.0):
+    orientation = angle
     angle = np.arctan2(y, x)
-    rel_angle = (angle - angle + np.pi) % (2 * np.pi) - np.pi  # wrap to [-pi, pi]
+    rel_angle = (angle - orientation + np.pi) % (2 * np.pi) - np.pi
     magnitude = np.hypot(x, y)
     return rel_angle / np.pi, np.clip(magnitude / np.sqrt(2), 0, 1)
 
