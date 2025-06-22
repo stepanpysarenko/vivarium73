@@ -178,7 +178,7 @@ function isObstacleCollision(x, y) {
     return state.obstacles.some(o => isWithinRadius(o.x, o.y, x, y, CONFIG.CREATURE_INTERACTION_RADIUS ** 2));
 }
 
-function isOutOfBounds(x, y) {
+function isBeyondGrid(x, y) {
     return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
 }
 
@@ -188,9 +188,9 @@ function handleObstacleCollision(creature) {
     let prevX = creature.prev.x;
     let prevY = creature.prev.y;
 
-    if (isObstacleCollision(newX, newY) || isOutOfBounds(newX, newY)) {
-        const tryX = !isObstacleCollision(newX, prevY) && !isOutOfBounds(newX, prevY);
-        const tryY = !isObstacleCollision(prevX, newY) && !isOutOfBounds(prevX, newY);
+    if (isObstacleCollision(newX, newY) || isBeyondGrid(newX, newY)) {
+        const tryX = !isObstacleCollision(newX, prevY) && !isBeyondGrid(newX, prevY);
+        const tryY = !isObstacleCollision(prevX, newY) && !isBeyondGrid(prevX, newY);
 
         if (tryX && !tryY) {
             newY = prevY;

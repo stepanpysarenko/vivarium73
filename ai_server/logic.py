@@ -1,8 +1,5 @@
 import numpy as np
 import random
-from fastapi import FastAPI
-
-app = FastAPI()
 
 INPUT_SIZE = 16
 HIDDEN_SIZE = 9
