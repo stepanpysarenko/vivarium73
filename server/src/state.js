@@ -163,7 +163,7 @@ function applyMovement(creature, movement) {
         x: newX,
         y: newY,
         angle: newAngle,
-        newEnergy,
+        energy: newEnergy,
         prev: {
             x: creature.x,
             y: creature.y,
