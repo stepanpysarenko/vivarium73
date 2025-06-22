@@ -179,7 +179,7 @@ function isObstacleCollision(x, y) {
 }
 
 function isBeyondGrid(x, y) {
-    return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
+    return x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE;
 }
 
 function handleObstacleCollision(creature) {
