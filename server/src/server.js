@@ -2,10 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const http = require("http");
+const { Worker } = require("worker_threads");
 const WebSocket = require("../node_modules/ws");
 const CONFIG = require("./config");
-const { initState, saveState, getPublicState, getPublicParams, updateState } = require("./state");
-const { placeFood } = require("./actions");
 
 const app = express();
 app.use(cors());
@@ -16,19 +15,54 @@ app.get("/", (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: "OK" }));
-app.get('/api/config', (req, res) => res.json({ 
+let latestState = null;
+let publicParams = null;
+const pending = new Map();
+
+const worker = new Worker(path.join(__dirname, 'sim_worker.js'));
+
+worker.on('message', (msg) => {
+    if (msg.requestId && pending.has(msg.requestId)) {
+        const { resolve } = pending.get(msg.requestId);
+        pending.delete(msg.requestId);
+        return resolve(msg);
+    }
+    if (msg.type === 'ready') {
+        publicParams = msg.params;
+        latestState = msg.state;
+    } else if (msg.type === 'state') {
+        latestState = msg.state;
+        sendState(latestState);
+    }
+});
+
+worker.on('error', (err) => console.error('Worker error:', err));
+
+function sendToWorker(message) {
+    return new Promise((resolve) => {
+        const requestId = Math.random().toString(36).slice(2);
+        pending.set(requestId, { resolve });
+        worker.postMessage({ ...message, requestId });
+    });
+}
+
+app.get('/api/config', (req, res) => res.json({
     webSocketUrl: CONFIG.WEBSOCKET_URL,
     stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
-    params: getPublicParams()
+    params: publicParams
 }));
 
-app.post("/api/place-food", (req, res) => {
+app.post("/api/place-food", async (req, res) => {
     const { x, y } = req.body;
     try {
-        placeFood(x, y);
-        res.json({ success: true });
+        const result = await sendToWorker({ type: 'placeFood', x, y });
+        if (result.success) {
+            res.json({ success: true });
+        } else {
+            res.status(400).json({ error: result.error });
+        }
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -56,27 +90,10 @@ function sendState(state) {
     }
 }
 
-async function loop() {
-    while (true) {
-        const start = performance.now();
-
-        await updateState();
-        await sendState(getPublicState());
-
-        const elapsed = performance.now() - start;
-        const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
-
-        await new Promise(resolve => setTimeout(resolve, sleepTime));
-    }
-}
-
-server.listen(CONFIG.PORT, async () => {
+server.listen(CONFIG.PORT, () => {
     console.log(`Server running at http://localhost:${CONFIG.PORT}`);
-    await initState();
-    loop();
-
     if (CONFIG.STATE_SAVE_INTERVAL !== null) {
-        setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
+        setInterval(() => worker.postMessage({ type: 'save' }), CONFIG.STATE_SAVE_INTERVAL);
     }
 });
 
@@ -89,7 +106,7 @@ function gracefulShutdown() {
     });
 
     console.log("Saving data before shutdown...");
-    saveState();
+    worker.postMessage({ type: 'shutdown' });
 
     server.close(() => {
         console.log("HTTP server closed");
