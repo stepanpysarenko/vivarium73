@@ -87,7 +87,7 @@ function getVisibleObjects(objects, x, y) {
 }
 
 function getVisibleFood(creature, state) {
-    return getVisibleObjects(state.obstacles, creature.x, creature.y);
+    return getVisibleObjects(state.food, creature.x, creature.y);
 }
 
 function getVisibleCreatures(creature, state) {
