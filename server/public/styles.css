@@ -192,6 +192,13 @@ body.about-visible #canvas {
     display: none;
 }
 
+@media (max-width: 800px) {
+    #canvas {
+        border-left: none;
+        border-right: none;
+    }
+}
+
 @media (max-width: 850px) {
     .header {
         flex-direction: column;
