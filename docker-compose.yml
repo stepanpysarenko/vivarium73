@@ -1,23 +1,7 @@
 version: '3.8'
 services:
-  server:
-    build: ./server
-    env_file:
-      - .env
-    environment:
-      - PORT=3000
-      - AI_SERVER_URL=http://ai_server:8000/api 
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-    restart: always
-    depends_on:
-      ai_server:
-        condition: service_healthy
-
-  ai_server:
-    build: ./ai_server
+  nn_service:
+    build: ./services/nn_service
     expose:
       - "8000"
     restart: always
@@ -26,3 +10,24 @@ services:
       interval: 3s
       timeout: 3s
       retries: 3
+
+  web_server:
+    build: ./services/web_server
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - NN_SERVICE_URL=http://nn_service:8000/api 
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      nn_service:
+        condition: service_healthy

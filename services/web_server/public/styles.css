@@ -124,8 +124,6 @@ body,
     width: 100%;
     max-width: 800px;
     height: auto;
-    pointer-events: auto;
-    touch-action: auto;
     cursor: pointer;
     touch-action: none;
     pointer-events: auto;
