@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
 const { initCreature, getNextCreatureId } = require("./creature");
-const { getMovements, mutateWeights } = require("./ai");
+const { getMovements, mutateWeights } = require("./nn");
 const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 

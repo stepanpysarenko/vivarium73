@@ -1,5 +1,5 @@
 const CONFIG = require("./config");
-const { initWeights } = require("./ai");
+const { initWeights } = require("./nn");
 
 async function initCreature(id, x = null, y = null, weights = null, generation = 1) {
     if (!weights) {

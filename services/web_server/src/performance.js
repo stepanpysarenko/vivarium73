@@ -1,6 +1,6 @@
 const CONFIG = require("./config");
 const { initCreature, getScore, getNextCreatureId } = require("./creature");
-const { mutateWeights } = require("./ai");
+const { mutateWeights } = require("./nn");
 
 function appendTopPerformers(creature, state) {
     creature.score = getScore(creature);
