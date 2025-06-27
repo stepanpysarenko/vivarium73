@@ -1,3 +1,26 @@
+
+:root {
+    --bg-color: #f8f8f8;
+    --text-color: #333333;
+    --canvas-bg: #f8f8f8;
+    --canvas-border: #e8e8e8;
+    --stat-label-color: #c8c8c8;
+    --button-text: #c8c8c8;
+    --button-bg: #e8e8e8;
+    --button-hover-text: #333333;
+}
+
+body.dark-mode {
+    --bg-color: #202123;
+    --text-color: #ececf1;
+    --canvas-bg: #343541;
+    --canvas-border: #444654;
+    --stat-label-color: #8e8ea0;
+    --button-bg: #444654;
+    --button-text: #ececf1;
+    --button-hover-text: #ffffff;
+}
+
 html,
 body {
     height: 100%;
@@ -7,8 +30,8 @@ body {
 }
 
 body {
-    background-color: #f8f8f8;
-    color: #333333;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     font-family: 'Press Start 2P', monospace, sans-serif;
     display: flex;
     justify-content: center;
@@ -99,7 +122,7 @@ body,
 .stat-label {
     display: block;
     font-size: 10px;
-    color: #c8c8c8;
+    color: var(--stat-label-color);
     margin-bottom: 8px;
 }
 
@@ -118,8 +141,8 @@ body,
 }
 
 #canvas {
-    border: 1px solid #e8e8e8;
-    background-color: #f8f8f8;
+    border: 1px solid var(--canvas-border);
+    background-color: var(--canvas-bg);
     display: block;
     width: 100%;
     max-width: 800px;
@@ -136,7 +159,7 @@ body,
     left: 0;
     width: 100%;
     height: 100%;
-    border: 1px solid #e8e8e8;
+    border: 1px solid var(--canvas-border);
     padding: 20px 20px;
     box-sizing: border-box;
     text-align: left;
@@ -164,13 +187,14 @@ body,
     padding-left: 15px;
 }
 
-#about-toggle {
+#about-toggle,
+#theme-toggle {
     font-family: inherit;
     font-size: 10px;
-    color: #c8c8c8;
+    color: var(--button-text);
     padding: 7px 10px;
     border: none;
-    background-color: #e8e8e8;
+    background-color: var(--button-bg);
     cursor: pointer;
     min-width: 80px;
     width: auto;
@@ -178,8 +202,9 @@ body,
     touch-action: auto;
 }
 
-#about-toggle:hover {
-    color: #333333;
+#about-toggle:hover,
+#theme-toggle:hover {
+    color: var(--button-hover-text);
 }
 
 body.about-visible #about-section {

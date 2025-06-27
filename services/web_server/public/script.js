@@ -6,8 +6,15 @@ const elements = {
     generation: document.getElementById("generation"),
     creatureCount: document.getElementById("creature-count"),
     foodCount: document.getElementById("food-count"),
-    aboutToggle: document.getElementById("about-toggle")
+    aboutToggle: document.getElementById("about-toggle"),
+    themeToggle: document.getElementById("theme-toggle")
 };
+
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+}
+elements.themeToggle.textContent = document.body.classList.contains("dark-mode") ? "light" : "dark";
 
 let config;
 let socket;
@@ -226,6 +233,13 @@ if ('serviceWorker' in navigator) {
 elements.aboutToggle.addEventListener("click", () => {
     document.body.classList.toggle("about-visible");
     elements.aboutToggle.textContent = document.body.classList.contains("about-visible") ? "back" : "about";
+});
+
+elements.themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    const dark = document.body.classList.contains("dark-mode");
+    elements.themeToggle.textContent = dark ? "light" : "dark";
+    localStorage.setItem("theme", dark ? "dark" : "light");
 });
 
 function getGridCoordinates(e) {
