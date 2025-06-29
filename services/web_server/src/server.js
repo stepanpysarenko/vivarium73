@@ -104,7 +104,3 @@ process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
 module.exports = { app, startServer };
-
-if (require.main === module) {
-    startServer();
-}
