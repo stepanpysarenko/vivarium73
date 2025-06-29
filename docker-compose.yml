@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   nn_service:
     build: ./services/nn_service

@@ -1,4 +1,4 @@
-name: Deploy to Prod
+name: Deploy
 
 on:
   push:
@@ -10,60 +10,96 @@ on:
       - 'docs/**'
 
 jobs:
-  deploy:
+  test-web-server:
+    name: Test Web Server
     runs-on: ubuntu-latest
-
-    environment: prod
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Clean remote directory (preserve /data)
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ vars.HOST }}
-        username: root
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          find /root/vivarium73 -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Copy code to server via SSH
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ vars.HOST }}
-        username: root
-        key: ${{ secrets.SSH_KEY }}
-        source: "."
-        target: "/root/vivarium73"
+      - name: Install dependencies
+        run: cd services/web_server && npm ci
 
-    - name: Build and start containers
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ vars.HOST }}
-        username: root
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          cd /root/vivarium73
-          echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > .env
-          docker-compose down --volumes --remove-orphans
-          docker-compose build
-          docker-compose up -d
+      - name: Run tests
+        run: cd services/web_server && npm run test
 
-    - name: Health check
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ vars.HOST }}
-        username: root
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          for i in {1..3}; do
-            if curl -sf http://localhost:3000/api/health >/dev/null; then
-              echo "Health check passed"
-              exit 0
-            fi
-            echo "Waiting for server..."
-            sleep 3
-          done
-          echo "Health check failed"
-          exit 1
+  test-nn-service:
+    name: Test NN Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install -r services/nn_service/requirements.txt
+
+      - name: Run tests
+        run: cd services/nn_service && pytest
+
+  deploy:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    needs: [test-web-server, test-nn-service]
+    environment: prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Clean remote directory (preserve /data)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            find /root/vivarium73 -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
+
+      - name: Copy code to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: "."
+          target: "/root/vivarium73"
+
+      - name: Build and start containers
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /root/vivarium73
+            echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > .env
+            docker-compose down --volumes --remove-orphans
+            docker-compose build
+            docker-compose up -d
+
+      - name: Health check
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            for i in {1..3}; do
+              if curl -sf http://localhost:3000/api/health >/dev/null; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Waiting for server..."
+              sleep 3
+            done
+            echo "Health check failed"
+            exit 1
