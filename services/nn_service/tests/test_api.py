@@ -65,3 +65,4 @@ def test_think_returns_movements():
     assert "movements" in data
     assert isinstance(data["movements"], list)
     assert len(data["movements"]) == 1
+    
