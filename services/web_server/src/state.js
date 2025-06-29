@@ -180,7 +180,7 @@ function isObstacleCollision(x, y) {
 }
 
 function isBeyondGrid(x, y) {
-    return x < 0 || x >= CONFIG.GRID_SIZE || y < 0 || y >= CONFIG.GRID_SIZE;
+    return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
 }
 
 function handleObstacleCollision(creature) {
@@ -211,8 +211,8 @@ function handleObstacleCollision(creature) {
         creature._collisionOccurred = true;
     }
 
-    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE, newX));
-    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE, newY));
+    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
+    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
 
     return creature;
 }
