@@ -34,9 +34,6 @@ class State(BaseModel):
     max_turn_angle: float = Field(..., alias="maxTurnAngle")
     max_speed: float = Field(..., alias="maxSpeed")
 
-    class Config:
-        allow_population_by_field_name = True
-
 class MutateRequest(BaseModel):
     weights: List[float]
 
