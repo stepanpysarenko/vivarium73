@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: "OK" }));
-app.get('/api/config', (req, res) => res.json({ 
+app.get('/api/config', (req, res) => res.json({
     webSocketUrl: CONFIG.WEBSOCKET_URL,
     stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
     params: getPublicParams()
@@ -56,17 +56,24 @@ function sendState(state) {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function loop() {
     while (true) {
-        const start = performance.now();
+        try {
+            const start = performance.now();
 
-        await updateState();
-        await sendState(getPublicState());
+            await updateState();
+            await sendState(getPublicState());
 
-        const elapsed = performance.now() - start;
-        const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
-
-        await new Promise(resolve => setTimeout(resolve, sleepTime));
+            const elapsed = performance.now() - start;
+            const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
+            await sleep(sleepTime);
+        } catch (err) {
+            console.error('Error in loop:', err);
+        }
     }
 }
 
