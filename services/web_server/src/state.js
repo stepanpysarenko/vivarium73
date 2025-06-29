@@ -211,8 +211,8 @@ function handleObstacleCollision(creature) {
         creature._collisionOccurred = true;
     }
 
-    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
-    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
+    creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE, newX));
+    creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE, newY));
 
     return creature;
 }
