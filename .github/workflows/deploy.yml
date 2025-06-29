@@ -44,7 +44,10 @@ jobs:
         run: pip install -r services/nn_service/requirements.txt
 
       - name: Run tests
-        run: cd services/nn_service && pytest
+        run: pytest
+        working-directory: services/nn_service
+        env:
+          PYTHONPATH: services/nn_service
 
   deploy:
     name: Deploy to Prod
