@@ -70,15 +70,17 @@ async function loop() {
     }
 }
 
-server.listen(CONFIG.PORT, async () => {
-    console.log(`Server running at http://localhost:${CONFIG.PORT}`);
-    await initState();
-    loop();
+function startServer(port = CONFIG.PORT) {
+    server.listen(port, async () => {
+        console.log(`Server running at http://localhost:${port}`);
+        await initState();
+        loop();
 
-    if (CONFIG.STATE_SAVE_INTERVAL !== null) {
-        setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
-    }
-});
+        if (CONFIG.STATE_SAVE_INTERVAL !== null) {
+            setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
+        }
+    });
+}
 
 function gracefulShutdown() {
     console.log("Shutting down gracefully...");
@@ -100,3 +102,9 @@ function gracefulShutdown() {
 
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
+
+module.exports = { app, startServer };
+
+if (require.main === module) {
+    startServer();
+}
