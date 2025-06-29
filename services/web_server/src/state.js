@@ -12,10 +12,6 @@ async function initState() {
     state = loadState();
     if (!state) {
         state = {
-            creatures: [],
-            food: [],
-            obstacles: getObstacles(),
-            borderObstacles: getBorderObstacles(),
             params: {
                 gridSize: CONFIG.GRID_SIZE,
                 maxFoodCount: CONFIG.FOOD_MAX_COUNT,
@@ -31,6 +27,10 @@ async function initState() {
                 foodCount: 0
             },
             lastCreatureId: 0,
+            creatures: [],
+            food: [],
+            obstacles: getObstacles(),
+            borderObstacles: getBorderObstacles(),
             topPerformers: []
         };
 
@@ -79,6 +79,12 @@ function round2(x) {
 
 function getPublicState() {
     return {
+        stats: {
+            restarts: state.stats.restarts,
+            generation: state.stats.generation,
+            creatureCount: state.stats.creatureCount,
+            foodCount: state.stats.foodCount
+        },
         creatures: state.creatures.map(c => ({
             id: c.id,
             x: round2(c.x),
@@ -88,13 +94,7 @@ function getPublicState() {
             flashing: c.updatesToFlash > 0
         })),
         food: state.food,
-        obstacles: state.obstacles,
-        stats: {
-            restarts: state.stats.restarts,
-            generation: state.stats.generation,
-            creatureCount: state.stats.creatureCount,
-            foodCount: state.stats.foodCount
-        }
+        obstacles: state.obstacles
     };
 }
 
@@ -122,6 +122,7 @@ async function updateState() {
     for (const creature of state.creatures) {
         if (creature._collisionOccurred) {
             creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
+            creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
         } else {
             creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
         }
@@ -281,7 +282,7 @@ async function handleLifecycle() {
             continue;
         }
 
-        creature.stats.turnsSurvived++;
+        creature.stats.updatesSurvived++;
         survivors.push(creature);
     }
 

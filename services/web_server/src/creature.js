@@ -27,7 +27,7 @@ async function initCreature(id, x = null, y = null, weights = null, generation =
         updatesToFlash: 0,
         weights,
         stats: {
-            turnsSurvived: 0,
+            updatesSurvived: 0,
             totalFoodCollected: 0
         }
     };
@@ -36,7 +36,7 @@ async function initCreature(id, x = null, y = null, weights = null, generation =
 }
 
 function getScore(creature) {
-    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.turnsSurvived);
+    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.updatesSurvived);
 }
 
 function getNextCreatureId(state) {
