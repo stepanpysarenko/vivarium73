@@ -90,7 +90,7 @@ function startServer(port = CONFIG.PORT) {
 }
 
 function gracefulShutdown() {
-    console.log("Shutting down gracefully...");
+    console.log("Shutting down...");
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.close();
@@ -102,7 +102,7 @@ function gracefulShutdown() {
 
     server.close(() => {
         console.log("HTTP server closed");
-        console.log("Shutting down...");
+        console.log("Exiting...");
         process.exit(0);
     });
 }
