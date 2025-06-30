@@ -30,14 +30,14 @@ async function restartPopulation(state) {
 
     for (let i = 0; i < topPerformersCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const clone = await initCreature(getNextCreatureId(state), null, null, parent.weights, parent.generation + 1);
+        const clone = await initCreature(getNextCreatureId(state), null, null, null, parent.weights, parent.generation + 1);
         state.creatures.push(clone);
     }
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
         const mutated = await mutateWeights(parent.weights);
-        const offspring = await initCreature(getNextCreatureId(state), null, null, mutated, parent.generation + 1);
+        const offspring = await initCreature(getNextCreatureId(state), null, null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }
 

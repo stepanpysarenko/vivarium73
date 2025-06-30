@@ -77,6 +77,10 @@ function round2(x) {
     return Math.round(x * 100) / 100;
 }
 
+function wrapAngle(angle) {
+    return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;   
+}
+
 function getPublicState() {
     return {
         stats: {
@@ -122,7 +126,6 @@ async function updateState() {
     for (const creature of state.creatures) {
         if (creature._collisionOccurred) {
             creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
-            creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
         } else {
             creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
         }
@@ -141,9 +144,7 @@ async function updateState() {
 }
 
 function applyMovement(creature, movement) {
-    let newAngle = creature.angle + movement.angleDelta;
-    newAngle = ((newAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
-
+    let newAngle = wrapAngle(creature.angle + movement.angleDelta);
     let moveX = movement.speed * Math.cos(newAngle);
     let moveY = movement.speed * Math.sin(newAngle);
     let newX = creature.x + moveX;
@@ -209,6 +210,7 @@ function handleObstacleCollision(creature) {
         }
 
         creature._collisionOccurred = true;
+        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
     }
 
     creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
@@ -237,6 +239,7 @@ function handleCreatureCollision(creature, creatureMap) {
                 const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
                 if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
                     creature._collisionOccurred = true;
+                    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
                     return creature;
                 }
             }
@@ -272,7 +275,8 @@ async function handleLifecycle() {
                 ? await mutateWeights(creature.weights)
                 : creature.weights;
 
-            const offspring = await initCreature(getNextCreatureId(state), creature.x, creature.y, weights, creature.generation + 1);
+            const offsspringAngle = wrapAngle(creature.angle + Math.PI);
+            const offspring = await initCreature(getNextCreatureId(state), creature.x, creature.y, offsspringAngle, weights, creature.generation + 1);
             offsprings.push(offspring);
 
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
