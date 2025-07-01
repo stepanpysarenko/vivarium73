@@ -139,6 +139,14 @@ function createCreatureMap(creatures) {
     }]));
 }
 
+function showLoader() {
+    document.body.classList.add("loading");
+}
+
+function hideLoader() {
+    document.body.classList.remove("loading"); 
+}
+
 function start() {
     if (socket) {
         if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
@@ -158,6 +166,7 @@ function start() {
     socket.onopen = () => {
         console.log("Connected to WS server");
         resetAnimationState();
+        hideLoader();
     };
 
     socket.onmessage = event => {
@@ -167,6 +176,7 @@ function start() {
 
     socket.onclose = () => {
         console.log("WS closed");
+        showLoader();
         reconnect();
     };
 
