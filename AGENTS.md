@@ -31,7 +31,7 @@ pytest
 - Keep commit messages and PR descriptions concise and mention affected services.
 - Always ensure the file ends with a single empty line (newline character) at the end of file.
 
-## [TODO]
+## To add
 
 - High-level architecture overview
 - NN overview

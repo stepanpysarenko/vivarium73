@@ -1,6 +1,6 @@
 const CONFIG = require("./config");
 
-const visibilityR2 = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2; 
+const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2; 
 
 function isCellOccupied(x, y, state) {
     return state.food.some(f => f.x === x && f.y === y) ||
@@ -83,7 +83,7 @@ function isWithinRadius(x1, y1, x2, y2, r2) {
 }
 
 function getVisibleObjects(objects, x, y) {
-    return objects.filter(o => isWithinRadius(o.x, o.y, x, y, visibilityR2));
+    return objects.filter(o => isWithinRadius(o.x, o.y, x, y, r2Visibility));
 }
 
 function getVisibleFood(creature, state) {
@@ -97,7 +97,7 @@ function getVisibleCreatures(creature, state) {
 function getVisibleObstacles(creature, state) {
     const { x: cx, y: cy } = creature;
     const visible = getVisibleObjects(state.obstacles, cx, cy);
-    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, visibilityR2)));
+    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, r2Visibility)));
     return visible;
 }
 

@@ -6,6 +6,8 @@ const { getMovements, mutateWeights } = require("./nn");
 const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 
+const r2Interaction = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
+
 var state = null;
 
 async function initState() {
@@ -78,7 +80,7 @@ function round2(x) {
 }
 
 function wrapAngle(angle) {
-    return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;   
+    return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
 }
 
 function getPublicState() {
@@ -177,11 +179,11 @@ function applyMovement(creature, movement) {
 }
 
 function isObstacleCollision(x, y) {
-    return state.obstacles.some(o => isWithinRadius(o.x, o.y, x, y, CONFIG.CREATURE_INTERACTION_RADIUS ** 2));
+    return state.obstacles.some(o => isWithinRadius(o.x, o.y, x, y, r2Interaction));
 }
 
 function isBeyondGrid(x, y) {
-    return x < 0 || x >= CONFIG.GRID_SIZE - 1 || y < 0 || y >= CONFIG.GRID_SIZE - 1;
+    return x < 0 || x > CONFIG.GRID_SIZE - 1 || y < 0 || y > CONFIG.GRID_SIZE - 1;
 }
 
 function handleObstacleCollision(creature) {
@@ -249,11 +251,10 @@ function handleCreatureCollision(creature, creatureMap) {
 }
 
 function handleEating(creature) {
-    const rSquared = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
     const foodIndex = state.food.findIndex(f => {
         const dx = f.x - creature.x;
         const dy = f.y - creature.y;
-        return dx * dx + dy * dy < rSquared;
+        return dx * dx + dy * dy < r2Interaction;
     });
 
     if (foodIndex !== -1) {
@@ -302,15 +303,20 @@ function updateStats() {
 }
 
 function addFood(x, y) {
-    if (isCellOccupied(x, y, state)) return false;
+    if (isBeyondGrid(x, y)) {
+        throw new Error("Invalid coordinates");
+    }
+
+    if (state.food.length >= CONFIG.FOOD_MAX_COUNT) {
+        throw new Error("Max food count reached");
+    }
+
+    if (isCellOccupied(x, y, state)) {
+        throw new Error("Cell is occupied");
+    }
 
     state.food.push({ x, y });
     state.stats.foodCount = state.food.length;
-    return true;
-}
-
-function getFoodCount() {
-    return state.food.length;
 }
 
 module.exports = {
@@ -319,6 +325,5 @@ module.exports = {
     getPublicState,
     getPublicParams,
     updateState,
-    addFood,
-    getFoodCount
+    addFood
 };

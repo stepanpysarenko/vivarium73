@@ -1,24 +1,41 @@
 const request = require('supertest');
-const actions = require('../../src/actions');
 const { app } = require('../../src/server');
 
-jest.mock('../../src/actions');
-
 describe('POST /api/place-food', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('responds with success when action succeeds', async () => {
-    actions.placeFood.mockImplementation(() => {});
-    const res = await request(app).post('/api/place-food').send({ x: 1, y: 2 });
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ success: true });
-    expect(actions.placeFood).toHaveBeenCalledWith(1, 2);
+  beforeEach(() => {
+    require('../../src/state').initState();
   });
 
-  it('responds with error when action throws', async () => {
-    actions.placeFood.mockImplementation(() => { throw new Error('bad'); });
-    const res = await request(app).post('/api/place-food').send({ x: 1, y: 2 });
+  it('responds with success when valid input is provided', async () => {
+    const res = await request(app)
+      .post('/api/place-food')
+      .send({ x: 1, y: 2 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('responds with error when x or y is invalid', async () => {
+    const res = await request(app)
+      .post('/api/place-food')
+      .send({ x: 'bad', y: 2 });
+
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ error: 'bad' });
+    expect(res.body).toEqual({
+      success: false, 
+      error: 'x and y must be numbers'
+    });
+  });
+
+  it('responds with error when addFood throws (e.g., out of bounds)', async () => {
+    const res = await request(app)
+      .post('/api/place-food')
+      .send({ x: -1, y: -1 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      success: false,
+      error: expect.any(String)
+    });
   });
 });

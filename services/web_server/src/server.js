@@ -4,8 +4,7 @@ const path = require("path");
 const http = require("http");
 const WebSocket = require("ws");
 const CONFIG = require("./config");
-const { initState, saveState, getPublicState, getPublicParams, updateState } = require("./state");
-const { placeFood } = require("./actions");
+const { initState, saveState, getPublicState, getPublicParams, updateState, addFood } = require("./state");
 
 const app = express();
 app.use(cors());
@@ -16,6 +15,7 @@ app.get("/", (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: "OK" }));
+
 app.get('/api/config', (req, res) => res.json({
     webSocketUrl: CONFIG.WEBSOCKET_URL,
     stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
@@ -24,11 +24,15 @@ app.get('/api/config', (req, res) => res.json({
 
 app.post("/api/place-food", (req, res) => {
     const { x, y } = req.body;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return res.status(400).json({ success: false, error: "x and y must be numbers" });
+    }
+
     try {
-        placeFood(x, y);
+        addFood(x, y);
         res.json({ success: true });
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        res.status(400).json({ success: false, error: err.message });
     }
 });
 
