@@ -1,9 +1,20 @@
+jest.mock('../../src/state', () => ({
+  initState: jest.fn().mockResolvedValue(),
+  saveState: jest.fn(),
+  getPublicState: jest.fn(),
+  getPublicParams: jest.fn(),
+  updateState: jest.fn(),
+  addFood: jest.fn()
+}));
+
 const request = require('supertest');
 const { app } = require('../../src/server');
+const state = require('../../src/state');
 
 describe('POST /api/place-food', () => {
-  beforeEach(() => {
-    require('../../src/state').initState();
+  beforeEach(async () => {
+    state.addFood.mockReset();
+    await state.initState();
   });
 
   it('responds with success when valid input is provided', async () => {
@@ -13,21 +24,24 @@ describe('POST /api/place-food', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
+    expect(state.addFood).toHaveBeenCalledWith(1, 2);
   });
 
   it('responds with error when x or y is invalid', async () => {
+    state.addFood.mockImplementationOnce(() => { throw new Error('bad'); });
     const res = await request(app)
       .post('/api/place-food')
       .send({ x: 'bad', y: 2 });
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
-      success: false, 
+      success: false,
       error: 'x and y must be numbers'
     });
   });
 
-  it('responds with error when addFood throws (e.g., out of bounds)', async () => {
+  it('responds with error when coordinates out of grid', async () => {
+    state.addFood.mockImplementationOnce(() => { throw new Error('bad'); });
     const res = await request(app)
       .post('/api/place-food')
       .send({ x: -1, y: -1 });
