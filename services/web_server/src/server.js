@@ -93,15 +93,15 @@ function startServer(port = CONFIG.PORT) {
     });
 }
 
-function gracefulShutdown() {
-    console.log("Shutting down...");
+function shutdown() {
+    console.log("Disconnecting clients...");
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.close();
         }
     });
 
-    console.log("Saving data before shutdown...");
+    console.log("Saving data....");
     saveState();
 
     server.close(() => {
@@ -111,7 +111,7 @@ function gracefulShutdown() {
     });
 }
 
-process.on("SIGINT", gracefulShutdown);
-process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 module.exports = { app, startServer };

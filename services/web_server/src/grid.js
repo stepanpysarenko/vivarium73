@@ -1,10 +1,10 @@
 const CONFIG = require("./config");
 
-const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2; 
+const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
 
 function isCellOccupied(x, y, state) {
-    return state.food.some(f => f.x === x && f.y === y) ||
-        state.obstacles.some(o => o.x === x && o.y === y);
+    return state.food.some(f => f.x === x && f.y === y)
+        || state.obstacles.some(o => o.x === x && o.y === y);
 }
 
 function getTotalEnergy(state) {
@@ -13,28 +13,26 @@ function getTotalEnergy(state) {
     return creatureEnergy + foodEnergy;
 }
 
-function initFood(state) {
-    let food = null;
-    while (!food || isCellOccupied(food.x, food.y, state)) {
-        food = {
-            x: Math.floor(Math.random() * (CONFIG.GRID_SIZE)),
-            y: Math.floor(Math.random() * (CONFIG.GRID_SIZE))
+function getRandomEmptyCell(state) {
+    const maxAttempts = CONFIG.GRID_SIZE ** 2 - state.food.length - state.obstacles.length;
+    let cell = null;
+    let attempts = 0;
+    do {
+        cell = {
+            x: Math.floor(Math.random() * CONFIG.GRID_SIZE),
+            y: Math.floor(Math.random() * CONFIG.GRID_SIZE)
         };
-    }
-    return food;
+        attempts++;
+    } while (isCellOccupied(cell.x, cell.y, state) && attempts < maxAttempts);
+
+    return isCellOccupied(cell.x, cell.y, state) ? null : cell;
 }
 
 function updateFood(state) {
-    let attempts = 0;
-    const maxAttempts = Math.pow(CONFIG.GRID_SIZE, 2) - state.food.length - state.obstacles.length;
-
-    while (
-        getTotalEnergy(state) < CONFIG.GRID_TARGET_ENERGY
-        && state.food.length < CONFIG.FOOD_MAX_COUNT
-        && attempts < maxAttempts
-    ) {
-        state.food.push(initFood(state));
-        attempts++;
+    while (getTotalEnergy(state) < CONFIG.GRID_TARGET_ENERGY && state.food.length < CONFIG.FOOD_MAX_COUNT) {
+        const cell = getRandomEmptyCell(state);
+        if (!cell) break;
+        state.food.push(cell);
     }
 }
 
@@ -104,7 +102,7 @@ function getVisibleObstacles(creature, state) {
 module.exports = {
     isCellOccupied,
     getTotalEnergy,
-    initFood,
+    getRandomEmptyCell,
     updateFood,
     getObstacles,
     getBorderObstacles,

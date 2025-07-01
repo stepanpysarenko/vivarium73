@@ -1,17 +1,25 @@
 const CONFIG = require("./config");
 const { initWeights } = require("./nn");
+const { getRandomEmptyCell } = require("./grid");
 
-async function initCreature(id, x = null, y = null, angle = 0.0, weights = null, generation = 1) {
+async function initCreature(state, x = null, y = null, angle = 0.0, weights = null, generation = 1) {
+    if (x === null || y === null) {
+        const cell = getRandomEmptyCell(state);
+        x = cell.x;
+        y = cell.y;
+    } else {
+        x = Math.floor(Math.random() * CONFIG.GRID_SIZE);
+        y = Math.floor(Math.random() * CONFIG.GRID_SIZE);
+    }
+
+    angle = angle !== null ? angle : (Math.random() * 2 * Math.PI) - Math.PI;
+
     if (!weights) {
         weights = await initWeights();
     }
 
-    x = x !== null ? x : Math.floor(Math.random() * CONFIG.GRID_SIZE);
-    y = y !== null ? y : Math.floor(Math.random() * CONFIG.GRID_SIZE);
-    angle = angle !== null ? angle : (Math.random() * 2 * Math.PI) - Math.PI;
-
     var creature = {
-        id,
+        id: getNextCreatureId(state),
         x,
         y,
         angle,
@@ -47,6 +55,5 @@ function getNextCreatureId(state) {
 
 module.exports = {
     initCreature,
-    getScore,
-    getNextCreatureId
+    getScore
 };

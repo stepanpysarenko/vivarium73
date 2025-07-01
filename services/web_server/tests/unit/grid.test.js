@@ -1,4 +1,4 @@
-const { isCellOccupied, isWithinRadius } = require('../../src/grid');
+const { isCellOccupied, isWithinRadius, getRandomEmptyCell } = require('../../src/grid');
 
 describe('isCellOccupied', () => {
   it('returns true when food occupies cell', () => {
@@ -19,5 +19,14 @@ describe('isWithinRadius', () => {
 
   it('false when point outside radius', () => {
     expect(isWithinRadius(0, 0, 3, 4, 9)).toBe(false);
+  });
+});
+
+describe('getRandomEmptyCell', () => {
+  it('never returns a cell occupied by obstacles', () => {
+    const state = { food: [], obstacles: [{ x: 0, y: 0 }] };
+    const { x, y } = getRandomEmptyCell(state);
+    expect(x).not.toBe(0);
+    expect(y).not.toBe(0);
   });
 });
