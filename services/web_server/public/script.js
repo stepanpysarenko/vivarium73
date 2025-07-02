@@ -21,6 +21,18 @@ let lastUpdateTime;
 let scale;
 let halfScale;
 
+function isLoading() {
+    return document.body.classList.contains("loading");
+}
+
+function showLoader() {
+    document.body.classList.add("loading");
+}
+
+function hideLoader() {
+    document.body.classList.remove("loading");
+}
+
 function resetAnimationState() {
     state = null;
     nextState = null;
@@ -100,6 +112,8 @@ function draw() {
             prevMap = createCreatureMap(nextState.creatures);
         }
 
+        // if (isLoading() && state) hideLoader();
+
         if (lastUpdateTime !== null) {
             const interval = nextState.timestamp - lastUpdateTime;
             estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
@@ -139,14 +153,6 @@ function createCreatureMap(creatures) {
     }]));
 }
 
-function showLoader() {
-    document.body.classList.add("loading");
-}
-
-function hideLoader() {
-    document.body.classList.remove("loading"); 
-}
-
 function start() {
     if (socket) {
         if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
@@ -166,7 +172,6 @@ function start() {
     socket.onopen = () => {
         console.log("Connected to WS server");
         resetAnimationState();
-        hideLoader();
     };
 
     socket.onmessage = event => {

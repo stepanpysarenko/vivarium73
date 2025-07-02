@@ -149,19 +149,19 @@ body,
     content: "";
     width: 50px;
     height: 50px;
-    border: 5px solid var(--color-text-muted);
-    border-top: 5px solid var(--color-text);
-    border-radius: 50%;
-    animation: spin 2s linear infinite;
+    background-color: var(--color-accent);
+    animation: spin-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes spin {
+@keyframes spin-pulse {
     0% {
-        transform: rotate(0deg);
+        transform: scale(0.8) rotate(0deg);
     }
-
+    50% {
+        transform: scale(1.2) rotate(360deg);
+    }
     100% {
-        transform: rotate(360deg);
+        transform: scale(0.8) rotate(360deg);
     }
 }
 

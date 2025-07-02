@@ -303,12 +303,12 @@ function updateStats() {
 }
 
 function addFood(x, y) {
-    if (isBeyondGrid(x, y)) {
-        throw new Error("Invalid coordinates");
-    }
-
     if (state.food.length >= CONFIG.FOOD_MAX_COUNT) {
         throw new Error("Max food count reached");
+    }
+    
+    if (isBeyondGrid(x, y)) {
+        throw new Error("Invalid coordinates");
     }
 
     if (isCellOccupied(x, y, state)) {
