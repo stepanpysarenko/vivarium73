@@ -112,7 +112,7 @@ function draw() {
             prevMap = createCreatureMap(nextState.creatures);
         }
 
-        // if (isLoading() && state) hideLoader();
+        if (isLoading() && state) hideLoader();
 
         if (lastUpdateTime !== null) {
             const interval = nextState.timestamp - lastUpdateTime;
