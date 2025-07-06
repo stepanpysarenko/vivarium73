@@ -21,6 +21,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    min-height: 100vh;
     min-height: 100dvh;
     overflow: hidden;
 }
@@ -114,6 +115,8 @@ body,
 .stat-value {
     font-size: 14px;
     font-weight: normal;
+    min-height: 1em;
+    display: inline-block;
 }
 
 #canvas,
@@ -157,9 +160,11 @@ body,
     0% {
         transform: scale(0.8) rotate(0deg);
     }
+
     50% {
         transform: scale(1.2) rotate(360deg);
     }
+
     100% {
         transform: scale(0.8) rotate(360deg);
     }
