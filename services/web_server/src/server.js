@@ -47,7 +47,7 @@ wss.on("connection", (ws) => {
     });
 });
 
-function sendState(state) {
+function sendUpdate(state) {
     const data = JSON.stringify(state);
     for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {
@@ -64,19 +64,29 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function handleStateUpdate() {
+    const start = performance.now();
+
+    await updateState();
+    await sendUpdate(getPublicState());
+
+    const elapsed = performance.now() - start;
+    const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
+    await sleep(sleepTime);
+}
+
 async function loop() {
+    let retries = 0;
     while (true) {
         try {
-            const start = performance.now();
-
-            await updateState();
-            await sendState(getPublicState());
-
-            const elapsed = performance.now() - start;
-            const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
-            await sleep(sleepTime);
+            await handleStateUpdate();
         } catch (err) {
-            console.error('Error in loop:', err);
+            console.error('Critical error in state update loop:', err);
+            retries++;
+            if (retries >= CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT) {
+                console.log(`Retry limit reached (${CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT}). Exiting...`);
+                process.exit(1);
+            }
         }
     }
 }
@@ -87,7 +97,7 @@ function startServer(port = CONFIG.PORT) {
         await initState();
         loop();
 
-        if (CONFIG.STATE_SAVE_INTERVAL !== null) {
+        if (CONFIG.STATE_SAVE_INTERVAL !== null && CONFIG.STATE_SAVE_PATH !== null) {
             setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
         }
     });
