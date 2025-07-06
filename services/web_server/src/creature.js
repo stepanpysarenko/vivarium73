@@ -7,11 +7,7 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
         const cell = getRandomEmptyCell(state);
         x = cell.x;
         y = cell.y;
-    } else {
-        x = Math.floor(Math.random() * CONFIG.GRID_SIZE);
-        y = Math.floor(Math.random() * CONFIG.GRID_SIZE);
-    }
-
+    } 
     angle = angle !== null ? angle : (Math.random() * 2 * Math.PI) - Math.PI;
 
     if (!weights) {
