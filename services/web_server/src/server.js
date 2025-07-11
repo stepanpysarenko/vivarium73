@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("ws");
+const { performance } = require("perf_hooks");
 const CONFIG = require("./config");
 const { initState, saveState, getPublicState, getPublicParams, updateState, addFood } = require("./state");
 

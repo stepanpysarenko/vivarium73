@@ -5,10 +5,12 @@ import logic as logic
 
 client = TestClient(app)
 
+
 def test_healthcheck():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "OK"}
+
 
 def test_init_weights_length():
     response = client.get("/api/weights/init")
@@ -17,6 +19,7 @@ def test_init_weights_length():
     expected_len = logic.HIDDEN_SIZE * logic.INPUT_SIZE + logic.OUTPUT_SIZE * logic.HIDDEN_SIZE
     assert "weights" in data
     assert len(data["weights"]) == expected_len
+
 
 def test_mutate_weights_changes_values():
     weight_count = logic.HIDDEN_SIZE * logic.INPUT_SIZE + logic.OUTPUT_SIZE * logic.HIDDEN_SIZE
@@ -27,6 +30,7 @@ def test_mutate_weights_changes_values():
     assert "weights" in data
     assert len(data["weights"]) == weight_count
     assert any(w != 0.0 for w in data["weights"])
+
 
 def test_think_returns_movements():
     weight_count = logic.HIDDEN_SIZE * logic.INPUT_SIZE + logic.OUTPUT_SIZE * logic.HIDDEN_SIZE
@@ -65,4 +69,5 @@ def test_think_returns_movements():
     assert "movements" in data
     assert isinstance(data["movements"], list)
     assert len(data["movements"]) == 1
-    
+    assert "angleDelta" in data["movements"][0]
+    assert "speed" in data["movements"][0]
