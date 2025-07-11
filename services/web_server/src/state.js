@@ -276,8 +276,8 @@ async function handleLifecycle() {
                 ? await mutateWeights(creature.weights)
                 : creature.weights;
 
-            const offsspringAngle = wrapAngle(creature.angle + Math.PI);
-            const offspring = await initCreature(state, creature.x, creature.y, offsspringAngle, weights, creature.generation + 1);
+            const offspringAngle = wrapAngle(creature.angle + Math.PI);
+            const offspring = await initCreature(state, creature.x, creature.y, offspringAngle, weights, creature.generation + 1);
             offsprings.push(offspring);
 
             creature.energy = CONFIG.CREATURE_MAX_ENERGY - CONFIG.CREATURE_REPRODUCTION_ENERGY_COST;
