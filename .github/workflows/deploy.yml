@@ -85,8 +85,8 @@ jobs:
           script: |
             cd /root/vivarium73
             echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > ./.env
-            sed -i "s|__CANONICAL_URL__|${{ vars.CANONICAL_URL }}|g" ./web_server/public/index.html
-            echo "${{ vars.CANONICAL_URL }}" > ./web_server/public/sitemap.txt
+            sed -i "s|__CANONICAL_URL__|${{ vars.CANONICAL_URL }}|g" ./services/web_server/public/index.html
+            echo "${{ vars.CANONICAL_URL }}" > ./services/web_server/public/sitemap.txt
             docker-compose down --volumes --remove-orphans
             docker-compose build
             docker-compose up -d
