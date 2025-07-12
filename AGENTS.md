@@ -7,18 +7,24 @@ This repository hosts two main services:
 ## Testing
 Run all tests before committing changes.
 
-### Web server
+### Testing environment setup script
 ```bash
+#!/bin/bash
+# Prepare dependencies for tests (assumes Python 3.11 and Node.js 20 are installed)
+
+set -e
+
+# ---- Python (NN service) ----
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r services/nn_service/requirements.txt
+deactivate
+
+# ---- Node.js (Web server) ----
 cd services/web_server
 npm ci
-npm run test
-```
-
-### Neural network service
-```bash
-cd services/nn_service
-pip install -r requirements.txt
-pytest
+cd -
 ```
 
 ## Environment variables
