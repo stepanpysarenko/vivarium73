@@ -40,11 +40,11 @@ async function getMovements(state) {
                 obstacles: getVisibleObstacles(c, state),
                 creatures: getVisibleCreatures(c, state)
             })),
-            gridSize: state.params.gridSize,
-            visibilityRadius: state.params.visibilityRadius,
-            maxEnergy: state.params.maxEnergy,
-            maxTurnAngle: state.params.maxTurnAngle,
-            maxSpeed: state.params.maxSpeed
+            gridSize: CONFIG.GRID_SIZE,
+            visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
+            maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
+            maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RAD,
+            maxSpeed: CONFIG.CREATURE_MAX_SPEED 
         });
         return response.data.movements;
     } catch (err) {

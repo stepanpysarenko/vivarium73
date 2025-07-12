@@ -14,14 +14,10 @@ async function initState() {
     state = loadState();
     if (!state) {
         state = {
-            params: {
-                gridSize: CONFIG.GRID_SIZE,
-                maxFoodCount: CONFIG.FOOD_MAX_COUNT,
-                maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
-                visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
-                maxSpeed: CONFIG.CREATURE_MAX_SPEED,
-                maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE / 180 * Math.PI
-            },
+            creatures: [],
+            food: [],
+            obstacles: getObstacles(),
+            borderObstacles: getBorderObstacles(),
             stats: {
                 restarts: 0,
                 generation: 1,
@@ -29,10 +25,6 @@ async function initState() {
                 foodCount: 0
             },
             lastCreatureId: 0,
-            creatures: [],
-            food: [],
-            obstacles: getObstacles(),
-            borderObstacles: getBorderObstacles(),
             topPerformers: []
         };
 
@@ -104,14 +96,6 @@ function getPublicState() {
     };
 }
 
-function getPublicParams() {
-    return {
-        gridSize: state.params.gridSize,
-        maxFoodCount: state.params.maxFoodCount,
-        maxEnergy: state.params.maxEnergy
-    };
-}
-
 async function updateState() {
     const movements = await getMovements(state);
     for (let i = 0; i < state.creatures.length; i++) {
@@ -153,7 +137,7 @@ function applyMovement(creature, movement) {
     let newY = creature.y + moveY;
 
     const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
-    const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE;
+    const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RAD;
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
         + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
@@ -306,7 +290,7 @@ function addFood(x, y) {
     if (state.food.length >= CONFIG.FOOD_MAX_COUNT) {
         throw new Error("Max food count reached");
     }
-    
+
     if (isBeyondGrid(x, y)) {
         throw new Error("Invalid coordinates");
     }
@@ -323,7 +307,6 @@ module.exports = {
     initState,
     saveState,
     getPublicState,
-    getPublicParams,
     updateState,
     addFood
 };

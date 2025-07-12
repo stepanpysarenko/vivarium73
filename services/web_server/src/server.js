@@ -5,7 +5,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const { performance } = require("perf_hooks");
 const CONFIG = require("./config");
-const { initState, saveState, getPublicState, getPublicParams, updateState, addFood } = require("./state");
+const { initState, saveState, getPublicState, updateState, addFood } = require("./state");
 
 const app = express();
 app.use(cors());
@@ -20,7 +20,9 @@ app.get('/api/health', (req, res) => res.json({ status: "OK" }));
 app.get('/api/config', (req, res) => res.json({
     webSocketUrl: CONFIG.WEBSOCKET_URL,
     stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
-    params: getPublicParams()
+    gridSize: CONFIG.GRID_SIZE,
+    maxFoodCount: CONFIG.FOOD_MAX_COUNT,
+    maxEnergy: CONFIG.CREATURE_MAX_ENERGY
 }));
 
 app.post("/api/place-food", (req, res) => {

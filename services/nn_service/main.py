@@ -29,7 +29,7 @@ class Creature(BaseModel):
 class State(BaseModel):
     creatures: List[Creature]
     grid_size: int = Field(..., alias="gridSize")
-    visibility_radius: int = Field(..., alias="visibilityRadius")
+    visibility_radius: float = Field(..., alias="visibilityRadius")
     max_energy: float = Field(..., alias="maxEnergy")
     max_turn_angle: float = Field(..., alias="maxTurnAngle")
     max_speed: float = Field(..., alias="maxSpeed")

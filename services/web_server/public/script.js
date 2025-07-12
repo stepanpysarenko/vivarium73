@@ -40,7 +40,7 @@ function resetAnimationState() {
     estimatedInterval = config.stateUpdateInterval;
     lastUpdateTime = null;
 
-    scale = canvas.width / config.params.gridSize;
+    scale = canvas.width / config.gridSize;
     halfScale = scale * 0.5;
 }
 
@@ -94,7 +94,7 @@ function drawCreatures(t, now) {
         ctx.translate(x * scale + halfScale, y * scale + halfScale);
         ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
-        ctx.globalAlpha = creature.energy / config.params.maxEnergy * 0.8 + 0.2;
+        ctx.globalAlpha = creature.energy / config.maxEnergy * 0.8 + 0.2;
         const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
         ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
         ctx.fillRect(-halfScale, -halfScale, scale, scale);
@@ -142,7 +142,7 @@ function updateStats() {
     elements.restarts.textContent = state.stats.restarts;
     elements.generation.textContent = state.stats.generation;
     elements.creatureCount.textContent = state.stats.creatureCount;
-    elements.foodCount.textContent = `${state.stats.foodCount}/${config.params.maxFoodCount}`;
+    elements.foodCount.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
 }
 
 function createCreatureMap(creatures) {
@@ -250,8 +250,8 @@ function getGridCoordinates(e) {
     const canvasX = (e.clientX - rect.left) * scaleX;
     const canvasY = (e.clientY - rect.top) * scaleY;
     return {
-        x: Math.floor(canvasX / (canvas.width / config.params.gridSize)),
-        y: Math.floor(canvasY / (canvas.height / config.params.gridSize))
+        x: Math.floor(canvasX / (canvas.width / config.gridSize)),
+        y: Math.floor(canvasY / (canvas.height / config.gridSize))
     };
 }
 
