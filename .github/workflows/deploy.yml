@@ -91,11 +91,11 @@ jobs:
             echo "Injecting canonical URL"
             sed -i "s|__CANONICAL_URL__|${{ vars.CANONICAL_URL }}|g" ./public/index.html
 
-            if [ -z ${{ vars.GA_TAG_ID }} ]; then
+            if [ -z "${{ vars.GA_TAG_ID }}" ]; then
               echo "Skipping GA tag injection (GA_TAG_ID not set)"
               sed -i 's|<!-- __GA_TAG_SCRIPT__ -->||g' ./public/index.html
             else
-              echo "Injecting GA tag: ${{ vars.GA_TAG_ID }}
+              echo "Injecting GA tag: ${{ vars.GA_TAG_ID }}"
               GA_SCRIPT=$(sed "s|__GA_TAG_ID__|${{ vars.GA_TAG_ID }}|g" ./templates/ga-snippet.template)
               GA_SCRIPT_ESCAPED=$(printf '%s\n' "$GA_SCRIPT" | sed -e ':a' -e 'N' -e '$!ba' \
                 -e 's|\\|\\\\|g' -e 's|&|\\&|g' -e 's|\n|\\n|g')
