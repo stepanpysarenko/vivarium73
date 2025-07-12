@@ -86,7 +86,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd ./services/web_server/
+            cd /root/vivarium73/services/web_server
 
             echo "Writing sitemap.txt"
             echo "$CANONICAL_URL" > ./public/sitemap.txt
