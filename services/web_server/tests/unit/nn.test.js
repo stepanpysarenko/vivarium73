@@ -65,14 +65,7 @@ describe('getMovements', () => {
         justReproduced: false,
         weights: []
       }
-    ],
-    params: {
-      gridSize: 1,
-      visibilityRadius: 2,
-      maxEnergy: 3,
-      maxTurnAngle: 4,
-      maxSpeed: 5
-    }
+    ]
   };
 
   it('returns movements on success', async () => {
@@ -100,11 +93,11 @@ describe('getMovements', () => {
             creatures: []
           }
         ],
-        gridSize: 1,
-        visibilityRadius: 2,
-        maxEnergy: 3,
-        maxTurnAngle: 4,
-        maxSpeed: 5
+        gridSize: CONFIG.GRID_SIZE,
+        visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
+        maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
+        maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RAD,
+        maxSpeed: CONFIG.CREATURE_MAX_SPEED
       }
     );
   });
