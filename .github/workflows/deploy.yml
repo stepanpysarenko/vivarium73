@@ -76,17 +76,46 @@ jobs:
           source: "."
           target: "/root/vivarium73"
 
+      - name: Build public assets
+        uses: appleboy/ssh-action@v0.1.10
+        env:
+          GA_TAG_ID: ${{ vars.GA_TAG_ID }}
+          CANONICAL_URL: ${{ vars.CANONICAL_URL }}
+        with:
+          host: ${{ vars.HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ./services/web_service/
+
+            echo "Writing sitemap.txt"
+            echo "$CANONICAL_URL" > ./public/sitemap.txt
+
+            echo "Injecting canonical URL"
+            sed -i "s|__CANONICAL_URL__|$CANONICAL_URL|g" ./public/index.html
+
+            if [ -z "$GA_TAG_ID" ]; then
+              echo "Skipping GA tag injection (GA_TAG_ID not set)"
+              sed -i 's|<!-- __GA_TAG_SCRIPT__ -->||g' ./public/index.html
+            else
+              echo "Injecting GA tag: $GA_TAG_ID"
+              GA_SCRIPT=$(sed "s|__GA_TAG_ID__|$GA_TAG_ID|g" ./templates/ga-snippet.template)
+              GA_SCRIPT_ESCAPED=$(printf '%s\n' "$GA_SCRIPT" | sed -e ':a' -e 'N' -e '$!ba' \
+                -e 's|\\|\\\\|g' -e 's|&|\\&|g' -e 's|\n|\\n|g')
+              sed -i "s|<!-- __GA_TAG_SCRIPT__ -->|$GA_SCRIPT_ESCAPED|g" ./public/index.html
+            fi
+
       - name: Build and start containers
         uses: appleboy/ssh-action@v0.1.10
+        env:
+          WEBSOCKET_URL: ${{ vars.WEBSOCKET_URL }}
         with:
           host: ${{ vars.HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /root/vivarium73
-            echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" > ./.env
-            sed -i "s|__CANONICAL_URL__|${{ vars.CANONICAL_URL }}|g" ./services/web_server/public/index.html
-            echo "${{ vars.CANONICAL_URL }}" > ./services/web_server/public/sitemap.txt
+            echo "WEBSOCKET_URL=$WEBSOCKET_URL" > .env
             docker-compose down --volumes --remove-orphans
             docker-compose build
             docker-compose up -d
