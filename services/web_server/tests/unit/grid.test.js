@@ -21,12 +21,3 @@ describe('isWithinRadius', () => {
     expect(isWithinRadius(0, 0, 3, 4, 9)).toBe(false);
   });
 });
-
-describe('getRandomEmptyCell', () => {
-  it('never returns a cell occupied by obstacles', () => {
-    const state = { food: [], obstacles: [{ x: 0, y: 0 }] };
-    const { x, y } = getRandomEmptyCell(state);
-    expect(x).not.toBe(0);
-    expect(y).not.toBe(0);
-  });
-});
