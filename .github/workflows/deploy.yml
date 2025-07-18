@@ -54,10 +54,19 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     needs: [test-web-server, test-nn-service]
-    env:
-      ENVIRONMENT: ${{ github.ref == 'refs/heads/qa' ? 'qa' : 'prod' }}
-    environment: ${{ env.ENVIRONMENT }}
+    strategy:
+      matrix:
+        include:
+          - branch: main
+            environment: prod
+          - branch: qa
+            environment: qa
+    if: github.ref_name == matrix.branch
+    environment: ${{ matrix.environment }}
     steps:
+      - name: Set ENVIRONMENT variable
+        run: echo "ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -106,7 +115,7 @@ jobs:
           script: |
             cd ${{ vars.DEPLOY_PATH }}
 
-            echo "ENVIRONMENT=${{ github.environment }}" > .env
+            echo "ENVIRONMENT=${{ env.ENVIRONMENT  }}" > .env
             echo "WEB_PORT=${{ vars.WEB_PORT }}" >> .env
             echo "NN_PORT=${{ vars.NN_PORT }}" >> .env
             echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" >> .env
