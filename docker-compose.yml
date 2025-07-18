@@ -1,29 +1,32 @@
 services:
   nn_service:
+    container_name: ${ENVIRONMENT}-vivarium73-nn
     build: ./services/nn_service
+    environment:
+      - PORT=${NN_PORT}
     expose:
-      - "8000"
+      - "${NN_PORT}"
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${NN_PORT}/api/health"]
       interval: 3s
       timeout: 3s
       retries: 3
 
   web_server:
+    container_name: ${ENVIRONMENT}-vivarium73-web
     build: ./services/web_server
-    env_file:
-      - .env
     environment:
-      - PORT=3000
-      - NN_SERVICE_URL=http://nn_service:8000/api 
+      - PORT=${WEB_PORT}
+      - WEBSOCKET_URL=${WEBSOCKET_URL}
+      - NN_SERVICE_URL=http://${ENVIRONMENT}-vivarium73-nn:${NN_PORT}/api
     ports:
-      - "3000:3000"
+      - "${WEB_PORT}:${WEB_PORT}"
     volumes:
       - ./data:/app/data
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${WEB_PORT}/api/health"]
       interval: 3s
       timeout: 3s
       retries: 3
