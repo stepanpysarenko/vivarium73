@@ -57,11 +57,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - branch: main
+          - only_branch: main
             environment: prod
-          - branch: qa
+          - only_branch: qa
             environment: qa
-    if: github.ref_name == matrix.branch
+    if: github.ref_name == matrix.only_branch
     environment: ${{ matrix.environment }}
     steps:
       - name: Set ENVIRONMENT variable
