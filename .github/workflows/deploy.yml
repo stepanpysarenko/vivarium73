@@ -81,14 +81,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Clean remote directory (preserve /data)
+      - name: Clean or create a deploy directory (preserve /data)
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ vars.HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            find ${{ vars.DEPLOY_PATH }} -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
+            DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
+
+            mkdir -p "$DEPLOY_PATH"
+
+            if [ -d "$DEPLOY_PATH" ]; then
+              find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
+            fi
 
       - name: Copy code to server
         uses: appleboy/scp-action@v0.1.4
