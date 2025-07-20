@@ -89,23 +89,37 @@ jobs:
           source: "."
           target: "${{ vars.DEPLOY_PATH }}"
 
-      - name: Build public assets
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ${{ vars.DEPLOY_PATH }}/services/web_server
+      - name: Inject canonical URL into index.html
+        if: github.ref_name == 'main' && vars.CANONICAL_URL != ''
+        env:
+          CANONICAL_URL: ${{ vars.CANONICAL_URL }}
+        run: |
+          INDEX_FILE=services/web_server/public/index.html
+          TAG="<link rel=\"canonical\" href=\"$CANONICAL_URL\">"
+          sed -i "s|<!-- __CANONICAL_URL__ -->|$TAG|" "$INDEX_FILE"
 
-            echo "Writing sitemap.txt"
-            echo "${{ vars.CANONICAL_URL }}" > ./public/sitemap.txt
+      - name: Inject GA tag into index.html
+        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
+        env:
+          GA_TAG_ID: ${{ vars.GA_TAG_ID }}
+        run: |
+          INDEX_FILE=services/web_server/public/index.html
+          GA_TAG="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','$GA_TAG_ID');</script>"
+          sed -i "s|<!-- __GA_TAG_SCRIPT__ -->|$GA_TAG|" "$INDEX_FILE"
 
-            echo "Injecting canonical URL"
-            sed -i "s|__CANONICAL_URL__|${{ vars.CANONICAL_URL }}|g" ./public/index.html
+      - name: Inject robots meta tag
+        run: |
+          INDEX_FILE=services/web_server/public/index.html
 
-            echo "Injecting GA tag"
-            sed -i "s|__GA_TAG_ID__|${{ vars.GA_TAG_ID }}|g" ./public/index.html
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "Allowing indexing"
+            ROBOTS_TAG='<meta name="robots" content="index, follow">'
+          else
+            echo "Blocking indexing"
+            ROBOTS_TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
+          fi
+
+          sed -i "s|<!-- __ROBOTS_TAG__ -->|$ROBOTS_TAG|" "$INDEX_FILE"
 
       - name: Build and start containers
         uses: appleboy/ssh-action@v0.1.10

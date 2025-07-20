@@ -257,6 +257,8 @@ function getGridCoordinates(e) {
 
 canvas.addEventListener("click", async (e) => {
     try {
+        if (typeof gtag === "function") gtag("event", "place_food");
+
         const res = await fetch("/api/place-food", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
