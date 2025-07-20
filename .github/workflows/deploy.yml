@@ -114,14 +114,12 @@ jobs:
           INDEX_FILE=services/web_server/public/index.html
 
           if [ "$BRANCH_NAME" = "main" ]; then
-          echo "Allowing indexing"
-            ROBOTS_TAG='<meta name="robots" content="index, follow">'
+            echo "Allowing indexing"
+            sed -i "s|<!-- __ROBOTS_TAG__ -->|<meta name=\"robots\" content=\"index, follow\">|" "$INDEX_FILE"
           else
             echo "Blocking indexing"
-            ROBOTS_TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
+            sed -i "s|<!-- __ROBOTS_TAG__ -->|<meta name=\"robots\" content=\"noindex, nofollow, noarchive, nosnippet\">|" "$INDEX_FILE"
           fi
-
-          sed -i "s|<!-- __ROBOTS_TAG__ -->|$ROBOTS_TAG|" "$INDEX_FILE"
 
       - name: Build and start containers
         uses: appleboy/ssh-action@v0.1.10
