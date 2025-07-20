@@ -1,26 +1,30 @@
-name: Reset State in Prod
+name: Reset State
 
 on:
   workflow_dispatch:
 
 jobs:
-  reset-state:
-    runs-on: ubuntu-latest
+  determine-deploy:
+    uses: ./.github/workflows/determine-environment.yml
 
-    environment: prod
+  reset-state:
+    name: Reset State
+    needs: determine-deploy
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-deploy.outputs.environment }}
 
     steps:
-    - name: SSH and Reset State
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ vars.HOST }}
-        username: root
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          cd /root/vivarium73
-          echo "Stopping containers..."
-          docker-compose down
-          echo "Removing state.json..."
-          rm -f data/state.json
-          echo "Starting containers..."
-          docker-compose up -d
+      - name: SSH and Reset State
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ vars.DEPLOY_PATH }}
+            echo "Stopping containers..."
+            docker-compose down
+            echo "Removing state.json..."
+            rm -f data/state.json
+            echo "Starting containers..."
+            docker-compose up -d
