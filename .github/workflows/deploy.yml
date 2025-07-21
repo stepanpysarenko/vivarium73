@@ -98,24 +98,29 @@ jobs:
         env:
           CANONICAL_URL: ${{ vars.CANONICAL_URL }}
         run: |
+          echo "Injecting canonical URL: $CANONICAL_URL"
           INDEX_FILE=services/web_server/public/index.html
           TAG="<link rel=\"canonical\" href=\"$CANONICAL_URL\">"
-          sed -i "s#<!-- __CANONICAL_URL__ -->#$TAG#" "$INDEX_FILE"
+          sed -i "s|<!-- __CANONICAL_URL__ -->|$TAG|" "$INDEX_FILE"
+
 
       - name: Inject GA tag into index.html
         if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
         env:
           GA_TAG_ID: ${{ vars.GA_TAG_ID }}
         run: |
+          echo "Injecting GA tag: $GA_TAG_ID"
           INDEX_FILE=services/web_server/public/index.html
           GA_TAG="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','$GA_TAG_ID');</script>"
-          sed -i "s#<!-- __GA_TAG_SCRIPT__ -->#$GA_TAG#" "$INDEX_FILE"
+          sed -i "s|<!-- __GA_TAG_SCRIPT__ -->|$GA_TAG|" "$INDEX_FILE"
 
       - name: Inject robots meta tag for non-prod
         if: github.ref_name != 'main'
         run: |
+          echo "Injecting robots meta tag for non-production environment"
           INDEX_FILE=services/web_server/public/index.html
-          sed -i "s#<!-- __ROBOTS_TAG__ -->#<meta name=\"robots\" content=\"noindex, nofollow, noarchive, nosnippet\">#" "$INDEX_FILE"
+          TAG="<meta name=\"robots" content=\"noindex, nofollow, noarchive, nosnippet\">"
+          sed -i 's|<!-- __ROBOTS_TAG__ -->|$TAG|' "$INDEX_FILE"
 
       - name: Build and start containers
         uses: appleboy/ssh-action@v0.1.10
