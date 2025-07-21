@@ -9,6 +9,10 @@ on:
       - 'LICENSE'
       - '*.md'
       - 'docs/**'
+      
+  pull_request:
+    branches:
+      - qa
 
 jobs:
   test-web-server:
