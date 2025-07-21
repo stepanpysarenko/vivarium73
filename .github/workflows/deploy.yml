@@ -119,8 +119,8 @@ jobs:
         run: |
           echo "Injecting robots meta tag for non-production environment"
           INDEX_FILE=services/web_server/public/index.html
-          TAG="<meta name=\"robots\" content=\"noindex, nofollow, noarchive, nosnippet\">"
-          sed -i 's|<!-- __ROBOTS_TAG__ -->|$TAG|' "$INDEX_FILE"
+          TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
+          sed -i "s|<!-- __ROBOTS_TAG__ -->|$TAG|" "$INDEX_FILE"
 
       - name: Build and start containers
         uses: appleboy/ssh-action@v0.1.10
