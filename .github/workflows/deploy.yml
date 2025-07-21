@@ -69,7 +69,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Inject canonical URL into index.html
+      - name: Inject robots meta tag to block indexing on qa
+        if: github.ref_name != 'main'
+        run: |
+          echo "Injecting robots meta tag"
+          INDEX_FILE=services/web_server/public/index.html
+          TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
+          sed -i "s|<!-- __ROBOTS_TAG__ -->|$TAG|" "$INDEX_FILE"
+
+      - name: Inject GA tag into index.html on prod
+        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
+        env:
+          GA_TAG_ID: ${{ vars.GA_TAG_ID }}
+        run: |
+          echo "Injecting GA tag: $GA_TAG_ID"
+          INDEX_FILE=services/web_server/public/index.html
+
+          GA_TAG="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_TAG_ID}');</script>"
+
+          awk -v replacement="$GA_TAG" '
+            {
+              if ($0 ~ /<!-- __GA_TAG_SCRIPT__ -->/) {
+                print replacement
+              } else {
+                print $0
+              }
+            }
+          ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
+
+      - name: Inject canonical URL into index.html on prod
         if: github.ref_name == 'main' && vars.CANONICAL_URL != ''
         env:
           CANONICAL_URL: ${{ vars.CANONICAL_URL }}
@@ -78,24 +106,6 @@ jobs:
           INDEX_FILE=services/web_server/public/index.html
           TAG="<link rel=\"canonical\" href=\"$CANONICAL_URL\">"
           sed -i "s|<!-- __CANONICAL_URL__ -->|$TAG|" "$INDEX_FILE"
-
-      - name: Inject GA tag into index.html
-        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
-        env:
-          GA_TAG_ID: ${{ vars.GA_TAG_ID }}
-        run: |
-          echo "Injecting GA tag: $GA_TAG_ID"
-          INDEX_FILE=services/web_server/public/index.html
-          GA_TAG="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','$GA_TAG_ID');</script>"
-          sed -i "s|<!-- __GA_TAG_SCRIPT__ -->|$GA_TAG|" "$INDEX_FILE"
-
-      - name: Inject robots meta tag for non-prod
-        if: github.ref_name != 'main'
-        run: |
-          echo "Injecting robots meta tag for non-production environment"
-          INDEX_FILE=services/web_server/public/index.html
-          TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
-          sed -i "s|<!-- __ROBOTS_TAG__ -->|$TAG|" "$INDEX_FILE"
 
       - name: Clean or create a deploy directory (preserve /data)
         uses: appleboy/ssh-action@v0.1.10
