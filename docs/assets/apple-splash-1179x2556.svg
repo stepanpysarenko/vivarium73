@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1179" height="2556" viewBox="0 0 1179 2556">
+  <rect width="100%" height="100%" fill="#f8f8f8" />
+  <g transform="translate(442.5, 1131) scale(14)">
+    <rect width="21" height="21" fill="#000000" />
+    <g fill="#ffffff">
+      <path id="7" d="M3.5 7 h7 v2 h-1 v1 h-1 v1 h-1 v3 h-2 v-3 h1 v-1 h1 v-1 h1 v-1 h-3 v1 h-2" />
+      <path id="3" d="M11.5 7 h6 v1 h-1 v1 h-1 v1 h1 v1 h1 v2 h-1 v1 h-5 v-1 h-1 v-1 h2 v1 h3 v-2 h-3 v-1 h1 v-1 h1 v-1 h-3 z" />
+    </g>
+  </g>
+</svg>
