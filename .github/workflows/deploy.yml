@@ -85,7 +85,16 @@ jobs:
           echo "Injecting GA tag: $GA_TAG_ID"
           INDEX_FILE=services/web_server/public/index.html
 
-          GA_TAG="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_TAG_ID}');</script>"
+          GA_TAG=$(cat <<EOF
+              <script async src="https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID"></script>
+              <script>
+                window.dataLayer=window.dataLayer||[];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '$GA_TAG_ID');
+              </script>
+          EOF
+          )
 
           awk -v replacement="$GA_TAG" '
             {
