@@ -9,6 +9,7 @@ const { initState, saveState, getPublicState, updateState, addFood } = require("
 
 const app = express();
 
+app.disable('x-powered-by');
 app.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");

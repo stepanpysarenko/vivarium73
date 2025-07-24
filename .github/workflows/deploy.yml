@@ -88,10 +88,10 @@ jobs:
           GA_TAG=$(cat <<EOF
               <script async src="https://www.googletagmanager.com/gtag/js?id=$GA_TAG_ID"></script>
               <script>
-                window.dataLayer=window.dataLayer||[];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '$GA_TAG_ID');
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '$GA_TAG_ID');
               </script>
           EOF
           )
@@ -99,6 +99,36 @@ jobs:
           awk -v replacement="$GA_TAG" '
             {
               if ($0 ~ /<!-- __GA_TAG_SCRIPT__ -->/) {
+                print replacement
+              } else {
+                print $0
+              }
+            }
+          ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
+
+      - name: Inject schema.org JSON-LD into index.html on prod
+        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
+        env:
+          CANONICAL_URL: ${{ vars.CANONICAL_URL }}
+        run: |
+          echo "Injecting schema.org JSON-LD with canonical URL: $CANONICAL_URL"
+          INDEX_FILE=services/web_server/public/index.html
+
+          TAG=$(cat <<EOF
+              <script type="application/ld+json">
+                  {
+                    "@context": "https://schema.org",
+                    "@type": "WebSite",
+                    "name": "vivarium73",
+                    "url": "$CANONICAL_URL"
+                  }
+              </script>
+          EOF
+          )
+
+          awk -v replacement="$TAG" '
+            {
+              if ($0 ~ /<!-- __SCHEMA_ORG_JSON__ -->/) {
                 print replacement
               } else {
                 print $0
