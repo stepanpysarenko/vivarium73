@@ -8,8 +8,16 @@ const CONFIG = require("./config");
 const { initState, saveState, getPublicState, updateState, addFood } = require("./state");
 
 const app = express();
+
+app.use((req, res, next) => {
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    next();
+});
+
 app.use(cors());
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, "../public")));
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public", "index.html"));
