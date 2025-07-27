@@ -36,7 +36,7 @@ describe('POST /api/place-food', () => {
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
       success: false,
-      error: 'x and y must be numbers'
+      error: 'Invalid coordinates'
     });
   });
 
