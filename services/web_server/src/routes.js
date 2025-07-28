@@ -1,6 +1,5 @@
 const CONFIG = require("./config");
-const { addFood, getCreature } = require("./state");
-const { getScore } = require("./creature");
+const { addFood } = require("./state");
 
 module.exports = function registerRoutes(app) {
     app.get("/api/health", (req, res) => res.json({ status: "OK" }));
@@ -27,19 +26,4 @@ module.exports = function registerRoutes(app) {
         }
     });
 
-    app.get("/api/creature/:id", (req, res) => {
-        const id = parseInt(req.params.id, 10);
-        const creature = getCreature(id);
-        if (!creature) {
-            return res.status(404).json({ error: "Creature not found" });
-        }
-
-        res.json({
-            id: creature.id,
-            generation: creature.generation,
-            totalFoodCollected: creature.stats.totalFoodCollected,
-            updatesSurvived: creature.stats.updatesSurvived,
-            score: getScore(creature)
-        });
-    });
 };

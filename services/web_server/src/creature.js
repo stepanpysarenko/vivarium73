@@ -32,8 +32,9 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
         updatesToFlash: 0,
         weights,
         stats: {
-            updatesSurvived: 0,
-            totalFoodCollected: 0
+            msLived: 0,
+            energyGained: 0,
+            score: 0
         }
     };
 
@@ -41,12 +42,11 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
 }
 
 function getScore(creature) {
-    return creature.stats.totalFoodCollected / Math.max(1, creature.stats.updatesSurvived);
+    return Math.round(creature.stats.energyGained / Math.max(1, creature.stats.msLived) * 10000);
 }
 
 function getNextCreatureId(state) {
-    state.lastCreatureId++;
-    return state.lastCreatureId;
+    return state.lastCreatureId++;
 }
 
 module.exports = {

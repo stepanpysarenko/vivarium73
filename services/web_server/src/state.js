@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
-const { initCreature } = require("./creature");
+const { initCreature, getScore } = require("./creature");
 const { getMovements, mutateWeights } = require("./nn");
 const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
@@ -88,8 +88,11 @@ function getPublicState() {
             x: round2(c.x),
             y: round2(c.y),
             angle: round2(c.angle),
-            energy: round2(c.energy),
-            flashing: c.updatesToFlash > 0
+            energy: Math.round(c.energy),
+            flashing: c.updatesToFlash > 0,
+            generation: c.generation,
+            score: c.stats.score,
+            msLived: c.stats.msLived
         })),
         food: state.food,
         obstacles: state.obstacles
@@ -243,7 +246,7 @@ function handleEating(creature) {
 
     if (foodIndex !== -1) {
         creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
-        creature.stats.totalFoodCollected++;
+        creature.stats.energyGained += CONFIG.FOOD_ENERGY;
         state.food.splice(foodIndex, 1);
     }
 }
@@ -271,7 +274,8 @@ async function handleLifecycle() {
             continue;
         }
 
-        creature.stats.updatesSurvived++;
+        creature.stats.msLived += CONFIG.STATE_UPDATE_INTERVAL;
+        creature.stats.score = getScore(creature);
         survivors.push(creature);
     }
 
@@ -305,7 +309,7 @@ function addFood(x, y) {
 
 function getCreature(id) {
     return state.creatures.find(c => c.id === id);
-}   
+}
 
 module.exports = {
     initState,

@@ -236,6 +236,28 @@ body.about-visible #canvas {
     display: none;
 }
 
+#creature-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: white;
+    border: 1px solid var(--color-accent);
+    padding: 10px;
+    font-size: 14px;
+    z-index: 10;
+    max-width: 220px;
+    pointer-events: auto;
+    touch-action: auto;
+}
+
+#creature-details {
+    margin: 0;
+}
+
+#creature-panel.hidden {
+    display: none;
+}
+
 @media (max-width: 800px) {
     #canvas {
         border-left: none;

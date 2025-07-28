@@ -6,7 +6,9 @@ const elements = {
     generation: document.getElementById("generation"),
     creatureCount: document.getElementById("creature-count"),
     foodCount: document.getElementById("food-count"),
-    aboutToggle: document.getElementById("about-toggle")
+    aboutToggle: document.getElementById("about-toggle"),
+    creaturePanel: document.getElementById("creature-panel"),
+    creatureDetails: document.getElementById("creature-details")
 };
 
 let config;
@@ -20,6 +22,8 @@ let estimatedInterval;
 let lastUpdateTime;
 let scale;
 let halfScale;
+
+let observedCreatureId = null;
 
 function isLoading() {
     return document.body.classList.contains("loading");
@@ -97,6 +101,14 @@ function drawCreatures(t, now) {
         ctx.globalAlpha = creature.energy / config.maxEnergy * 0.8 + 0.2;
         const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
         ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
+     
+        if (creature.id === observedCreatureId) {
+            ctx.shadowColor = "#ff0000";
+            ctx.shadowBlur = 30;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+
         ctx.fillRect(-halfScale, -halfScale, scale, scale);
         ctx.fillStyle = "#ffdd00"; // yellow
         ctx.fillRect(-halfScale, -halfScale, halfScale, halfScale);
@@ -123,6 +135,7 @@ function draw() {
         state = nextState;
         nextState = null;
         updateStats();
+        updatObservedCreatureInfo();
     }
 
     if (state) {
@@ -243,7 +256,7 @@ elements.aboutToggle.addEventListener("click", () => {
     elements.aboutToggle.textContent = document.body.classList.contains("about-visible") ? "back" : "about";
 });
 
-function getGridCoordinates(e) {
+function getGridClickCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -255,14 +268,14 @@ function getGridCoordinates(e) {
     };
 }
 
-canvas.addEventListener("click", async (e) => {
-    try {
-        if (typeof gtag === "function") gtag("event", "place_food");
+async function placeFood(x, y) {
+    if (typeof gtag === "function") gtag("event", "place_food");
 
+    try {
         const res = await fetch("/api/place-food", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(getGridCoordinates(e)),
+            body: JSON.stringify({ x, y }),
         });
         const data = await res.json();
         if (!data.success) {
@@ -270,5 +283,49 @@ canvas.addEventListener("click", async (e) => {
         }
     } catch (err) {
         console.error("Failed to place food", err);
+    }
+}
+
+function formatTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+function updatObservedCreatureInfo() {
+    if (!observedCreatureId) return;
+    const creature = state.creatures.find(c => c.id === observedCreatureId);
+
+    elements.creatureDetails.textContent = `#${creature.id}\n`
+        + `gen: ${creature.generation}\n`
+        + `energy: ${creature.energy}\n`
+        + `life: ${formatTime(creature.msLived)}\n`
+        + `score: ${creature.score}`;
+}
+
+function observeCreature(creature) {
+    observedCreatureId = creature.id;
+    elements.creaturePanel.classList.remove("hidden");
+}
+
+function stopObservingCreature() {
+    elements.creaturePanel.classList.add("hidden");
+    observedCreatureId = null;
+}
+
+canvas.addEventListener("click", async (e) => {
+    const { x, y } = getGridClickCoordinates(e);
+
+    const clickedCreature = state.creatures.find(c => {
+        const dx = c.x - x;
+        const dy = c.y - y;
+        return dx * dx + dy * dy < 2;
+    });
+
+    if (clickedCreature) {
+        observeCreature(clickedCreature);
+    } else {
+        placeFood(x, y);
     }
 });
