@@ -122,7 +122,7 @@ async function updateState() {
     }
 
     state.creatures = await handleLifecycle();
-    if (state.creatures.length <= CONFIG.POPULATION_RESTART_THRESHOLD) {
+    if (state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
         await restartPopulation(state);
         state.stats.restarts++;
         saveState();

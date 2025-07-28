@@ -245,7 +245,6 @@ body.about-visible #canvas {
     padding: 10px;
     font-size: 14px;
     z-index: 10;
-    max-width: 220px;
     pointer-events: auto;
     touch-action: auto;
 }

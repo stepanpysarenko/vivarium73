@@ -23,7 +23,7 @@ let lastUpdateTime;
 let scale;
 let halfScale;
 
-let observedCreatureId = null;
+let observedCreatureId;
 
 function isLoading() {
     return document.body.classList.contains("loading");
@@ -46,6 +46,8 @@ function resetAnimationState() {
 
     scale = canvas.width / config.gridSize;
     halfScale = scale * 0.5;
+
+    observedCreatureId = null;
 }
 
 function lerp(a, b, t) {
