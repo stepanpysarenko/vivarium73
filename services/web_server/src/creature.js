@@ -46,7 +46,7 @@ function getScore(creature) {
 }
 
 function getNextCreatureId(state) {
-    return state.lastCreatureId++;
+    return ++state.lastCreatureId;
 }
 
 module.exports = {
