@@ -101,6 +101,10 @@ body,
     align-items: flex-start;
 }
 
+.stats.hidden {
+    display: none;
+}
+
 .stat {
     width: auto;
     min-width: 75px;

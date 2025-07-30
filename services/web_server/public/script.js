@@ -2,13 +2,24 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const elements = {
-    restarts: document.getElementById("restarts"),
-    generation: document.getElementById("generation"),
-    creatureCount: document.getElementById("creature-count"),
-    foodCount: document.getElementById("food-count"),
     aboutToggle: document.getElementById("about-toggle"),
-    creaturePanel: document.getElementById("creature-panel"),
-    creatureDetails: document.getElementById("creature-details")
+    stats: {
+        grid: {
+            statsPanel: document.getElementById("stats-grid"),
+            restarts: document.getElementById("stats-grid-restarts"),
+            generation: document.getElementById("stats-grid-generation"),
+            creatures: document.getElementById("stats-grid-creatures"),
+            food: document.getElementById("stats-grid-food")
+        },
+        creature: {
+            statsPanel: document.getElementById("stats-creature"),
+            id: document.getElementById("stat-creature-id"),
+            generation: document.getElementById("stat-creature-generation"),
+            life: document.getElementById("stat-creature-life"),
+            energy: document.getElementById("stat-creature-energy"),
+            score: document.getElementById("stat-creature-score")
+        }
+    }
 };
 
 let config;
@@ -47,7 +58,7 @@ function resetAnimationState() {
     scale = canvas.width / config.gridSize;
     halfScale = scale * 0.5;
 
-    observedCreatureId = null;
+    stopObservingCreature()
 }
 
 function lerp(a, b, t) {
@@ -100,15 +111,17 @@ function drawCreatures(t, now) {
         ctx.translate(x * scale + halfScale, y * scale + halfScale);
         ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
-        ctx.globalAlpha = creature.energy / config.maxEnergy * 0.8 + 0.2;
+        ctx.globalAlpha = creature.energy * 0.8 + 0.2;
         const flash = creature.flashing && (Math.floor(now / 200) % 2 === 0);
         ctx.fillStyle = flash ? "#ff0000" : "#0000ff"; // red : blue
-     
+
         if (creature.id === observedCreatureId) {
-            ctx.shadowColor = "#ff0000";
-            ctx.shadowBlur = 30;
+            ctx.shadowColor = "#0000ff";
+            ctx.shadowBlur = 15;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
+        } else {
+            ctx.shadowBlur = 0;
         }
 
         ctx.fillRect(-halfScale, -halfScale, scale, scale);
@@ -136,8 +149,8 @@ function draw() {
 
         state = nextState;
         nextState = null;
-        updateStats();
-        updatObservedCreatureInfo();
+        updateGridStats();
+        updateObservedCreatureStats();
     }
 
     if (state) {
@@ -153,11 +166,11 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-function updateStats() {
-    elements.restarts.textContent = state.stats.restarts;
-    elements.generation.textContent = state.stats.generation;
-    elements.creatureCount.textContent = state.stats.creatureCount;
-    elements.foodCount.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
+function updateGridStats() {
+    elements.stats.grid.restarts.textContent = state.stats.restarts;
+    elements.stats.grid.generation.textContent = state.stats.generation;
+    elements.stats.grid.creatures.textContent = state.stats.creatureCount;
+    elements.stats.grid.food.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
 }
 
 function createCreatureMap(creatures) {
@@ -290,29 +303,47 @@ async function placeFood(x, y) {
 
 function formatTime(ms) {
     const totalSeconds = Math.floor(ms / 1000);
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalDays = Math.floor(totalHours / 24);
+
+    if (totalSeconds < 60) {
+        return `${totalSeconds}s`;
+    } else if (totalMinutes < 60) {
+        const secs = totalSeconds % 60;
+        return `${totalMinutes}m ${secs}s`;
+    } else if (totalHours < 24) {
+        const mins = totalMinutes % 60;
+        return `${totalHours}h ${mins}m`;
+    } else {
+        return `${totalDays}d`;
+    }
 }
 
-function updatObservedCreatureInfo() {
+function updateObservedCreatureStats() {
     if (!observedCreatureId) return;
     const creature = state.creatures.find(c => c.id === observedCreatureId);
+    if (!creature) {
+        stopObservingCreature();
+        return;
+    }
 
-    elements.creatureDetails.textContent = `#${creature.id}\n`
-        + `gen: ${creature.generation}\n`
-        + `energy: ${creature.energy}\n`
-        + `life: ${formatTime(creature.msLived)}\n`
-        + `score: ${creature.score}`;
+    elements.stats.creature.id.textContent = `#${creature.id}`;
+    elements.stats.creature.generation.textContent = `${creature.generation}`;
+    elements.stats.creature.life.textContent = formatTime(creature.msLived);
+    elements.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+    elements.stats.creature.score.textContent = `${creature.score}`;
 }
 
-function observeCreature(creature) {
+function startObservingCreature(creature) {
     observedCreatureId = creature.id;
-    elements.creaturePanel.classList.remove("hidden");
+    elements.stats.grid.statsPanel.classList.add("hidden");
+    elements.stats.creature.statsPanel.classList.remove("hidden");
 }
 
 function stopObservingCreature() {
-    elements.creaturePanel.classList.add("hidden");
+    elements.stats.grid.statsPanel.classList.remove("hidden");
+    elements.stats.creature.statsPanel.classList.add("hidden");
     observedCreatureId = null;
 }
 
@@ -326,7 +357,9 @@ canvas.addEventListener("click", async (e) => {
     });
 
     if (clickedCreature) {
-        observeCreature(clickedCreature);
+        startObservingCreature(clickedCreature);
+    } else if (observedCreatureId) {
+        stopObservingCreature();
     } else {
         placeFood(x, y);
     }

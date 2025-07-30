@@ -88,7 +88,7 @@ function getPublicState() {
             x: round2(c.x),
             y: round2(c.y),
             angle: round2(c.angle),
-            energy: Math.round(c.energy),
+            energy: round2(c.energy / CONFIG.CREATURE_MAX_ENERGY),
             flashing: c.updatesToFlash > 0,
             generation: c.generation,
             score: c.stats.score,

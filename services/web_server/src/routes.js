@@ -8,8 +8,7 @@ module.exports = function registerRoutes(app) {
         webSocketUrl: CONFIG.WEBSOCKET_URL,
         stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
         gridSize: CONFIG.GRID_SIZE,
-        maxFoodCount: CONFIG.FOOD_MAX_COUNT,
-        maxEnergy: CONFIG.CREATURE_MAX_ENERGY
+        maxFoodCount: CONFIG.FOOD_MAX_COUNT
     }));
 
     app.post("/api/place-food", (req, res) => {
