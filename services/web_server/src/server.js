@@ -1,13 +1,22 @@
 const express = require("express");
-const cors = require("cors");
-const path = require("path");
 const http = require("http");
 const WebSocket = require("ws");
+const cors = require("cors");
+const path = require("path");
 const { performance } = require("perf_hooks");
+
 const CONFIG = require("./config");
-const { initState, saveState, getPublicState, updateState, addFood } = require("./state");
+const {
+    initState,
+    saveState,
+    getPublicState,
+    updateState
+} = require("./state");
+const registerRoutes = require("./routes");
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -18,48 +27,16 @@ app.use((req, res, next) => {
 
 app.use(cors());
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, "../public")));
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public", "index.html"));
-});
 
-app.get('/api/health', (req, res) => res.json({ status: "OK" }));
-
-app.get('/api/config', (req, res) => res.json({
-    webSocketUrl: CONFIG.WEBSOCKET_URL,
-    stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
-    gridSize: CONFIG.GRID_SIZE,
-    maxFoodCount: CONFIG.FOOD_MAX_COUNT,
-    maxEnergy: CONFIG.CREATURE_MAX_ENERGY
-}));
-
-app.post("/api/place-food", (req, res) => {
-    const { x, y } = req.body;
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-        return res.status(400).json({ success: false, error: "x and y must be numbers" });
-    }
-
-    try {
-        addFood(x, y);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-});
-
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+registerRoutes(app);
 
 wss.on("connection", (ws) => {
-    console.log("New WebSocket connection");
-
-    ws.on("close", () => {
-        console.log("WebSocket disconnected");
-    });
+    console.log("Client connected");
+    ws.on("close", () => console.log("Client disconnected"));
 });
 
-function sendUpdate(state) {
+function broadcastState(state) {
     const data = JSON.stringify(state);
     for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {
@@ -78,13 +55,10 @@ function sleep(ms) {
 
 async function handleStateUpdate() {
     const start = performance.now();
-
     await updateState();
-    await sendUpdate(getPublicState());
-
+    broadcastState(getPublicState());
     const elapsed = performance.now() - start;
-    const sleepTime = Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed);
-    await sleep(sleepTime);
+    await sleep(Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed));
 }
 
 async function loop() {
@@ -93,10 +67,9 @@ async function loop() {
         try {
             await handleStateUpdate();
         } catch (err) {
-            console.error('Critical error in state update loop:', err);
-            retries++;
-            if (retries >= CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT) {
-                console.log(`Retry limit reached (${CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT}). Exiting...`);
+            console.error("Critical error:", err);
+            if (++retries >= CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT) {
+                console.error("Retry limit reached. Exiting.");
                 process.exit(1);
             }
         }
@@ -105,32 +78,21 @@ async function loop() {
 
 function startServer(port = CONFIG.PORT) {
     server.listen(port, async () => {
-        console.log(`Server running at http://localhost:${port}`);
+        console.log(`Server running on http://localhost:${port}`);
         await initState();
         loop();
 
-        if (CONFIG.STATE_SAVE_INTERVAL !== null && CONFIG.STATE_SAVE_PATH !== null) {
+        if (CONFIG.STATE_SAVE_INTERVAL && CONFIG.STATE_SAVE_PATH) {
             setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
         }
     });
 }
 
 function shutdown() {
-    console.log("Disconnecting clients...");
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.close();
-        }
-    });
-
-    console.log("Saving data....");
+    console.log("Shutting down...");
     saveState();
-
-    server.close(() => {
-        console.log("HTTP server closed");
-        console.log("Exiting...");
-        process.exit(0);
-    });
+    wss.clients.forEach(c => c.readyState === WebSocket.OPEN && c.close());
+    server.close(() => process.exit(0));
 }
 
 process.on("SIGINT", shutdown);
