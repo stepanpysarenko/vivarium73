@@ -15,9 +15,9 @@ const elements = {
             statsPanel: document.getElementById("stats-creature"),
             id: document.getElementById("stat-creature-id"),
             generation: document.getElementById("stat-creature-generation"),
-            life: document.getElementById("stat-creature-life"),
             energy: document.getElementById("stat-creature-energy"),
-            score: document.getElementById("stat-creature-score")
+            score: document.getElementById("stat-creature-score"),
+            life: document.getElementById("stat-creature-life")
         }
     }
 };
@@ -309,12 +309,10 @@ function formatTime(ms) {
 
     if (totalSeconds < 60) {
         return `${totalSeconds}s`;
-    } else if (totalMinutes < 60) {
-        const secs = totalSeconds % 60;
-        return `${totalMinutes}m ${secs}s`;
-    } else if (totalHours < 24) {
-        const mins = totalMinutes % 60;
-        return `${totalHours}h ${mins}m`;
+    } else if (totalMinutes < 180) {
+        return `${totalMinutes}m`;
+    } else if (totalHours < 72) {
+        return `${totalHours}h`;
     } else {
         return `${totalDays}d`;
     }
@@ -330,9 +328,9 @@ function updateObservedCreatureStats() {
 
     elements.stats.creature.id.textContent = `#${creature.id}`;
     elements.stats.creature.generation.textContent = `${creature.generation}`;
-    elements.stats.creature.life.textContent = formatTime(creature.msLived);
     elements.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
     elements.stats.creature.score.textContent = `${creature.score}`;
+    elements.stats.creature.life.textContent = formatTime(creature.msLived);
 }
 
 function startObservingCreature(creature) {

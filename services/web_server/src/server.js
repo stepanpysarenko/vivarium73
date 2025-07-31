@@ -66,6 +66,7 @@ async function loop() {
     while (true) {
         try {
             await handleStateUpdate();
+            retries = 0;
         } catch (err) {
             console.error("Critical error:", err);
             if (++retries >= CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT) {
