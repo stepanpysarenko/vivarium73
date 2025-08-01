@@ -69,15 +69,7 @@
         el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
         el.stats.creature.score.textContent = `${creature.score}`;
     }
-
-    function resetObservedCreatureStats() {
-        el.stats.creature.id.textContent = '';
-        el.stats.creature.generation.textContent = '';
-        el.stats.creature.life.textContent = '';
-        el.stats.creature.energy.textContent = '';
-        el.stats.creature.score.textContent = '';
-    }
-
+    
     function resetAnimationState() {
         app.state.current = null;
         app.state.next = null;
@@ -321,7 +313,6 @@
         el.stats.grid.panel.classList.remove('hidden');
         el.stats.creature.panel.classList.add('hidden');
         app.observedCreatureId = null;
-        resetObservedCreatureStats();
     }
 
     async function onCanvasClick(e) {
