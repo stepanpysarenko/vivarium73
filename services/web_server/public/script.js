@@ -4,7 +4,7 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    const elements = {
+    const el = {
         aboutToggle: document.getElementById('about-toggle'),
         stats: {
             grid: {
@@ -18,63 +18,75 @@
                 panel: document.getElementById('stats-creature'),
                 id: document.getElementById('stat-creature-id'),
                 generation: document.getElementById('stat-creature-generation'),
+                life: document.getElementById('stat-creature-life'),
                 energy: document.getElementById('stat-creature-energy'),
-                score: document.getElementById('stat-creature-score'),
-                life: document.getElementById('stat-creature-life')
+                score: document.getElementById('stat-creature-score')
             }
         }
     };
 
-    let config;
-    let socket;
-    let reconnectScheduled = false;
-
-    let state;
-    let nextState;
-    let prevMap;
-    let estimatedInterval;
-    let lastUpdateTime;
-    let scale;
-    let halfScale;
-
-    let observedCreatureId;
+    const app = {
+        config: null,
+        socket: null,
+        reconnectScheduled: false,
+        state: {
+            current: null,
+            next: null,
+            prevMap: new Map(),
+        },
+        animation: {
+            estimatedInterval: null,
+            lastUpdateTime: null,
+            scale: null,
+            halfScale: null,
+        },
+        observedCreatureId: null,
+    };
 
     const isLoading = () => document.body.classList.contains('loading');
     const showLoader = () => document.body.classList.add('loading');
     const hideLoader = () => document.body.classList.remove('loading');
 
     function updateGridStats() {
-        elements.stats.grid.restarts.textContent = state.stats.restarts;
-        elements.stats.grid.generation.textContent = state.stats.generation;
-        elements.stats.grid.creatures.textContent = state.stats.creatureCount;
-        elements.stats.grid.food.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
+        el.stats.grid.restarts.textContent = app.state.current.stats.restarts;
+        el.stats.grid.generation.textContent = app.state.current.stats.generation;
+        el.stats.grid.creatures.textContent = app.state.current.stats.creatureCount;
+        el.stats.grid.food.textContent = `${app.state.current.stats.foodCount}/${app.config.maxFoodCount}`;
     }
 
     function updateObservedCreatureStats() {
-        if (!observedCreatureId) return;
+        if (!app.observedCreatureId) return;
 
-        const creature = state.creatures.find(c => c.id === observedCreatureId);
+        const creature = app.state.current.creatures.find(c => c.id === app.observedCreatureId);
         if (!creature) {
             stopObservingCreature();
             return;
         }
 
-        elements.stats.creature.id.textContent = `id${creature.id}`;
-        elements.stats.creature.generation.textContent = `${creature.generation}`;
-        elements.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
-        elements.stats.creature.score.textContent = `${creature.score}`;
-        elements.stats.creature.life.textContent = formatTime(creature.msLived);
+        el.stats.creature.id.textContent = `${creature.id}`;
+        el.stats.creature.generation.textContent = `${creature.generation}`;
+        el.stats.creature.life.textContent = formatTime(creature.msLived);
+        el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+        el.stats.creature.score.textContent = `${creature.score}`;
+    }
+
+    function resetObservedCreatureStats() {
+        el.stats.creature.id.textContent = '';
+        el.stats.creature.generation.textContent = '';
+        el.stats.creature.life.textContent = '';
+        el.stats.creature.energy.textContent = '';
+        el.stats.creature.score.textContent = '';
     }
 
     function resetAnimationState() {
-        state = null;
-        nextState = null;
-        prevMap = new Map();
-        estimatedInterval = config.stateUpdateInterval;
-        lastUpdateTime = null;
+        app.state.current = null;
+        app.state.next = null;
+        app.state.prevMap = new Map();
+        app.animation.estimatedInterval = app.config.stateUpdateInterval;
+        app.animation.lastUpdateTime = null;
 
-        scale = canvas.width / config.gridSize;
-        halfScale = scale * 0.5;
+        app.animation.scale = canvas.width / app.config.gridSize;
+        app.animation.halfScale = app.animation.scale * 0.5;
     }
 
     function lerp(a, b, t) {
@@ -96,23 +108,25 @@
     function drawObstacles() {
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#e8e8e8';
-        state.obstacles.forEach(({ x, y }) => {
-            ctx.fillRect(x * scale, y * scale, scale, scale);
+        app.state.current.obstacles.forEach(({ x, y }) => {
+            ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
+                app.animation.scale, app.animation.scale);
         });
     }
 
     function drawFood() {
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#008000';
-        state.food.forEach(({ x, y }) => {
-            ctx.fillRect(x * scale, y * scale, scale, scale);
+        app.state.current.food.forEach(({ x, y }) => {
+            ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
+                app.animation.scale, app.animation.scale);
         });
     }
 
     function drawCreatures(t, now) {
-        state.creatures.forEach(creature => {
+        app.state.current.creatures.forEach(creature => {
             let x, y, angle;
-            const prev = prevMap.get(creature.id);
+            const prev = app.state.prevMap.get(creature.id);
             if (prev) {
                 x = lerp(prev.x, creature.x, t);
                 y = lerp(prev.y, creature.y, t);
@@ -124,14 +138,15 @@
             }
 
             ctx.save();
-            ctx.translate(x * scale + halfScale, y * scale + halfScale);
+            ctx.translate(x * app.animation.scale + app.animation.halfScale,
+                y * app.animation.scale + app.animation.halfScale);
             ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
             const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
             ctx.fillStyle = flash ? '#ff0000' : '#0000ff';
 
-            if (creature.id === observedCreatureId) {
+            if (creature.id === app.observedCreatureId) {
                 ctx.shadowColor = '#0000ff';
                 ctx.shadowBlur = 15;
                 ctx.shadowOffsetX = 0;
@@ -140,39 +155,41 @@
                 ctx.shadowBlur = 0;
             }
 
-            ctx.fillRect(-halfScale, -halfScale, scale, scale);
+            ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
+                app.animation.scale, app.animation.scale);
             ctx.fillStyle = '#ffdd00';
-            ctx.fillRect(-halfScale, -halfScale, halfScale, halfScale);
+            ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
+                app.animation.halfScale, app.animation.halfScale);
             ctx.restore();
         });
     }
 
     function draw() {
-        if (nextState) {
-            if (state) {
-                prevMap = createCreatureMap(state.creatures);
+        if (app.state.next) {
+            if (app.state.current) {
+                app.state.prevMap = createCreatureMap(app.state.current.creatures);
             } else {
-                prevMap = createCreatureMap(nextState.creatures);
+                app.state.prevMap = createCreatureMap(app.state.next.creatures);
             }
 
-            if (state && isLoading()) hideLoader();
+            if (app.state.current && isLoading()) hideLoader();
 
-            if (lastUpdateTime !== null) {
-                const interval = nextState.timestamp - lastUpdateTime;
-                estimatedInterval = 0.8 * estimatedInterval + 0.2 * interval;
+            if (app.animation.lastUpdateTime !== null) {
+                const interval = app.state.next.timestamp - app.animation.lastUpdateTime;
+                app.animation.estimatedInterval = 0.8 * app.animation.estimatedInterval + 0.2 * interval;
             }
-            lastUpdateTime = nextState.timestamp;
+            app.animation.lastUpdateTime = app.state.next.timestamp;
 
-            state = nextState;
-            nextState = null;
+            app.state.current = app.state.next;
+            app.state.next = null;
 
             updateGridStats();
             updateObservedCreatureStats();
         }
 
-        if (state) {
+        if (app.state.current) {
             const now = performance.now();
-            const t = Math.min((now - lastUpdateTime) / estimatedInterval, 1.2);
+            const t = Math.min((now - app.animation.lastUpdateTime) / app.animation.estimatedInterval, 1.2);
 
             clearCanvas();
             drawObstacles();
@@ -190,50 +207,50 @@
     }]));
 
     function startWebSocket() {
-        if (socket) {
-            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+        if (app.socket) {
+            if (app.socket.readyState === WebSocket.OPEN || app.socket.readyState === WebSocket.CONNECTING) {
                 console.log('WS is already open or connecting - skipping new start');
                 return;
             }
 
             try {
-                socket.close();
+                app.socket.close();
             } catch (e) {
                 console.warn('Failed to close existing WS:', e.message);
             }
         }
 
-        socket = new WebSocket(config.webSocketUrl);
+        app.socket = new WebSocket(app.config.webSocketUrl);
 
-        socket.onopen = () => {
+        app.socket.onopen = () => {
             console.log('Connected to WS server');
             resetAnimationState();
             stopObservingCreature();
         };
 
-        socket.onmessage = event => {
-            nextState = JSON.parse(event.data);
-            nextState.timestamp = performance.now();
+        app.socket.onmessage = event => {
+            app.state.next = JSON.parse(event.data);
+            app.state.next.timestamp = performance.now();
         };
 
-        socket.onclose = () => {
+        app.socket.onclose = () => {
             console.log('WS closed');
             showLoader();
             reconnect();
         };
 
-        socket.onerror = error => console.error('WS error:', error);
+        app.socket.onerror = error => console.error('WS error:', error);
     }
 
     function reconnect() {
-        if (reconnectScheduled) return;
-        reconnectScheduled = true;
+        if (app.reconnectScheduled) return;
+        app.reconnectScheduled = true;
         setTimeout(() => {
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
+            if (!app.socket || app.socket.readyState !== WebSocket.OPEN) {
                 console.log('Reconnecting WS...');
                 startWebSocket();
             }
-            reconnectScheduled = false;
+            app.reconnectScheduled = false;
         }, 250);
     }
 
@@ -252,8 +269,8 @@
         const canvasX = (e.clientX - rect.left) * scaleX;
         const canvasY = (e.clientY - rect.top) * scaleY;
         return {
-            x: Math.floor(canvasX / (canvas.width / config.gridSize)),
-            y: Math.floor(canvasY / (canvas.height / config.gridSize))
+            x: Math.floor(canvasX / (canvas.width / app.config.gridSize)),
+            y: Math.floor(canvasY / (canvas.height / app.config.gridSize))
         };
     }
 
@@ -294,21 +311,22 @@
     function startObservingCreature(creature) {
         if (typeof gtag === 'function') gtag('event', 'observe_creature');
 
-        observedCreatureId = creature.id;
-        elements.stats.grid.panel.classList.add('hidden');
-        elements.stats.creature.panel.classList.remove('hidden');
+        app.observedCreatureId = creature.id;
+        el.stats.grid.panel.classList.add('hidden');
+        el.stats.creature.panel.classList.remove('hidden');
     }
 
     function stopObservingCreature() {
-        elements.stats.grid.panel.classList.remove('hidden');
-        elements.stats.creature.panel.classList.add('hidden');
-        observedCreatureId = null;
+        el.stats.grid.panel.classList.remove('hidden');
+        el.stats.creature.panel.classList.add('hidden');
+        app.observedCreatureId = null;
+        resetObservedCreatureStats();
     }
 
     async function onCanvasClick(e) {
         const { x, y } = getGridClickCoordinates(e);
 
-        const clickedCreature = state.creatures.find(c => {
+        const clickedCreature = app.state.current.creatures.find(c => {
             const dx = c.x - x;
             const dy = c.y - y;
             return dx * dx + dy * dy < 2;
@@ -316,7 +334,7 @@
 
         if (clickedCreature) {
             startObservingCreature(clickedCreature);
-        } else if (observedCreatureId) {
+        } else if (app.observedCreatureId) {
             stopObservingCreature();
         } else {
             placeFood(x, y);
@@ -334,9 +352,9 @@
     }
 
     function setupEventListeners() {
-        elements.aboutToggle.addEventListener('click', () => {
+        el.aboutToggle.addEventListener('click', () => {
             document.body.classList.toggle('about-visible');
-            elements.aboutToggle.textContent = document.body.classList.contains('about-visible') ? 'back' : 'about';
+            el.aboutToggle.textContent = document.body.classList.contains('about-visible') ? 'back' : 'about';
         });
 
         canvas.addEventListener('click', onCanvasClick);
@@ -346,14 +364,14 @@
         window.addEventListener('pageshow', reconnect);
         window.addEventListener('online', reconnect);
         window.addEventListener('beforeunload', () => {
-            if (socket) socket.close();
+            if (app.socket) app.socket.close();
         });
     }
 
     async function init() {
         try {
             const response = await fetch('/api/config');
-            config = await response.json();
+            app.config = await response.json();
             startWebSocket();
             requestAnimationFrame(draw);
         } catch (error) {
