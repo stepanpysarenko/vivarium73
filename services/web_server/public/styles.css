@@ -220,7 +220,7 @@ body.loading #canvas {
     color: var(--color-text-muted);
     padding: 7px 10px;
     border: none;
-    background-color: var(--color-accent);
+    background-color: var(--color-bg);
     cursor: pointer;
     min-width: 80px;
     width: auto;
