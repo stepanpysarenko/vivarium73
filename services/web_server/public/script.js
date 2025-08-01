@@ -8,14 +8,14 @@
         aboutToggle: document.getElementById('about-toggle'),
         stats: {
             grid: {
-                statsPanel: document.getElementById('stats-grid'),
+                panel: document.getElementById('stats-grid'),
                 restarts: document.getElementById('stats-grid-restarts'),
                 generation: document.getElementById('stats-grid-generation'),
                 creatures: document.getElementById('stats-grid-creatures'),
                 food: document.getElementById('stats-grid-food')
             },
             creature: {
-                statsPanel: document.getElementById('stats-creature'),
+                panel: document.getElementById('stats-creature'),
                 id: document.getElementById('stat-creature-id'),
                 generation: document.getElementById('stat-creature-generation'),
                 energy: document.getElementById('stat-creature-energy'),
@@ -43,6 +43,29 @@
     const showLoader = () => document.body.classList.add('loading');
     const hideLoader = () => document.body.classList.remove('loading');
 
+    function updateGridStats() {
+        elements.stats.grid.restarts.textContent = state.stats.restarts;
+        elements.stats.grid.generation.textContent = state.stats.generation;
+        elements.stats.grid.creatures.textContent = state.stats.creatureCount;
+        elements.stats.grid.food.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
+    }
+
+    function updateObservedCreatureStats() {
+        if (!observedCreatureId) return;
+
+        const creature = state.creatures.find(c => c.id === observedCreatureId);
+        if (!creature) {
+            stopObservingCreature();
+            return;
+        }
+
+        elements.stats.creature.id.textContent = `id${creature.id}`;
+        elements.stats.creature.generation.textContent = `${creature.generation}`;
+        elements.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+        elements.stats.creature.score.textContent = `${creature.score}`;
+        elements.stats.creature.life.textContent = formatTime(creature.msLived);
+    }
+
     function resetAnimationState() {
         state = null;
         nextState = null;
@@ -52,11 +75,11 @@
 
         scale = canvas.width / config.gridSize;
         halfScale = scale * 0.5;
-
-        stopObservingCreature();
     }
 
-    const lerp = (a, b, t) => a + (b - a) * t;
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
 
     function lerpAngle(from, to, t) {
         let delta = to - from;
@@ -132,7 +155,7 @@
                 prevMap = createCreatureMap(nextState.creatures);
             }
 
-            if (isLoading() && state) hideLoader();
+            if (state && isLoading()) hideLoader();
 
             if (lastUpdateTime !== null) {
                 const interval = nextState.timestamp - lastUpdateTime;
@@ -142,6 +165,7 @@
 
             state = nextState;
             nextState = null;
+
             updateGridStats();
             updateObservedCreatureStats();
         }
@@ -159,20 +183,13 @@
         requestAnimationFrame(draw);
     }
 
-    function updateGridStats() {
-        elements.stats.grid.restarts.textContent = state.stats.restarts;
-        elements.stats.grid.generation.textContent = state.stats.generation;
-        elements.stats.grid.creatures.textContent = state.stats.creatureCount;
-        elements.stats.grid.food.textContent = `${state.stats.foodCount}/${config.maxFoodCount}`;
-    }
-
     const createCreatureMap = creatures => new Map(creatures.map(c => [c.id, {
         x: c.x,
         y: c.y,
         angle: c.angle
     }]));
 
-    function startSocket() {
+    function startWebSocket() {
         if (socket) {
             if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
                 console.log('WS is already open or connecting - skipping new start');
@@ -191,6 +208,7 @@
         socket.onopen = () => {
             console.log('Connected to WS server');
             resetAnimationState();
+            stopObservingCreature();
         };
 
         socket.onmessage = event => {
@@ -213,7 +231,7 @@
         setTimeout(() => {
             if (!socket || socket.readyState !== WebSocket.OPEN) {
                 console.log('Reconnecting WS...');
-                startSocket();
+                startWebSocket();
             }
             reconnectScheduled = false;
         }, 250);
@@ -222,6 +240,7 @@
     function onVisibilityChange() {
         if (document.visibilityState === 'visible') {
             resetAnimationState();
+            stopObservingCreature();
             reconnect();
         }
     }
@@ -272,32 +291,17 @@
         return `${totalDays}d`;
     }
 
-    function updateObservedCreatureStats() {
-        if (!observedCreatureId) return;
-        const creature = state.creatures.find(c => c.id === observedCreatureId);
-        if (!creature) {
-            stopObservingCreature();
-            return;
-        }
-
-        elements.stats.creature.id.textContent = `id${creature.id}`;
-        elements.stats.creature.generation.textContent = `${creature.generation}`;
-        elements.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
-        elements.stats.creature.score.textContent = `${creature.score}`;
-        elements.stats.creature.life.textContent = formatTime(creature.msLived);
-    }
-
     function startObservingCreature(creature) {
         if (typeof gtag === 'function') gtag('event', 'observe_creature');
 
         observedCreatureId = creature.id;
-        elements.stats.grid.statsPanel.classList.add('hidden');
-        elements.stats.creature.statsPanel.classList.remove('hidden');
+        elements.stats.grid.panel.classList.add('hidden');
+        elements.stats.creature.panel.classList.remove('hidden');
     }
 
     function stopObservingCreature() {
-        elements.stats.grid.statsPanel.classList.remove('hidden');
-        elements.stats.creature.statsPanel.classList.add('hidden');
+        elements.stats.grid.panel.classList.remove('hidden');
+        elements.stats.creature.panel.classList.add('hidden');
         observedCreatureId = null;
     }
 
@@ -337,6 +341,7 @@
 
         canvas.addEventListener('click', onCanvasClick);
         document.addEventListener('visibilitychange', onVisibilityChange);
+
         window.addEventListener('focus', reconnect);
         window.addEventListener('pageshow', reconnect);
         window.addEventListener('online', reconnect);
@@ -349,7 +354,7 @@
         try {
             const response = await fetch('/api/config');
             config = await response.json();
-            startSocket();
+            startWebSocket();
             requestAnimationFrame(draw);
         } catch (error) {
             console.error('Error getting WS server url', error);
