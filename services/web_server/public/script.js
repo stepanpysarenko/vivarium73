@@ -312,6 +312,7 @@
         if (typeof gtag === 'function') gtag('event', 'observe_creature');
 
         app.observedCreatureId = creature.id;
+        updateObservedCreatureStats();
         el.stats.grid.panel.classList.add('hidden');
         el.stats.creature.panel.classList.remove('hidden');
     }
