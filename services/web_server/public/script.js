@@ -5,6 +5,7 @@
     const ctx = canvas.getContext('2d');
 
     const el = {
+        about: document.getElementById('about'),
         aboutToggle: document.getElementById('about-toggle'),
         stats: {
             grid: {
@@ -345,8 +346,8 @@
 
     function setupEventListeners() {
         el.aboutToggle.addEventListener('click', () => {
-            document.body.classList.toggle('about-visible');
-            el.aboutToggle.textContent = document.body.classList.contains('about-visible') ? 'back' : 'about';
+            el.about.classList.toggle('hidden');
+            el.aboutToggle.textContent = el.about.classList.contains('hidden') ? 'about' : 'back';
         });
 
         canvas.addEventListener('click', onCanvasClick);

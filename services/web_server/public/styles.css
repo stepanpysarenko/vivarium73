@@ -5,6 +5,16 @@
     --color-text-muted: #c8c8c8;
 }
 
+html {
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
 html,
 body {
     height: 100%;
@@ -21,8 +31,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100svh;
     overflow: hidden;
 }
 
@@ -50,21 +59,23 @@ body,
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    box-sizing: border-box;
     padding: 10px 0;
     flex-grow: 1;
 }
 
-.header {
-    padding: 20px 0;
-    margin-top: 10px;
+.header,
+.footer {
     width: 100%;
-    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: center;
     touch-action: none;
     pointer-events: none;
+}
+
+.header {
+    padding: 20px 0;
+    margin-top: 10px;
 }
 
 .content {
@@ -79,13 +90,6 @@ body,
     gap: 5px;
     padding: 20px 0;
     margin-bottom: 10px;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    touch-action: none;
-    pointer-events: none;
 }
 
 .title {
@@ -99,10 +103,6 @@ body,
     display: flex;
     gap: 20px;
     align-items: flex-start;
-}
-
-.stats.hidden {
-    display: none;
 }
 
 .stat {
@@ -127,7 +127,7 @@ body,
 
 #canvas,
 #loader,
-#about-section {
+#about {
     position: absolute;
     top: 0;
     left: 0;
@@ -180,12 +180,8 @@ body.loading #loader {
     display: flex;
 }
 
-body.loading #canvas {
-    display: none;
-}
-
-#about-section {
-    display: none;
+#about {
+    display: flex;
     padding: 20px 20px;
     box-sizing: border-box;
     text-align: left;
@@ -194,6 +190,10 @@ body.loading #canvas {
     justify-content: space-between;
     align-items: center;
     z-index: 3;
+}
+
+#about.hidden {
+    display: none;
 }
 
 #about-content {
@@ -230,35 +230,6 @@ body.loading #canvas {
 
 #about-toggle:hover {
     color: var(--color-text);
-}
-
-body.about-visible #about-section {
-    display: block;
-}
-
-body.about-visible #canvas {
-    display: none;
-}
-
-#creature-panel {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: white;
-    border: 1px solid var(--color-accent);
-    padding: 10px;
-    font-size: 14px;
-    z-index: 10;
-    pointer-events: auto;
-    touch-action: auto;
-}
-
-#creature-details {
-    margin: 0;
-}
-
-#creature-panel.hidden {
-    display: none;
 }
 
 @media (max-width: 800px) {
@@ -302,4 +273,8 @@ body.about-visible #canvas {
     #about-content {
         font-size: 10px;
     }
+}
+
+.hidden {
+    display: none !important;
 }
