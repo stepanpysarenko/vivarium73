@@ -35,15 +35,7 @@ body {
     overflow: hidden;
 }
 
-html,
-body,
-.container,
-.header,
-.footer,
-.stats,
-.stat,
-#canvas,
-#loader {
+html {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -183,7 +175,6 @@ body.loading #loader {
 #about {
     display: flex;
     padding: 20px 20px;
-    box-sizing: border-box;
     text-align: left;
     overflow: hidden;
     flex-direction: column;
