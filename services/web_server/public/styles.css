@@ -3,6 +3,26 @@
     --color-accent: #e8e8e8;
     --color-text: #383838;
     --color-text-muted: #c8c8c8;
+    --color-white: #ffffff;
+    --space-xs: 5px;
+    --space-sm: 10px;
+    --space-md: 15px;
+    --space-lg: 20px;
+    --space-xl: 24px;
+    --font-size-xxs: 0.5625rem;
+    --font-size-xs: 0.625rem;
+    --font-size-sm: 0.75rem;
+    --font-size-md: 0.875rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+}
+
+html {
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
 }
 
 html,
@@ -21,9 +41,14 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100svh;
     overflow: hidden;
+}
+
+@supports not (height: 100svh) {
+    body {
+        min-height: 100vh;
+    }
 }
 
 html,
@@ -50,21 +75,23 @@ body,
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    box-sizing: border-box;
-    padding: 10px 0;
+    padding: var(--space-sm) 0;
     flex-grow: 1;
 }
 
-.header {
-    padding: 20px 0;
-    margin-top: 10px;
+.header,
+.footer {
     width: 100%;
-    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: center;
     touch-action: none;
     pointer-events: none;
+}
+
+.header {
+    padding: var(--space-lg) 0;
+    margin-top: var(--space-sm);
 }
 
 .content {
@@ -76,28 +103,21 @@ body,
 
 .footer {
     flex-direction: column;
-    gap: 5px;
-    padding: 20px 0;
-    margin-bottom: 10px;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    touch-action: none;
-    pointer-events: none;
+    gap: var(--space-xs);
+    padding: var(--space-lg) 0;
+    margin-bottom: var(--space-sm);
 }
 
 .title {
-    font-size: 24px;
+    font-size: var(--font-size-xl);
     font-weight: normal;
-    line-height: 24px;
+    line-height: var(--font-size-xl);
     margin: 0;
 }
 
 .stats {
     display: flex;
-    gap: 20px;
+    gap: var(--space-lg);
     align-items: flex-start;
 }
 
@@ -113,21 +133,19 @@ body,
 
 .stat-label {
     display: block;
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     margin-bottom: 8px;
 }
 
 .stat-value {
-    font-size: 14px;
+    font-size: var(--font-size-md);
     font-weight: normal;
     min-height: 1em;
     display: inline-block;
 }
 
-#canvas,
-#loader,
-#about-section {
+.overlay-element {
     position: absolute;
     top: 0;
     left: 0;
@@ -186,8 +204,7 @@ body.loading #canvas {
 
 #about-section {
     display: none;
-    padding: 20px 20px;
-    box-sizing: border-box;
+    padding: var(--space-lg) var(--space-lg);
     text-align: left;
     overflow: hidden;
     flex-direction: column;
@@ -200,8 +217,8 @@ body.loading #canvas {
     overflow-y: auto;
     max-height: 100%;
     width: 100%;
-    padding-right: 15px;
-    font-size: 12px;
+    padding-right: var(--space-md);
+    font-size: var(--font-size-sm);
     text-align: left;
     line-height: 1.6;
     pointer-events: auto;
@@ -211,14 +228,14 @@ body.loading #canvas {
 
 #about-content ul {
     margin: 0;
-    padding-left: 15px;
+    padding-left: var(--space-md);
 }
 
 #about-toggle {
     font-family: inherit;
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     color: var(--color-text-muted);
-    padding: 7px 10px;
+    padding: 7px var(--space-sm);
     border: none;
     background-color: var(--color-bg);
     cursor: pointer;
@@ -242,12 +259,12 @@ body.about-visible #canvas {
 
 #creature-panel {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    background: white;
+    top: var(--space-lg);
+    left: var(--space-lg);
+    background: var(--color-white);
     border: 1px solid var(--color-accent);
-    padding: 10px;
-    font-size: 14px;
+    padding: var(--space-sm);
+    font-size: var(--font-size-md);
     z-index: 10;
     pointer-events: auto;
     touch-action: auto;
@@ -271,35 +288,35 @@ body.about-visible #canvas {
 @media (max-width: 850px) {
     .header {
         flex-direction: column;
-        gap: 10px;
+        gap: var(--space-sm);
         text-align: center;
     }
 
     .title {
-        font-size: 18px;
-        line-height: 18px;
+        font-size: var(--font-size-lg);
+        line-height: var(--font-size-lg);
         margin-bottom: 8px;
     }
 
     .stats {
         flex-direction: row;
-        gap: 10px;
+        gap: var(--space-sm);
     }
 
     .stat-label {
-        font-size: 9px;
-        margin-bottom: 5px;
+        font-size: var(--font-size-xxs);
+        margin-bottom: var(--space-xs);
     }
 
     .stat-value {
-        font-size: 10px;
+        font-size: var(--font-size-xs);
     }
 
     .footer {
-        padding-top: 24px;
+        padding-top: var(--space-xl);
     }
 
     #about-content {
-        font-size: 10px;
+        font-size: var(--font-size-xs);
     }
 }
