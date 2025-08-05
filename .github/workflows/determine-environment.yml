@@ -15,7 +15,7 @@ jobs:
     steps:
       - id: setenv
         run: |
-          BRANCH="${GITHUB_REF##*/}"
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
           if [[ "$BRANCH" == "qa" ]]; then
             echo "environment=qa" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" == "main" ]]; then

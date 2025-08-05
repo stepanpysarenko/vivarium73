@@ -50,10 +50,10 @@ jobs:
         run: pip install -r services/nn_service/requirements.txt
 
       - name: Run tests
-        run: pytest
+        run: pytest nn_service/tests
         env:
           PYTHONPATH: .
-        working-directory: services/nn_service
+        working-directory: services
 
   determine-deploy:
     uses: ./.github/workflows/determine-environment.yml

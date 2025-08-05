@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from main import app
-import logic as logic
+from nn_service.main import app
+from nn_service import logic
 
 client = TestClient(app)
 

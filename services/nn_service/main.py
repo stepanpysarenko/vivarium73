@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List
-from logic import init_weights, mutate_weights, think
+from nn_service.logic import init_weights, mutate_weights, think
 
 app = FastAPI()
 
