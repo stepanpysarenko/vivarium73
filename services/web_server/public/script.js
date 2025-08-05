@@ -7,6 +7,8 @@
     const el = {
         about: document.getElementById('about'),
         aboutToggle: document.getElementById('about-toggle'),
+        themeToggle: document.getElementById('theme-toggle'),
+        metaThemeColor: document.querySelector('meta[name="theme-color"]'),
         stats: {
             grid: {
                 panel: document.getElementById('stats-grid'),
@@ -42,11 +44,20 @@
             halfScale: null,
         },
         observedCreatureId: null,
+        darkMode: false
     };
 
     const isLoading = () => document.body.classList.contains('loading');
     const showLoader = () => document.body.classList.add('loading');
     const hideLoader = () => document.body.classList.remove('loading');
+
+    function setTheme(dark) {
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.classList.toggle('light', !dark);
+        el.themeToggle.textContent = dark ? 'light' : 'dark';
+        app.darkMode = dark;
+        el.metaThemeColor.setAttribute('content', dark ? '#282828' : '#f8f8f8');
+    }
 
     function updateGridStats() {
         el.stats.grid.restarts.textContent = app.state.current.stats.restarts;
@@ -70,7 +81,7 @@
         el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
         el.stats.creature.score.textContent = `${creature.score}`;
     }
-    
+
     function resetAnimationState() {
         app.state.current = null;
         app.state.next = null;
@@ -100,7 +111,7 @@
 
     function drawObstacles() {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#e8e8e8';
+        ctx.fillStyle = app.darkMode ? '#3c3c3c' : '#e8e8e8';
         app.state.current.obstacles.forEach(({ x, y }) => {
             ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
                 app.animation.scale, app.animation.scale);
@@ -347,7 +358,11 @@
     function setupEventListeners() {
         el.aboutToggle.addEventListener('click', () => {
             el.about.classList.toggle('hidden');
-            el.aboutToggle.textContent = el.about.classList.contains('hidden') ? 'about' : 'back';
+            el.aboutToggle.textContent = el.about.classList.contains('hidden') ? 'about' : 'grid';
+        });
+
+        el.themeToggle.addEventListener('click', () => {
+            setTheme(!document.documentElement.classList.contains('dark'));
         });
 
         canvas.addEventListener('click', onCanvasClick);
@@ -362,6 +377,7 @@
     }
 
     async function init() {
+        setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
         try {
             const response = await fetch('/api/config');
             app.config = await response.json();

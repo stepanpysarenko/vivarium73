@@ -1,8 +1,41 @@
 :root {
-    --color-bg: #f8f8f8;
-    --color-accent: #e8e8e8;
-    --color-text: #383838;
-    --color-text-muted: #c8c8c8;
+    --color-bg-light: #f8f8f8;
+    --color-accent-light: #e8e8e8;
+    --color-text-light: #383838;
+    --color-text-muted-light: #c8c8c8;
+
+    --color-bg-dark: #282828;
+    --color-accent-dark: #3c3c3c;
+    --color-text-dark: #d4d4d4;
+    --color-text-muted-dark: #858585;
+
+    --color-bg: var(--color-bg-light);
+    --color-accent: var(--color-accent-light);
+    --color-text: var(--color-text-light);
+    --color-text-muted: var(--color-text-muted-light);
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+        --color-bg: var(--color-bg-dark);
+        --color-accent: var(--color-accent-dark);
+        --color-text: var(--color-text-dark);
+        --color-text-muted: var(--color-text-muted-dark);
+        color-scheme: dark;
+    }
+}
+
+:root.dark {
+    --color-bg: var(--color-bg-dark);
+    --color-accent: var(--color-accent-dark);
+    --color-text: var(--color-text-dark);
+    --color-text-muted: var(--color-text-muted-dark);
+    color-scheme: dark;
+}
+
+:root.light {
+    color-scheme: light;
 }
 
 html {
@@ -202,7 +235,17 @@ body.loading #loader {
     padding-left: 15px;
 }
 
-#about-toggle {
+.button-row {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
+    touch-action: auto;
+}
+
+.button-row button {
     font-family: inherit;
     font-size: 10px;
     color: var(--color-text-muted);
@@ -216,7 +259,7 @@ body.loading #loader {
     touch-action: auto;
 }
 
-#about-toggle:hover {
+.button-row button:hover {
     color: var(--color-text);
 }
 

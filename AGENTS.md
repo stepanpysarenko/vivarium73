@@ -36,12 +36,17 @@ cd -
 ```bash
 #!/bin/bash
 
-# ---- Python (NN service) ----
-PYTHONPATH=. pytest nn_service/tests
+# NN service
+(
+    cd services
+    PYTHONPATH=. pytest nn_service/tests
+)
 
-# ---- Node.js (Web server) ----
-cd services/web_server
-npm test
+# Web server
+(
+    cd services/web_server
+    npm test
+)
 ```
 
 
