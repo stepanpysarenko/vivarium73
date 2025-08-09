@@ -28,6 +28,27 @@
         }
     };
 
+    const PALETTE = {
+        light: {
+            background: '#f8f8f8',
+            obstacle: '#e8e8e8',
+            food: '#008000',
+            creature: '#0000ff',
+            creatureFlash: '#ff0000',
+            creatureObservedShadow: '#0000ff',
+            creatureSecondary: '#ff9933'
+        },
+        dark: {
+            background: '#282828',
+            obstacle: '#3c3c3c',
+            food: '#3cb371',
+            creature: '#537bff',
+            creatureFlash: '#ff0000',
+            creatureObservedShadow: '#537bff',
+            creatureSecondary: '#ffdd00'
+        }
+    };
+
     const app = {
         config: null,
         socket: null,
@@ -44,7 +65,7 @@
             halfScale: null,
         },
         observedCreatureId: null,
-        darkMode: false
+        colors: null
     };
 
     const isLoading = () => document.body.classList.contains('loading');
@@ -55,8 +76,8 @@
         document.documentElement.classList.toggle('dark', dark);
         document.documentElement.classList.toggle('light', !dark);
         el.themeToggle.textContent = dark ? 'light' : 'dark';
-        app.darkMode = dark;
-        el.metaThemeColor.setAttribute('content', dark ? '#282828' : '#f8f8f8');
+        app.colors = dark ? PALETTE.dark : PALETTE.light;
+        el.metaThemeColor.setAttribute('content', app.colors.background);
     }
 
     function updateGridStats() {
@@ -111,7 +132,7 @@
 
     function drawObstacles() {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = app.darkMode ? '#3c3c3c' : '#e8e8e8';
+        ctx.fillStyle = app.colors.obstacle;
         app.state.current.obstacles.forEach(({ x, y }) => {
             ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
                 app.animation.scale, app.animation.scale);
@@ -120,7 +141,7 @@
 
     function drawFood() {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#008000';
+        ctx.fillStyle = app.colors.food;
         app.state.current.food.forEach(({ x, y }) => {
             ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
                 app.animation.scale, app.animation.scale);
@@ -148,10 +169,10 @@
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
             const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
-            ctx.fillStyle = flash ? '#ff0000' : '#0000ff';
+            ctx.fillStyle = flash ? app.colors.flashing : app.colors.creature;
 
             if (creature.id === app.observedCreatureId) {
-                ctx.shadowColor = '#0000ff';
+                ctx.shadowColor = app.colors.creatureObservedShadow;
                 ctx.shadowBlur = 15;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
@@ -161,7 +182,7 @@
 
             ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
                 app.animation.scale, app.animation.scale);
-            ctx.fillStyle = '#ffdd00';
+            ctx.fillStyle = app.colors.creatureSecondary;
             ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
                 app.animation.halfScale, app.animation.halfScale);
             ctx.restore();
