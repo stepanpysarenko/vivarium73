@@ -165,6 +165,10 @@ body {
     pointer-events: auto;
 }
 
+body.loading #canvas {
+    display: none;
+}
+
 #loader {
     display: none;
     z-index: 2;
@@ -217,7 +221,6 @@ body.loading #loader {
     overflow-y: auto;
     max-height: 100%;
     width: 100%;
-    padding-right: 15px;
     font-size: 12px;
     text-align: left;
     line-height: 1.6;

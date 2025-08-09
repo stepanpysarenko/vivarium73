@@ -41,7 +41,7 @@
         dark: {
             background: '#282828',
             obstacle: '#3c3c3c',
-            food: '#3cb371',
+            food: '#34a064',
             creature: '#537bff',
             creatureFlash: '#ff0000',
             creatureObservedShadow: '#537bff',
