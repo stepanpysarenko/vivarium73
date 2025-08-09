@@ -89,9 +89,9 @@ function startServer(port = CONFIG.PORT) {
     });
 }
 
-function shutdown() {
+async function shutdown() {
     console.log("Shutting down...");
-    saveState();
+    await saveState();
     wss.clients.forEach(c => c.readyState === WebSocket.OPEN && c.close());
     server.close(() => process.exit(0));
 }

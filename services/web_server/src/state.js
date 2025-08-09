@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const CONFIG = require('./config');
 const { initCreature, getScore } = require("./creature");
@@ -11,7 +11,7 @@ const r2Interaction = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
 var state = null;
 
 async function initState() {
-    state = loadState();
+    state = await loadState();
     if (!state) {
         state = {
             creatures: [],
@@ -39,30 +39,27 @@ async function initState() {
     }
 }
 
-function saveState() {
+async function saveState() {
     const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
         const data = JSON.stringify(state, null, 4);
-        fs.writeFileSync(filePath, data, 'utf8');
+        await fs.writeFile(filePath, data, 'utf8');
         console.log('State successfully saved to', filePath);
     } catch (error) {
         console.error(`Error saving state to ${filePath}:`, error.message);
     }
 }
 
-function loadState() {
+async function loadState() {
     const filePath = path.resolve(CONFIG.STATE_SAVE_PATH);
     try {
-        if (!fs.existsSync(filePath)) {
-            console.warn(`State file not found at ${filePath}`);
-            return null;
-        }
-        const fileData = fs.readFileSync(filePath, 'utf8');
+        await fs.access(filePath);
+        const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
         console.log(`State successfully loaded from ${filePath}`);
         return state;
     } catch (error) {
-        console.error(`Error loading state from ${filePath}:`, error.message);
+        console.warn(`Error loading state from ${filePath}:`, error.message);
         return null;
     }
 }
