@@ -181,6 +181,7 @@ jobs:
             cd ${{ vars.DEPLOY_PATH }}
 
             echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" > .env
+            echo "CORS_ORIGIN=${{ vars.CORS_ORIGIN }}" >> .env
             echo "WEB_PORT=${{ vars.WEB_PORT }}" >> .env
             echo "NN_PORT=${{ vars.NN_PORT }}" >> .env
             echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" >> .env
