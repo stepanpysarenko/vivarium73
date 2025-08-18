@@ -72,12 +72,16 @@
     const showLoader = () => document.body.classList.add('loading');
     const hideLoader = () => document.body.classList.remove('loading');
 
-    function setTheme(dark) {
+    function setTheme(dark, persist = false) {
         document.documentElement.classList.toggle('dark', dark);
         document.documentElement.classList.toggle('light', !dark);
         el.themeToggle.textContent = dark ? 'light' : 'dark';
         app.colors = dark ? PALETTE.dark : PALETTE.light;
         el.metaThemeColor.setAttribute('content', app.colors.background);
+
+        if (persist) {
+            localStorage.setItem('theme', dark ? 'dark' : 'light');
+        }
     }
 
     function updateGridStats() {
@@ -338,13 +342,15 @@
 
         app.observedCreatureId = creature.id;
         updateObservedCreatureStats();
-        el.stats.grid.panel.classList.add('hidden');
-        el.stats.creature.panel.classList.remove('hidden');
+
+        el.stats.grid.panel.hidden = true;
+        el.stats.creature.panel.hidden = false;
     }
 
     function stopObservingCreature() {
-        el.stats.grid.panel.classList.remove('hidden');
-        el.stats.creature.panel.classList.add('hidden');
+        el.stats.grid.panel.hidden = false;
+        el.stats.creature.panel.hidden = true;
+
         app.observedCreatureId = null;
     }
 
@@ -378,12 +384,14 @@
 
     function setupEventListeners() {
         el.aboutToggle.addEventListener('click', () => {
-            el.about.classList.toggle('hidden');
+            el.about.hidden = !el.about.hidden;
+            canvas.hidden = !el.about.hidden;
             el.aboutToggle.textContent = el.about.classList.contains('hidden') ? 'about' : 'grid';
         });
 
         el.themeToggle.addEventListener('click', () => {
-            setTheme(!document.documentElement.classList.contains('dark'));
+            const dark = !document.documentElement.classList.contains('dark');
+            setTheme(dark, true);
         });
 
         canvas.addEventListener('click', onCanvasClick);
@@ -398,7 +406,14 @@
     }
 
     async function init() {
-        setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme) {
+            setTheme(storedTheme === 'dark');
+        } else {
+            setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
         try {
             const response = await fetch('/api/config');
             app.config = await response.json();

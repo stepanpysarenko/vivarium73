@@ -73,6 +73,10 @@ body {
     overflow: hidden;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 .container {
     width: 100%;
     max-width: 800px;
@@ -91,8 +95,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    touch-action: none;
-    pointer-events: none;
 }
 
 .header {
@@ -108,36 +110,37 @@ body {
 }
 
 .title {
-    font-size: 24px;
+    font-size: clamp(18px, 2.4vw, 24px);
     font-weight: normal;
-    line-height: 24px;
+    line-height: 1;
     margin: 0;
 }
 
 .stats {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-}
-
-.stat {
-    width: auto;
-    min-width: 60px;
+    display: grid;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    justify-content: start;
+    row-gap: 0.6rem;
+    column-gap: 1.5rem;
+    margin: 0;
+    padding: 0;
     text-align: center;
 }
 
-.stat-label {
-    display: block;
-    font-size: 10px;
+.stats dt {
+    grid-row: 1;
+    font-size: clamp(9px, 1.2vw, 10px);
     color: var(--color-text-muted);
-    margin-bottom: 8px;
+    font-weight: normal;
+    margin: 0;
 }
 
-.stat-value {
-    font-size: 14px;
+.stats dd {
+    grid-row: 2;
+    font-size: clamp(10px, 1.4vw, 14px);
     font-weight: normal;
-    min-height: 1em;
-    display: inline-block;
+    margin: 0;
 }
 
 .content {
@@ -155,7 +158,6 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    aspect-ratio: 1;
     background-color: var(--color-bg);
 }
 
@@ -204,22 +206,16 @@ body.loading #loader {
 }
 
 #about {
-    display: flex;
     z-index: 3;
     padding: 20px 20px;
-    text-align: left;
-    overflow: hidden;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
 }
 
 #about-content {
     overflow-y: auto;
     max-height: 100%;
     width: 100%;
-    padding-right: 10px;
-    font-size: 12px;
+    padding-right: 15px;
+    font-size: clamp(10px, 1.2vw, 12px);
     text-align: left;
     line-height: 1.6;
     pointer-events: auto;
@@ -238,8 +234,6 @@ body.loading #loader {
     gap: 8px;
     justify-content: center;
     align-items: center;
-    pointer-events: auto;
-    touch-action: auto;
 }
 
 .button-row button {
@@ -275,30 +269,6 @@ body.loading #loader {
     }
 
     .title {
-        font-size: 18px;
-        line-height: 18px;
         margin-bottom: 8px;
     }
-
-    .stats {
-        flex-direction: row;
-        gap: 10px;
-    }
-
-    .stat-label {
-        font-size: 9px;
-        margin-bottom: 5px;
-    }
-
-    .stat-value {
-        font-size: 10px;
-    }
-
-    #about-content {
-        font-size: 10px;
-    }
-}
-
-.hidden {
-    display: none !important;
 }

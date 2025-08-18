@@ -46,51 +46,33 @@
     <div class="container">
         <div class="header">
             <h1 class="title">vivarium73</h1>
-            <div class="stats" id="stats-grid">
-                <div class="stat">
-                    <span class="stat-label">restarts</span>
-                    <span class="stat-value" id="stats-grid-restarts"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">gen</span>
-                    <span class="stat-value" id="stats-grid-generation"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">creatures</span>
-                    <span class="stat-value" id="stats-grid-creatures"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">food</span>
-                    <span class="stat-value" id="stats-grid-food"></span>
-                </div>
-            </div>
-            <div class="stats hidden" id="stats-creature">
-                <div class="stat">
-                    <span class="stat-label">id</span>
-                    <span class="stat-value" id="stat-creature-id"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">gen</span>
-                    <span class="stat-value" id="stat-creature-generation"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">life</span>
-                    <span class="stat-value" id="stat-creature-life"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">energy</span>
-                    <span class="stat-value" id="stat-creature-energy"></span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">score</span>
-                    <span class="stat-value" id="stat-creature-score"></span>
-                </div>
-            </div>
+            <dl class="stats" id="stats-grid">
+                <dt>restarts</dt>
+                <dd id="stats-grid-restarts"></dd>
+                <dt>gen</dt>
+                <dd id="stats-grid-generation"></dd>
+                <dt>creatures</dt>
+                <dd id="stats-grid-creatures"></dd>
+                <dt>food</dt>
+                <dd id="stats-grid-food"></dd>
+            </dl>
+            <dl class="stats" id="stats-creature" hidden>
+                <dt>id</dt>
+                <dd id="stat-creature-id"></dd>
+                <dt>gen</dt>
+                <dd id="stat-creature-generation"></dd>
+                <dt>life</dt>
+                <dd id="stat-creature-life"></dd>
+                <dt>energy</dt>
+                <dd id="stat-creature-energy"></dd>
+                <dt>score</dt>
+                <dd id="stat-creature-score"></dd>
+            </dl>
         </div>
         <div class="content">
             <canvas id="canvas" width="800" height="800"></canvas>
             <div id="loader"></div>
-            <div id="about" class="hidden">
+            <div id="about" hidden>
                 <div id="about-content">
                     <p><strong>vivarium73</strong> is a real-time evolutionary simulation where autonomous creatures
                         search for food, avoid obstacles, and evolve over generations</p>
@@ -105,7 +87,7 @@
                         <li>you can click anywhere to add extra food</li>
                         <li>can be installed as a Progressive Web App (PWA) on desktop or mobile</li>
                     </ul>
-                    <h3>more: <a href="https://github.com/stepanpysarenko/vivarium73" target="_blank">github</a></h3>
+                    <p><a href="https://github.com/stepanpysarenko/vivarium73" target="_blank">github</a></p>
                 </div>
             </div>
         </div>
@@ -113,7 +95,7 @@
             <div class="button-row">
                 <button id="about-toggle">about</button>
                 <button id="theme-toggle">theme</button>
-            </div>  
+            </div>
         </div>
     </div>
     <script src="script.js" defer></script>
