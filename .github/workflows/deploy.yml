@@ -50,10 +50,10 @@ jobs:
         run: pip install -r services/nn_service/requirements.txt
 
       - name: Run tests
-        run: pytest
+        run: pytest nn_service/tests
         env:
           PYTHONPATH: .
-        working-directory: services/nn_service
+        working-directory: services
 
   determine-deploy:
     uses: ./.github/workflows/determine-environment.yml
@@ -181,6 +181,7 @@ jobs:
             cd ${{ vars.DEPLOY_PATH }}
 
             echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" > .env
+            echo "CORS_ORIGIN=${{ vars.CORS_ORIGIN }}" >> .env
             echo "WEB_PORT=${{ vars.WEB_PORT }}" >> .env
             echo "NN_PORT=${{ vars.NN_PORT }}" >> .env
             echo "WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}" >> .env

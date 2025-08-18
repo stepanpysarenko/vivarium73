@@ -18,6 +18,7 @@ services:
     build: ./services/web_server
     environment:
       - PORT=${WEB_PORT}
+      - CORS_ORIGIN=${CORS_ORIGIN}
       - WEBSOCKET_URL=${WEBSOCKET_URL}
       - NN_SERVICE_URL=http://${ENVIRONMENT}-vivarium73-nn:${NN_PORT}/api
     ports:

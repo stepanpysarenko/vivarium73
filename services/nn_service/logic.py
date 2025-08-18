@@ -26,7 +26,10 @@ def mutate_weights(weights):
     ]
     return {"weights": mutated_weights}
 
-def compute_vector(x, y, targets, repel=False):
+def wrap_angle(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
+
+def influence_vector(x, y, targets, repel=False):
     vector_x, vector_y = 0.0, 0.0
     for t in targets:
         dx = (x - t.x) if repel else (t.x - x)
@@ -44,18 +47,17 @@ def compute_vector(x, y, targets, repel=False):
 
     return vector_x, vector_y
 
-def compute_angle_and_magnitude(x, y, angle=0.0):
+def angle_and_magnitude(x, y, angle=0.0):
     orientation = angle
     angle = np.arctan2(y, x)
-    rel_angle = (angle - orientation + np.pi) % (2 * np.pi) - np.pi
+    rel_angle = wrap_angle(angle - orientation)
     magnitude = np.hypot(x, y)
     return rel_angle / np.pi, np.clip(magnitude / np.sqrt(2), 0, 1)
 
-def compute_angle_delta(current, prev):
-    delta = (current - prev + np.pi) % (2 * np.pi) - np.pi  # wrap to [-pi, pi]
-    return delta / np.pi
+def angle_delta(current, prev):
+    return wrap_angle(current - prev) / np.pi
 
-def get_net_movement_vector(path, visibility_radius):
+def net_movement_vector(path, visibility_radius):
     if len(path) < 2:
         return 0.0, 0.0
 
@@ -68,23 +70,23 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     energy_dx = np.clip((creature.energy - creature.prev_energy) / max_energy, -1, 1)
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
 
-    fx, fy = compute_vector(creature.x, creature.y, creature.food)
-    food_angle, food_magnitude = compute_angle_and_magnitude(fx, fy, creature.angle)
+    fx, fy = influence_vector(creature.x, creature.y, creature.food)
+    food_angle, food_magnitude = angle_and_magnitude(fx, fy, creature.angle)
 
-    ox, oy = compute_vector(creature.x, creature.y, creature.obstacles, True)
-    obstacle_angle, obstacle_magnitude = compute_angle_and_magnitude(ox, oy, creature.angle)
+    ox, oy = influence_vector(creature.x, creature.y, creature.obstacles, True)
+    obstacle_angle, obstacle_magnitude = angle_and_magnitude(ox, oy, creature.angle)
 
-    cx, cy = compute_vector(creature.x, creature.y, creature.creatures, repel=True)
-    creature_angle, creature_magnitude = compute_angle_and_magnitude(cx, cy, creature.angle)
+    cx, cy = influence_vector(creature.x, creature.y, creature.creatures, repel=True)
+    creature_angle, creature_magnitude = angle_and_magnitude(cx, cy, creature.angle)
 
-    net_dx, net_dy = get_net_movement_vector(creature.recent_path, visibility_radius)
-    net_angle, net_magnitude = compute_angle_and_magnitude(net_dx, net_dy, creature.angle)
+    net_dx, net_dy = net_movement_vector(creature.recent_path, visibility_radius)
+    net_angle, net_magnitude = angle_and_magnitude(net_dx, net_dy, creature.angle)
 
     move_dx = creature.x - creature.prev_x
     move_dy = creature.y - creature.prev_y
-    move_angle, move_magnitude = compute_angle_and_magnitude(move_dx, move_dy, creature.angle)
+    move_angle, move_magnitude = angle_and_magnitude(move_dx, move_dy, creature.angle)
 
-    angle_delta = compute_angle_delta(creature.angle, creature.prev_angle)
+    angle_delta_val = angle_delta(creature.angle, creature.prev_angle)
 
     inputs = np.array([
         energy_level,
@@ -98,7 +100,7 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
         creature_magnitude,
         net_angle,
         net_magnitude,
-        angle_delta,
+        angle_delta_val,
         move_angle,
         move_magnitude,
         random.uniform(-1, 1),  # exploration noise
@@ -112,10 +114,7 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     hidden_layer = np.tanh(np.dot(hidden_weights, inputs))
     output = np.tanh(np.dot(output_weights, hidden_layer))
 
-    angle_delta = output[0] * max_turn_angle
-    speed = ((output[1] + 1) / 2) * max_speed
-
     return {
-        "angleDelta": angle_delta,
-        "speed": speed
+        "angleDelta": output[0] * max_turn_angle,
+        "speed": ((output[1] + 1) / 2) * max_speed
     }

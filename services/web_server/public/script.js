@@ -5,7 +5,10 @@
     const ctx = canvas.getContext('2d');
 
     const el = {
+        about: document.getElementById('about'),
         aboutToggle: document.getElementById('about-toggle'),
+        themeToggle: document.getElementById('theme-toggle'),
+        metaThemeColor: document.querySelector('meta[name="theme-color"]'),
         stats: {
             grid: {
                 panel: document.getElementById('stats-grid'),
@@ -25,6 +28,27 @@
         }
     };
 
+    const PALETTE = {
+        light: {
+            background: '#f8f8f8',
+            obstacle: '#e8e8e8',
+            food: '#008000',
+            creature: '#0000ff',
+            creatureFlash: '#ff0000',
+            creatureObservedShadow: '#0000ff',
+            creatureSecondary: '#ff9933'
+        },
+        dark: {
+            background: '#282828',
+            obstacle: '#3c3c3c',
+            food: '#34a064',
+            creature: '#537bff',
+            creatureFlash: '#ff0000',
+            creatureObservedShadow: '#537bff',
+            creatureSecondary: '#ffdd00'
+        }
+    };
+
     const app = {
         config: null,
         socket: null,
@@ -41,11 +65,24 @@
             halfScale: null,
         },
         observedCreatureId: null,
+        colors: null
     };
 
     const isLoading = () => document.body.classList.contains('loading');
     const showLoader = () => document.body.classList.add('loading');
     const hideLoader = () => document.body.classList.remove('loading');
+
+    function setTheme(dark, persist = false) {
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.classList.toggle('light', !dark);
+        el.themeToggle.textContent = dark ? 'light' : 'dark';
+        app.colors = dark ? PALETTE.dark : PALETTE.light;
+        el.metaThemeColor.setAttribute('content', app.colors.background);
+
+        if (persist) {
+            localStorage.setItem('theme', dark ? 'dark' : 'light');
+        }
+    }
 
     function updateGridStats() {
         el.stats.grid.restarts.textContent = app.state.current.stats.restarts;
@@ -69,7 +106,7 @@
         el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
         el.stats.creature.score.textContent = `${creature.score}`;
     }
-    
+
     function resetAnimationState() {
         app.state.current = null;
         app.state.next = null;
@@ -99,7 +136,7 @@
 
     function drawObstacles() {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#e8e8e8';
+        ctx.fillStyle = app.colors.obstacle;
         app.state.current.obstacles.forEach(({ x, y }) => {
             ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
                 app.animation.scale, app.animation.scale);
@@ -108,7 +145,7 @@
 
     function drawFood() {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#008000';
+        ctx.fillStyle = app.colors.food;
         app.state.current.food.forEach(({ x, y }) => {
             ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
                 app.animation.scale, app.animation.scale);
@@ -136,10 +173,10 @@
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
             const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
-            ctx.fillStyle = flash ? '#ff0000' : '#0000ff';
+            ctx.fillStyle = flash ? app.colors.flashing : app.colors.creature;
 
             if (creature.id === app.observedCreatureId) {
-                ctx.shadowColor = '#0000ff';
+                ctx.shadowColor = app.colors.creatureObservedShadow;
                 ctx.shadowBlur = 15;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
@@ -149,7 +186,7 @@
 
             ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
                 app.animation.scale, app.animation.scale);
-            ctx.fillStyle = '#ffdd00';
+            ctx.fillStyle = app.colors.creatureSecondary;
             ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
                 app.animation.halfScale, app.animation.halfScale);
             ctx.restore();
@@ -305,13 +342,15 @@
 
         app.observedCreatureId = creature.id;
         updateObservedCreatureStats();
-        el.stats.grid.panel.classList.add('hidden');
-        el.stats.creature.panel.classList.remove('hidden');
+
+        el.stats.grid.panel.hidden = true;
+        el.stats.creature.panel.hidden = false;
     }
 
     function stopObservingCreature() {
-        el.stats.grid.panel.classList.remove('hidden');
-        el.stats.creature.panel.classList.add('hidden');
+        el.stats.grid.panel.hidden = false;
+        el.stats.creature.panel.hidden = true;
+
         app.observedCreatureId = null;
     }
 
@@ -345,8 +384,14 @@
 
     function setupEventListeners() {
         el.aboutToggle.addEventListener('click', () => {
-            document.body.classList.toggle('about-visible');
-            el.aboutToggle.textContent = document.body.classList.contains('about-visible') ? 'back' : 'about';
+            el.about.hidden = !el.about.hidden;
+            canvas.hidden = !el.about.hidden;
+            el.aboutToggle.textContent = el.about.hidden ? 'about' : 'grid';
+        });
+
+        el.themeToggle.addEventListener('click', () => {
+            const dark = !document.documentElement.classList.contains('dark');
+            setTheme(dark, true);
         });
 
         canvas.addEventListener('click', onCanvasClick);
@@ -361,6 +406,14 @@
     }
 
     async function init() {
+
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme) {
+            setTheme(storedTheme === 'dark');
+        } else {
+            setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
         try {
             const response = await fetch('/api/config');
             app.config = await response.json();

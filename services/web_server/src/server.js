@@ -25,8 +25,8 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: CONFIG.CORS_ORIGIN }));
+app.use(express.json({ limit: "1kb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
 registerRoutes(app);
@@ -89,9 +89,9 @@ function startServer(port = CONFIG.PORT) {
     });
 }
 
-function shutdown() {
+async function shutdown() {
     console.log("Shutting down...");
-    saveState();
+    await saveState();
     wss.clients.forEach(c => c.readyState === WebSocket.OPEN && c.close());
     server.close(() => process.exit(0));
 }

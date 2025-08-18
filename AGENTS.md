@@ -36,27 +36,25 @@ cd -
 ```bash
 #!/bin/bash
 
-# ---- Python (NN service) ----
-python3 -m pytest services/nn_service/tests
+# NN service
+(
+    cd services
+    PYTHONPATH=. pytest nn_service/tests
+)
 
-# ---- Node.js (Web server) ----
-cd services/web_server
-npm test
+# Web server
+(
+    cd services/web_server
+    npm test
+)
 ```
 
 
 ## Environment variables
-- `services/web_server/.env.example` lists `PORT`, `WEBSOCKET_URL`, and `NN_SERVICE_URL`.
-  Copy it to `.env` and adjust values when running locally.
+- Copy vars from `services/web_server/.env.example` to `.env` and adjust them when running locally.
 
 ## General notes
 - The Docker setup (`docker-compose.yml`) builds both services.
 - Persistent state is stored under `services/web_server/data/state.json` if running the web server.
 - Keep commit messages and PR descriptions concise and mention affected services.
 - Always ensure the file ends with a single empty line (newline character) at the end of file.
-
-## To add
-
-- NN overview
-- State management overview
-- Contribution workflow

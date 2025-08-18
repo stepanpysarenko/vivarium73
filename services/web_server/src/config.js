@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const CONFIG = {
     PORT: process.env.PORT || 3000,
+    CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     NN_SERVICE_URL: process.env.NN_SERVICE_URL || "http://localhost:8000/api",
     STATE_SAVE_PATH: process.env.STATE_SAVE_PATH || "./data/state.json",
