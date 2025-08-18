@@ -386,7 +386,7 @@
         el.aboutToggle.addEventListener('click', () => {
             el.about.hidden = !el.about.hidden;
             canvas.hidden = !el.about.hidden;
-            el.aboutToggle.textContent = el.about.classList.contains('hidden') ? 'about' : 'grid';
+            el.aboutToggle.textContent = el.about.hidden ? 'about' : 'grid';
         });
 
         el.themeToggle.addEventListener('click', () => {
