@@ -304,15 +304,10 @@ function addFood(x, y) {
     state.stats.foodCount = state.food.length;
 }
 
-function getCreature(id) {
-    return state.creatures.find(c => c.id === id);
-}
-
 module.exports = {
     initState,
     saveState,
     getPublicState,
     updateState,
-    addFood,
-    getCreature
+    addFood
 };

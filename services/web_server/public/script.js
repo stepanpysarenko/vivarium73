@@ -28,7 +28,7 @@
         }
     };
 
-    const PALETTE = {
+    const COLOR_PALETTE = {
         light: {
             background: '#f8f8f8',
             obstacle: '#e8e8e8',
@@ -76,7 +76,7 @@
         document.documentElement.classList.toggle('dark', dark);
         document.documentElement.classList.toggle('light', !dark);
         el.themeToggle.textContent = dark ? 'light' : 'dark';
-        app.colors = dark ? PALETTE.dark : PALETTE.light;
+        app.colors = dark ? COLOR_PALETTE.dark : COLOR_PALETTE.light;
         el.metaThemeColor.setAttribute('content', app.colors.background);
 
         if (persist) {
@@ -173,7 +173,7 @@
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
             const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
-            ctx.fillStyle = flash ? app.colors.flashing : app.colors.creature;
+            ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
 
             if (creature.id === app.observedCreatureId) {
                 ctx.shadowColor = app.colors.creatureObservedShadow;
@@ -298,8 +298,8 @@
         const canvasX = (e.clientX - rect.left) * scaleX;
         const canvasY = (e.clientY - rect.top) * scaleY;
         return {
-            x: Math.floor(canvasX / (canvas.width / app.config.gridSize)),
-            y: Math.floor(canvasY / (canvas.height / app.config.gridSize))
+            x: Math.floor(canvasX / app.animation.scale),
+            y: Math.floor(canvasY / app.animation.scale)
         };
     }
 
@@ -322,19 +322,23 @@
     }
 
     function formatTime(ms) {
-        const totalSeconds = Math.floor(ms / 1000);
-        const totalMinutes = Math.floor(totalSeconds / 60);
-        const totalHours = Math.floor(totalMinutes / 60);
-        const totalDays = Math.floor(totalHours / 24);
-
-        if (totalSeconds < 60) {
-            return `${totalSeconds}s`;
-        } else if (totalMinutes < 180) {
-            return `${totalMinutes}m`;
-        } else if (totalHours < 72) {
-            return `${totalHours}h`;
+        const seconds = Math.floor(ms / 1000);
+        if (seconds < 60) {
+            return `${seconds}s`;
+        } 
+        
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 180) {
+            return `${minutes}m`;
         }
-        return `${totalDays}d`;
+
+        const hours = Math.floor(minutes / 60);     
+        if (hours < 72) {
+            return `${hours}h`;
+        }
+
+        const days = Math.floor(hours / 24);
+        return `${days}d`;
     }
 
     function startObservingCreature(creature) {
@@ -385,7 +389,7 @@
     function setupEventListeners() {
         el.aboutToggle.addEventListener('click', () => {
             el.about.hidden = !el.about.hidden;
-            canvas.hidden = !el.about.hidden;
+            canvas.hidden = !canvas.hidden;
             el.aboutToggle.textContent = el.about.hidden ? 'about' : 'grid';
         });
 
