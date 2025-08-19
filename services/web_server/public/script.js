@@ -53,16 +53,17 @@
         config: null,
         socket: null,
         reconnectScheduled: false,
+        reconnectDelay: 250,
         state: {
+            prev: null,
             current: null,
-            next: null,
-            prevMap: new Map(),
+            next: null
         },
+        scale: null,
+        halfScale: null,
         animation: {
             estimatedInterval: null,
-            lastUpdateTime: null,
-            scale: null,
-            halfScale: null,
+            lastUpdateTime: null
         },
         observedCreatureId: null,
         colors: null
@@ -94,7 +95,7 @@
     function updateObservedCreatureStats() {
         if (!app.observedCreatureId) return;
 
-        const creature = app.state.current.creatures.find(c => c.id === app.observedCreatureId);
+        const creature = app.state.current.creatureMap.get(app.observedCreatureId);
         if (!creature) {
             stopObservingCreature();
             return;
@@ -107,15 +108,17 @@
         el.stats.creature.score.textContent = `${creature.score}`;
     }
 
+    function setScale() {
+        app.scale = canvas.width / app.config.gridSize;
+        app.halfScale = app.scale * 0.5;
+    }
+
     function resetAnimationState() {
+        app.state.prev = null;
         app.state.current = null;
         app.state.next = null;
-        app.state.prevMap = new Map();
         app.animation.estimatedInterval = app.config.stateUpdateInterval;
         app.animation.lastUpdateTime = null;
-
-        app.animation.scale = canvas.width / app.config.gridSize;
-        app.animation.halfScale = app.animation.scale * 0.5;
     }
 
     function lerp(a, b, t) {
@@ -138,8 +141,7 @@
         ctx.globalAlpha = 1;
         ctx.fillStyle = app.colors.obstacle;
         app.state.current.obstacles.forEach(({ x, y }) => {
-            ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
-                app.animation.scale, app.animation.scale);
+            ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
         });
     }
 
@@ -147,15 +149,14 @@
         ctx.globalAlpha = 1;
         ctx.fillStyle = app.colors.food;
         app.state.current.food.forEach(({ x, y }) => {
-            ctx.fillRect(x * app.animation.scale, y * app.animation.scale,
-                app.animation.scale, app.animation.scale);
+            ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
         });
     }
 
     function drawCreatures(t, now) {
         app.state.current.creatures.forEach(creature => {
             let x, y, angle;
-            const prev = app.state.prevMap.get(creature.id);
+            const prev = app.state.prev?.creatureMap.get(creature.id);
             if (prev) {
                 x = lerp(prev.x, creature.x, t);
                 y = lerp(prev.y, creature.y, t);
@@ -167,8 +168,7 @@
             }
 
             ctx.save();
-            ctx.translate(x * app.animation.scale + app.animation.halfScale,
-                y * app.animation.scale + app.animation.halfScale);
+            ctx.translate(x * app.scale + app.halfScale, y * app.scale + app.halfScale);
             ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
@@ -184,23 +184,15 @@
                 ctx.shadowBlur = 0;
             }
 
-            ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
-                app.animation.scale, app.animation.scale);
+            ctx.fillRect(-app.halfScale, -app.halfScale, app.scale, app.scale);
             ctx.fillStyle = app.colors.creatureSecondary;
-            ctx.fillRect(-app.animation.halfScale, -app.animation.halfScale,
-                app.animation.halfScale, app.animation.halfScale);
+            ctx.fillRect(-app.halfScale, -app.halfScale, app.halfScale, app.halfScale);
             ctx.restore();
         });
     }
 
     function draw() {
         if (app.state.next) {
-            if (app.state.current) {
-                app.state.prevMap = createCreatureMap(app.state.current.creatures);
-            } else {
-                app.state.prevMap = createCreatureMap(app.state.next.creatures);
-            }
-
             if (app.state.current && isLoading()) hideLoader();
 
             if (app.animation.lastUpdateTime !== null) {
@@ -209,6 +201,7 @@
             }
             app.animation.lastUpdateTime = app.state.next.timestamp;
 
+            app.state.prev = app.state.current;
             app.state.current = app.state.next;
             app.state.next = null;
 
@@ -228,12 +221,6 @@
 
         requestAnimationFrame(draw);
     }
-
-    const createCreatureMap = creatures => new Map(creatures.map(c => [c.id, {
-        x: c.x,
-        y: c.y,
-        angle: c.angle
-    }]));
 
     function startWebSocket() {
         if (app.socket) {
@@ -259,6 +246,7 @@
 
         app.socket.onmessage = event => {
             app.state.next = JSON.parse(event.data);
+            app.state.next.creatureMap = new Map(app.state.next.creatures.map(c => [c.id, c]));
             app.state.next.timestamp = performance.now();
         };
 
@@ -280,7 +268,7 @@
                 startWebSocket();
             }
             app.reconnectScheduled = false;
-        }, 250);
+        }, app.reconnectDelay);
     }
 
     function onVisibilityChange() {
@@ -298,8 +286,8 @@
         const canvasX = (e.clientX - rect.left) * scaleX;
         const canvasY = (e.clientY - rect.top) * scaleY;
         return {
-            x: Math.floor(canvasX / app.animation.scale),
-            y: Math.floor(canvasY / app.animation.scale)
+            x: Math.floor(canvasX / app.scale),
+            y: Math.floor(canvasY / app.scale)
         };
     }
 
@@ -325,14 +313,14 @@
         const seconds = Math.floor(ms / 1000);
         if (seconds < 60) {
             return `${seconds}s`;
-        } 
-        
+        }
+
         const minutes = Math.floor(seconds / 60);
         if (minutes < 180) {
             return `${minutes}m`;
         }
 
-        const hours = Math.floor(minutes / 60);     
+        const hours = Math.floor(minutes / 60);
         if (hours < 72) {
             return `${hours}h`;
         }
@@ -421,6 +409,7 @@
         try {
             const response = await fetch('/api/config');
             app.config = await response.json();
+            setScale();
             startWebSocket();
             requestAnimationFrame(draw);
         } catch (error) {
