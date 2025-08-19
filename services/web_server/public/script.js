@@ -103,7 +103,7 @@
         el.stats.creature.id.textContent = `${creature.id}`;
         el.stats.creature.generation.textContent = `${creature.generation}`;
         el.stats.creature.life.textContent = formatTime(creature.msLived);
-        el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+        el.stats.creature.energy.textContent = `${creature.energy}%`;
         el.stats.creature.score.textContent = `${creature.score}`;
     }
 
