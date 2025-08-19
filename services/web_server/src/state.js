@@ -85,7 +85,7 @@ function getPublicState() {
             x: round2(c.x),
             y: round2(c.y),
             angle: round2(c.angle),
-            energy: round2(c.energy / CONFIG.CREATURE_MAX_ENERGY),
+            energy: Math.round(c.energy / CONFIG.CREATURE_MAX_ENERGY * 100),
             flashing: c.updatesToFlash > 0,
             generation: c.generation,
             score: c.stats.score,
@@ -304,15 +304,10 @@ function addFood(x, y) {
     state.stats.foodCount = state.food.length;
 }
 
-function getCreature(id) {
-    return state.creatures.find(c => c.id === id);
-}
-
 module.exports = {
     initState,
     saveState,
     getPublicState,
     updateState,
-    addFood,
-    getCreature
+    addFood
 };
