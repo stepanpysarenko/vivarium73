@@ -1,60 +1,55 @@
-# AGENT Instructions
+# AGENTS.md
 
-## Architecture Overview
+## Architecture
+- Two services managed via Docker Compose:
+  - `services/web_server` – web server with client app and WebSocket API built with Node.js/Express
+  - `services/nn_service` – neural network service built with FastAPI
+- Web server communicates with NN service over HTTP.
+- Clients communicate with the web server via HTTP and WebSocket for real-time updates.
 
-This project is composed of two services managed by Docker Compose:
+## Dev environment setup
 
-- `services/web_server` – A Node.js/Express server that serves the web client and exposes a WebSocket API.
-- `services/nn_service` – A FastAPI application providing neural network logic.
+### Prerequisites
+- Python 3.11
+- Node.js 18+ and npm
+- pip (latest version)
 
-The web server communicates with the NN service over HTTP. Clients interact with the web server over HTTP and WebSocket connections.
+### Steps
+1. Copy `services/web_server/.env.example` to `.env` and update values for your local environment.
+2. Set up **nn_service**:
+   ```bash
+   python3.11 -m venv .venv
+   source .venv/bin/activate
+   pip install --upgrade pip
+   pip install -r services/nn_service/requirements.txt
+   deactivate
+   ```
+3. Set up **web_server**:
+   ```bash
+   cd services/web_server
+   npm ci
+   cd -
+   ```
 
+Run these steps once after cloning, or again if dependencies change. For daily development, only activate the Python venv (if working on `nn_service`) and then run tests.
 
-## Testing
-Run all tests before committing changes.
+## Testing instructions
+- Always run tests before committing.
+- Run **nn_service** tests:
+  ```bash
+  cd services && PYTHONPATH=. pytest nn_service/tests
+  ```
+- Run **web_server** tests:
+  ```bash
+  cd services/web_server && npm test
+  ```
 
-### Local environment setup script
-```bash
-#!/bin/bash
+## Docker notes
+- `docker-compose.yml` builds and runs both services.
+- Persistent state is stored at `services/web_server/data/state.json`.
 
-set -e
-
-# ---- Python (NN service) ----
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r services/nn_service/requirements.txt
-deactivate
-
-# ---- Node.js (Web server) ----
-cd services/web_server
-npm ci
-cd -
-```
-
-### Running tests
-```bash
-#!/bin/bash
-
-# NN service
-(
-    cd services
-    PYTHONPATH=. pytest nn_service/tests
-)
-
-# Web server
-(
-    cd services/web_server
-    npm test
-)
-```
-
-
-## Environment variables
-- Copy vars from `services/web_server/.env.example` to `.env` and adjust them when running locally.
-
-## General notes
-- The Docker setup (`docker-compose.yml`) builds both services.
-- Persistent state is stored under `services/web_server/data/state.json` if running the web server.
-- Keep commit messages and PR descriptions concise and mention affected services.
-- Always ensure the file ends with a single empty line (newline character) at the end of file.
+## PR guidelines
+- Keep commit messages and PR descriptions concise.
+- Mention which service(s) are affected.
+- Link related issues if available.
+- Ensure files end with a single trailing newline.
