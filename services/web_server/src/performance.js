@@ -17,12 +17,14 @@ async function restartPopulation(state) {
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
             state.creatures.push(await initCreature(state));
         }
+        state.eggs = [];
         return;
     }
 
     console.log("Restarting population with top performers...");
     console.log('Top performers scores:', state.topPerformers.map(p => p.stats.score));
     state.creatures = [];
+    state.eggs = [];
     const topPerformersCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * CONFIG.POPULATION_TOP_RATIO);
     const mutatedCount = Math.floor(CONFIG.CREATURE_INITIAL_COUNT * CONFIG.POPULATION_MUTATED_RATIO);
     const randomCount = CONFIG.CREATURE_INITIAL_COUNT - topPerformersCount - mutatedCount;

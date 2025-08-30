@@ -20,6 +20,7 @@
             creature: {
                 panel: document.getElementById('stats-creature'),
                 id: document.getElementById('stat-creature-id'),
+                sex: document.getElementById('stat-creature-sex'),
                 generation: document.getElementById('stat-creature-generation'),
                 life: document.getElementById('stat-creature-life'),
                 energy: document.getElementById('stat-creature-energy'),
@@ -33,18 +34,20 @@
             background: '#f8f8f8',
             obstacle: '#e8e8e8',
             food: '#008000',
-            creature: '#0000ff',
+            egg: '#ffa500',
+            creatureMale: '#0000ff',
+            creatureFemale: '#ff00ff',
             creatureFlash: '#ff0000',
-            creatureObservedShadow: '#0000ff',
             creatureSecondary: '#ff9933'
         },
         dark: {
             background: '#282828',
             obstacle: '#3c3c3c',
             food: '#34a064',
-            creature: '#537bff',
+            egg: '#ffa500',
+            creatureMale: '#537bff',
+            creatureFemale: '#ff66ff',
             creatureFlash: '#ff0000',
-            creatureObservedShadow: '#537bff',
             creatureSecondary: '#ffdd00'
         }
     };
@@ -61,6 +64,7 @@
         },
         scale: null,
         halfScale: null,
+        quarterScale: null,
         animation: {
             estimatedInterval: null,
             lastUpdateTime: null
@@ -102,6 +106,7 @@
         }
 
         el.stats.creature.id.textContent = `${creature.id}`;
+        el.stats.creature.sex.textContent = `${creature.sex}`;
         el.stats.creature.generation.textContent = `${creature.generation}`;
         el.stats.creature.life.textContent = formatTime(creature.msLived);
         el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
@@ -111,6 +116,7 @@
     function setScale() {
         app.scale = canvas.width / app.config.gridSize;
         app.halfScale = app.scale * 0.5;
+        app.quarterScale = app.scale * 0.25;
     }
 
     function resetAnimationState() {
@@ -153,6 +159,14 @@
         });
     }
 
+    function drawEggs() {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = app.colors.egg;
+        app.state.current.eggs.forEach(({ x, y }) => {
+            ctx.fillRect(x * app.scale, y * app.scale, app.halfScale, app.halfScale);
+        });
+    }
+
     function drawCreatures(t, now) {
         app.state.current.creatures.forEach(creature => {
             let x, y, angle;
@@ -173,13 +187,13 @@
 
             ctx.globalAlpha = creature.energy * 0.8 + 0.2;
             const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
-            ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
+            const color = creature.sex === 'M' ? app.colors.creatureMale : app.colors.creatureFemale;
+            ctx.fillStyle = flash ? app.colors.creatureFlash : color;
 
             if (creature.id === app.observedCreatureId) {
-                ctx.shadowColor = app.colors.creatureObservedShadow;
+                ctx.shadowColor = color;
                 ctx.shadowBlur = 15;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+
             } else {
                 ctx.shadowBlur = 0;
             }
@@ -191,23 +205,25 @@
         });
     }
 
-    function draw() {
-        if (app.state.next) {
-            if (app.state.current && isLoading()) hideLoader();
-
-            if (app.animation.lastUpdateTime !== null) {
-                const interval = app.state.next.timestamp - app.animation.lastUpdateTime;
-                app.animation.estimatedInterval = 0.8 * app.animation.estimatedInterval + 0.2 * interval;
-            }
-            app.animation.lastUpdateTime = app.state.next.timestamp;
-
-            app.state.prev = app.state.current;
-            app.state.current = app.state.next;
-            app.state.next = null;
-
-            updateGridStats();
-            updateObservedCreatureStats();
+    function updateState() {
+        if (app.animation.lastUpdateTime !== null) {
+            const interval = app.state.next.timestamp - app.animation.lastUpdateTime;
+            app.animation.estimatedInterval = 0.8 * app.animation.estimatedInterval + 0.2 * interval;
         }
+        app.animation.lastUpdateTime = app.state.next.timestamp;
+
+        app.state.prev = app.state.current;
+        app.state.current = app.state.next;
+        app.state.next = null;
+
+        if (app.state.current && isLoading()) hideLoader();
+
+        updateGridStats();
+        updateObservedCreatureStats();
+    }
+
+    function draw() {
+        if (app.state.next) updateState();
 
         if (app.state.current) {
             const now = performance.now();
@@ -216,6 +232,7 @@
             clearCanvas();
             drawObstacles();
             drawFood();
+            drawEggs();
             drawCreatures(t, now);
         }
 
@@ -311,19 +328,13 @@
 
     function formatTime(ms) {
         const seconds = Math.floor(ms / 1000);
-        if (seconds < 60) {
-            return `${seconds}s`;
-        }
+        if (seconds < 60) return `${seconds}s`;
 
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 180) {
-            return `${minutes}m`;
-        }
+        if (minutes < 180) return `${minutes}m`;
 
         const hours = Math.floor(minutes / 60);
-        if (hours < 72) {
-            return `${hours}h`;
-        }
+        if (hours < 72) return `${hours}h`;
 
         const days = Math.floor(hours / 24);
         return `${days}d`;
@@ -398,7 +409,6 @@
     }
 
     async function init() {
-
         const storedTheme = localStorage.getItem('theme');
         if (storedTheme) {
             setTheme(storedTheme === 'dark');

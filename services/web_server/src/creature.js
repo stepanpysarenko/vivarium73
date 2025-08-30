@@ -2,13 +2,19 @@ const CONFIG = require("./config");
 const { initWeights } = require("./nn");
 const { getRandomEmptyCell } = require("./grid");
 
-async function initCreature(state, x = null, y = null, angle = 0.0, weights = null, generation = 1) {
+async function initCreature(
+    state,
+    x = null,
+    y = null,
+    angle = 0.0,
+    weights = null,
+    generation = 1,
+    sex = null) {
     if (x === null || y === null) {
         const cell = getRandomEmptyCell(state);
         x = cell.x;
         y = cell.y;
-    } 
-    angle = angle !== null ? angle : (Math.random() * 2 * Math.PI) - Math.PI;
+    }
 
     if (!weights) {
         weights = await initWeights();
@@ -18,8 +24,10 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
         id: getNextCreatureId(state),
         x,
         y,
-        angle,
+        angle: angle ?? (Math.random() * 2 * Math.PI) - Math.PI,
         energy: CONFIG.CREATURE_INITIAL_ENERGY,
+        sex: sex ?? (Math.random() < CONFIG.CREATURE_SEX_RATIO_MALE ? 'M' : 'F'),
+        mateCooldown: 0,
         prev: {
             x,
             y,
