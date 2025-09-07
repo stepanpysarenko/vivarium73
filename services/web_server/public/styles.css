@@ -122,7 +122,7 @@ body {
     grid-auto-flow: column;
     justify-content: start;
     row-gap: 0.6rem;
-    column-gap: 1.5rem;
+    column-gap: 1.3rem;
     margin: 0;
     padding: 0;
     text-align: center;
@@ -216,7 +216,7 @@ body.loading #loader {
     max-height: 100%;
     width: 100%;
     padding-right: 15px;
-    font-size: clamp(10px, 1.2vw, 12px);
+    font-size: clamp(10px, 1.4vw, 14px);
     text-align: left;
     line-height: 1.6;
     pointer-events: auto;
