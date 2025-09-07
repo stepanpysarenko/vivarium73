@@ -3,6 +3,8 @@
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const obstacleLayer = document.createElement('canvas');
+    const obstacleCtx = obstacleLayer.getContext('2d');
 
     const el = {
         about: document.getElementById('about'),
@@ -66,7 +68,9 @@
             bufferLimit: 10
         },
         observedCreatureId: null,
-        colors: null
+        colors: null,
+        prevGridStats: {},
+        prevCreatureStats: {}
     };
 
     const isLoading = () => document.body.classList.contains('loading');
@@ -79,6 +83,7 @@
         el.themeToggle.textContent = dark ? 'light' : 'dark';
         app.colors = dark ? COLOR_PALETTE.dark : COLOR_PALETTE.light;
         el.metaThemeColor.setAttribute('content', app.colors.background);
+        updateObstacleLayer();
 
         if (persist) {
             localStorage.setItem('theme', dark ? 'dark' : 'light');
@@ -87,10 +92,22 @@
 
     function updateGridStats() {
         if (!app.state.latest) return;
-        el.stats.grid.restarts.textContent = app.state.latest.stats.restarts;
-        el.stats.grid.generation.textContent = app.state.latest.stats.generation;
-        el.stats.grid.creatures.textContent = app.state.latest.stats.creatureCount;
-        el.stats.grid.food.textContent = `${app.state.latest.stats.foodCount}/${app.config.maxFoodCount}`;
+        const stats = app.state.latest.stats;
+        const prev = app.prevGridStats;
+        if (prev.restarts !== stats.restarts) {
+            el.stats.grid.restarts.textContent = stats.restarts;
+        }
+        if (prev.generation !== stats.generation) {
+            el.stats.grid.generation.textContent = stats.generation;
+        }
+        if (prev.creatureCount !== stats.creatureCount) {
+            el.stats.grid.creatures.textContent = stats.creatureCount;
+        }
+        const foodText = `${stats.foodCount}/${app.config.maxFoodCount}`;
+        if (prev.foodText !== foodText) {
+            el.stats.grid.food.textContent = foodText;
+        }
+        app.prevGridStats = { ...stats, foodText };
     }
 
     function updateObservedCreatureStats() {
@@ -102,16 +119,39 @@
             return;
         }
 
-        el.stats.creature.id.textContent = `${creature.id}`;
-        el.stats.creature.generation.textContent = `${creature.generation}`;
-        el.stats.creature.life.textContent = formatTime(creature.msLived);
-        el.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
-        el.stats.creature.score.textContent = `${creature.score}`;
+        const prev = app.prevCreatureStats;
+        if (prev.id !== creature.id) {
+            el.stats.creature.id.textContent = `${creature.id}`;
+        }
+        if (prev.generation !== creature.generation) {
+            el.stats.creature.generation.textContent = `${creature.generation}`;
+        }
+        const lifeText = formatTime(creature.msLived);
+        if (prev.lifeText !== lifeText) {
+            el.stats.creature.life.textContent = lifeText;
+        }
+        const energyText = `${Math.round(creature.energy * 100)}%`;
+        if (prev.energyText !== energyText) {
+            el.stats.creature.energy.textContent = energyText;
+        }
+        if (prev.score !== creature.score) {
+            el.stats.creature.score.textContent = `${creature.score}`;
+        }
+        app.prevCreatureStats = {
+            id: creature.id,
+            generation: creature.generation,
+            lifeText,
+            energyText,
+            score: creature.score
+        };
     }
 
     function setScale() {
         app.scale = canvas.width / app.config.gridSize;
         app.halfScale = app.scale * 0.5;
+        obstacleLayer.width = canvas.width;
+        obstacleLayer.height = canvas.height;
+        updateObstacleLayer();
     }
 
     function resetAnimationState() {
@@ -135,12 +175,12 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    function drawObstacles() {
+    function updateObstacleLayer() {
         if (!app.state.latest) return;
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = app.colors.obstacle;
+        obstacleCtx.clearRect(0, 0, obstacleLayer.width, obstacleLayer.height);
+        obstacleCtx.fillStyle = app.colors.obstacle;
         app.state.latest.obstacles.forEach(({ x, y }) => {
-            ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
+            obstacleCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
         });
     }
 
@@ -202,29 +242,25 @@
             return;
         }
 
-        // find snapshots surrounding renderTime
-        let prevIndex = 0;
-        while (prevIndex < buffer.length && buffer[prevIndex].timestamp <= renderTime) prevIndex++;
+        while (buffer.length >= 2 && buffer[1].timestamp <= renderTime) {
+            buffer.shift();
+        }
 
         let prevState, nextState, t;
-        if (prevIndex === 0) {
+        if (buffer.length === 1) {
             prevState = nextState = buffer[0];
-            t = 0;
-        } else if (prevIndex === buffer.length) {
-            prevState = buffer[buffer.length - 2] || buffer[buffer.length - 1];
-            nextState = buffer[buffer.length - 1];
-            const interval = nextState.timestamp - prevState.timestamp || app.config.stateUpdateInterval;
-            const maxTime = nextState.timestamp + app.animation.extrapolationLimit;
+            const interval = app.config.stateUpdateInterval;
+            const maxTime = prevState.timestamp + app.animation.extrapolationLimit;
             const clamped = Math.min(renderTime, maxTime);
             t = (clamped - prevState.timestamp) / interval;
         } else {
-            prevState = buffer[prevIndex - 1];
-            nextState = buffer[prevIndex];
+            prevState = buffer[0];
+            nextState = buffer[1];
             t = (renderTime - prevState.timestamp) / (nextState.timestamp - prevState.timestamp);
         }
 
         clearCanvas();
-        drawObstacles();
+        ctx.drawImage(obstacleLayer, 0, 0);
         drawFood();
         drawCreatures(prevState, nextState, t, now);
 
@@ -259,6 +295,7 @@
             state.timestamp = performance.now();
             app.state.buffer.push(state);
             app.state.latest = state;
+            updateObstacleLayer();
             if (app.state.buffer.length > app.animation.bufferLimit) {
                 const excess = app.state.buffer.length - app.animation.bufferLimit;
                 app.state.buffer.splice(0, excess);
