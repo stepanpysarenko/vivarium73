@@ -55,15 +55,14 @@
         reconnectScheduled: false,
         reconnectDelay: 250,
         state: {
-            prev: null,
-            current: null,
-            next: null
+            buffer: [],
+            latest: null
         },
         scale: null,
         halfScale: null,
         animation: {
-            estimatedInterval: null,
-            lastUpdateTime: null
+            renderDelay: 150,
+            extrapolationLimit: 120
         },
         observedCreatureId: null,
         colors: null
@@ -86,16 +85,17 @@
     }
 
     function updateGridStats() {
-        el.stats.grid.restarts.textContent = app.state.current.stats.restarts;
-        el.stats.grid.generation.textContent = app.state.current.stats.generation;
-        el.stats.grid.creatures.textContent = app.state.current.stats.creatureCount;
-        el.stats.grid.food.textContent = `${app.state.current.stats.foodCount}/${app.config.maxFoodCount}`;
+        if (!app.state.latest) return;
+        el.stats.grid.restarts.textContent = app.state.latest.stats.restarts;
+        el.stats.grid.generation.textContent = app.state.latest.stats.generation;
+        el.stats.grid.creatures.textContent = app.state.latest.stats.creatureCount;
+        el.stats.grid.food.textContent = `${app.state.latest.stats.foodCount}/${app.config.maxFoodCount}`;
     }
 
     function updateObservedCreatureStats() {
-        if (!app.observedCreatureId) return;
+        if (!app.observedCreatureId || !app.state.latest) return;
 
-        const creature = app.state.current.creatureMap.get(app.observedCreatureId);
+        const creature = app.state.latest.creatureMap.get(app.observedCreatureId);
         if (!creature) {
             stopObservingCreature();
             return;
@@ -114,11 +114,8 @@
     }
 
     function resetAnimationState() {
-        app.state.prev = null;
-        app.state.current = null;
-        app.state.next = null;
-        app.animation.estimatedInterval = app.config.stateUpdateInterval;
-        app.animation.lastUpdateTime = null;
+        app.state.buffer.length = 0;
+        app.state.latest = null;
     }
 
     function lerp(a, b, t) {
@@ -138,25 +135,27 @@
     }
 
     function drawObstacles() {
+        if (!app.state.latest) return;
         ctx.globalAlpha = 1;
         ctx.fillStyle = app.colors.obstacle;
-        app.state.current.obstacles.forEach(({ x, y }) => {
+        app.state.latest.obstacles.forEach(({ x, y }) => {
             ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
         });
     }
 
     function drawFood() {
+        if (!app.state.latest) return;
         ctx.globalAlpha = 1;
         ctx.fillStyle = app.colors.food;
-        app.state.current.food.forEach(({ x, y }) => {
+        app.state.latest.food.forEach(({ x, y }) => {
             ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
         });
     }
 
-    function drawCreatures(t, now) {
-        app.state.current.creatures.forEach(creature => {
+    function drawCreatures(prevState, currentState, t, now) {
+        currentState.creatures.forEach(creature => {
             let x, y, angle;
-            const prev = app.state.prev?.creatureMap.get(creature.id);
+            const prev = prevState?.creatureMap.get(creature.id);
             if (prev) {
                 x = lerp(prev.x, creature.x, t);
                 y = lerp(prev.y, creature.y, t);
@@ -192,32 +191,40 @@
     }
 
     function draw() {
-        if (app.state.next) {
-            if (app.state.current && isLoading()) hideLoader();
+        const now = performance.now();
+        const renderTime = now - app.animation.renderDelay;
+        const buffer = app.state.buffer;
 
-            if (app.animation.lastUpdateTime !== null) {
-                const interval = app.state.next.timestamp - app.animation.lastUpdateTime;
-                app.animation.estimatedInterval = 0.8 * app.animation.estimatedInterval + 0.2 * interval;
-            }
-            app.animation.lastUpdateTime = app.state.next.timestamp;
-
-            app.state.prev = app.state.current;
-            app.state.current = app.state.next;
-            app.state.next = null;
-
-            updateGridStats();
-            updateObservedCreatureStats();
+        if (!buffer.length) {
+            requestAnimationFrame(draw);
+            return;
         }
 
-        if (app.state.current) {
-            const now = performance.now();
-            const t = Math.min((now - app.animation.lastUpdateTime) / app.animation.estimatedInterval, 1.2);
+        // find snapshots surrounding renderTime
+        let prevIndex = 0;
+        while (prevIndex < buffer.length && buffer[prevIndex].timestamp <= renderTime) prevIndex++;
 
-            clearCanvas();
-            drawObstacles();
-            drawFood();
-            drawCreatures(t, now);
+        let prevSnap, nextSnap, t;
+        if (prevIndex === 0) {
+            prevSnap = nextSnap = buffer[0];
+            t = 0;
+        } else if (prevIndex === buffer.length) {
+            prevSnap = buffer[buffer.length - 2] || buffer[buffer.length - 1];
+            nextSnap = buffer[buffer.length - 1];
+            const interval = nextSnap.timestamp - prevSnap.timestamp || app.config.stateUpdateInterval;
+            const maxTime = nextSnap.timestamp + app.animation.extrapolationLimit;
+            const clamped = Math.min(renderTime, maxTime);
+            t = (clamped - prevSnap.timestamp) / interval;
+        } else {
+            prevSnap = buffer[prevIndex - 1];
+            nextSnap = buffer[prevIndex];
+            t = (renderTime - prevSnap.timestamp) / (nextSnap.timestamp - prevSnap.timestamp);
         }
+
+        clearCanvas();
+        drawObstacles();
+        drawFood();
+        drawCreatures(prevSnap.state, nextSnap.state, t, now);
 
         requestAnimationFrame(draw);
     }
@@ -245,9 +252,17 @@
         };
 
         app.socket.onmessage = event => {
-            app.state.next = JSON.parse(event.data);
-            app.state.next.creatureMap = new Map(app.state.next.creatures.map(c => [c.id, c]));
-            app.state.next.timestamp = performance.now();
+            const state = JSON.parse(event.data);
+            state.creatureMap = new Map(state.creatures.map(c => [c.id, c]));
+            const snapshot = { state, timestamp: performance.now() };
+            app.state.buffer.push(snapshot);
+            app.state.latest = state;
+            if (app.state.buffer.length > 60) {
+                app.state.buffer.splice(0, app.state.buffer.length - 60);
+            }
+            if (isLoading()) hideLoader();
+            updateGridStats();
+            updateObservedCreatureStats();
         };
 
         app.socket.onclose = () => {
@@ -349,7 +364,7 @@
     async function onCanvasClick(e) {
         const { x, y } = getGridClickCoordinates(e);
 
-        const clickedCreature = app.state.current.creatures.find(c => {
+        const clickedCreature = app.state.latest?.creatures.find(c => {
             const dx = c.x - x;
             const dy = c.y - y;
             return dx * dx + dy * dy < 2;
