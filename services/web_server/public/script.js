@@ -62,7 +62,8 @@
         halfScale: null,
         animation: {
             renderDelay: 150,
-            extrapolationLimit: 120
+            extrapolationLimit: 120,
+            bufferLimit: 20
         },
         observedCreatureId: null,
         colors: null
@@ -159,7 +160,8 @@
             if (prev) {
                 x = lerp(prev.x, creature.x, t);
                 y = lerp(prev.y, creature.y, t);
-                angle = lerpAngle(prev.angle, creature.angle, t);
+                const angleT = Math.min(t, 1);
+                angle = lerpAngle(prev.angle, creature.angle, angleT);
             } else {
                 x = creature.x;
                 y = creature.y;
@@ -257,8 +259,9 @@
             const snapshot = { state, timestamp: performance.now() };
             app.state.buffer.push(snapshot);
             app.state.latest = state;
-            if (app.state.buffer.length > 60) {
-                app.state.buffer.splice(0, app.state.buffer.length - 60);
+            if (app.state.buffer.length > app.animation.bufferLimit) {
+                const excess = app.state.buffer.length - app.animation.bufferLimit;
+                app.state.buffer.splice(0, excess);
             }
             if (isLoading()) hideLoader();
             updateGridStats();
@@ -424,6 +427,7 @@
         try {
             const response = await fetch('/api/config');
             app.config = await response.json();
+            app.animation.renderDelay = app.config.stateUpdateInterval;
             setScale();
             startWebSocket();
             requestAnimationFrame(draw);
