@@ -61,7 +61,7 @@
         scale: null,
         halfScale: null,
         animation: {
-            renderDelay: 50,
+            renderDelay: 100,
             extrapolationLimit: 50,
             bufferLimit: 10
         },
@@ -417,7 +417,6 @@
     }
 
     async function init() {
-
         const storedTheme = localStorage.getItem('theme');
         if (storedTheme) {
             setTheme(storedTheme === 'dark');
