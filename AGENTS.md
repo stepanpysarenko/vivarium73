@@ -37,7 +37,7 @@ Run these steps once after cloning, or again if dependencies change. For daily d
 - Always run tests before committing.
 - Run **nn_service** tests:
   ```bash
-  cd services && PYTHONPATH=. pytest nn_service/tests
+  source .venv/bin/activate && PYTHONPATH=services pytest services/nn_service/tests
   ```
 - Run **web_server** tests:
   ```bash

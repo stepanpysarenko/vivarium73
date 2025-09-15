@@ -110,6 +110,8 @@ async function updateState() {
     }
 
     for (const creature of state.creatures) {
+        creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2);
+
         if (creature._collisionOccurred) {
             creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
         } else {
@@ -117,7 +119,7 @@ async function updateState() {
         }
         delete creature._collisionOccurred;
     }
-
+    
     state.creatures = await handleLifecycle();
     if (state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
         await restartPopulation(state);

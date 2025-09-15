@@ -15,6 +15,8 @@ class Creature(BaseModel):
     y: float
     angle: float
     energy: float
+    wander_angle: float = Field(..., alias="wanderAngle")
+    wander_strength: float = Field(..., alias="wanderStrength")
     prev_x: float = Field(..., alias="prevX")
     prev_y: float = Field(..., alias="prevY")
     prev_angle: float = Field(..., alias="prevAngle")

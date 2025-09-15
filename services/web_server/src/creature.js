@@ -19,6 +19,8 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
         x,
         y,
         angle,
+        wanderAngle: (Math.random() * 2 * Math.PI) - Math.PI,
+        wanderStrength: 1.0,
         energy: CONFIG.CREATURE_INITIAL_ENERGY,
         prev: {
             x,

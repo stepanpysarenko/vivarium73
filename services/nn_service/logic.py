@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-INPUT_SIZE = 16
+INPUT_SIZE = 17
 HIDDEN_SIZE = 9
 OUTPUT_SIZE = 2
 
@@ -88,6 +88,10 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
 
     angle_delta_val = angle_delta(creature.angle, creature.prev_angle)
 
+    wander_dx = np.cos(creature.wander_angle) * creature.wander_strength
+    wander_dy = np.sin(creature.wander_angle) * creature.wander_strength
+    wander_angle, wander_magnitude = angle_and_magnitude(wander_dx, wander_dy, creature.angle)
+
     inputs = np.array([
         energy_level,
         energy_dx,
@@ -103,7 +107,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
         angle_delta_val,
         move_angle,
         move_magnitude,
-        random.uniform(-1, 1),  # exploration noise
+        wander_angle,
+        wander_magnitude,
         1.0  # bias
     ])
 
