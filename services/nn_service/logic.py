@@ -88,9 +88,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
 
     angle_delta_val = angle_delta(creature.angle, creature.prev_angle)
 
-    wander_dx = np.cos(creature.wander_angle) * creature.wander_strength
-    wander_dy = np.sin(creature.wander_angle) * creature.wander_strength
-    wander_angle, wander_magnitude = angle_and_magnitude(wander_dx, wander_dy, creature.angle)
+    wander_angle = wrap_angle(creature.wander_angle - creature.angle) / np.pi
+    wander_magnitude = np.clip(creature.wander_strength / np.sqrt(2), 0, 1)
 
     inputs = np.array([
         energy_level,
