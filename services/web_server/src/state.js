@@ -121,7 +121,10 @@ async function updateState() {
     }
     
     state.creatures = await handleLifecycle();
-    if (state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
+    if (state.creatures.length == 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
+        for (const creature of state.creatures) {
+            appendTopPerformers(creature, state);
+        }
         await restartPopulation(state);
         state.stats.restarts++;
         saveState();
@@ -274,7 +277,7 @@ async function handleLifecycle() {
         }
 
         creature.stats.msLived += CONFIG.STATE_UPDATE_INTERVAL;
-        creature.stats.score = getScore(creature);
+        creature.stats.score = Math.max(creature.stats.score ?? 0, getScore(creature));
         survivors.push(creature);
     }
 
