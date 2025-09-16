@@ -44,7 +44,7 @@ async function initCreature(state, x = null, y = null, angle = 0.0, weights = nu
 }
 
 function getScore(creature) {
-    return Math.round(creature.stats.energyGained / Math.max(1, creature.stats.msLived) * 100000);
+    return Math.round(creature.stats.energyGained / 10);
 }
 
 function getNextCreatureId(state) {
