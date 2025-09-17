@@ -288,8 +288,6 @@ function updateStats() {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
     state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
-
-    state.topPerformers.forEach(p => p.stats.score *= 0.99); // gradually remove old top performers
 }
 
 function addFood(x, y) {
