@@ -277,7 +277,7 @@ async function handleLifecycle() {
         }
 
         creature.stats.msLived += CONFIG.STATE_UPDATE_INTERVAL;
-        creature.stats.score = Math.max(creature.stats.score ?? 0, getScore(creature));
+        creature.stats.score = getScore(creature);
         survivors.push(creature);
     }
 
