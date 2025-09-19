@@ -246,8 +246,14 @@ function handleEating(creature) {
         return dx * dx + dy * dy < r2Interaction;
     });
 
+    let foodEnergy = CONFIG.FOOD_ENERGY;
+    if (state.stats.generation <= CONFIG.FOOD_ENERGY_MULTIPLIER_MAX_GEN) {
+        const multiplier = CONFIG.FOOD_ENERGY_MULTIPLIER * (1 - state.stats.generation / CONFIG.FOOD_ENERGY_MULTIPLIER_MAX_GEN);
+        foodEnergy = Math.round(CONFIG.FOOD_ENERGY * multiplier);
+    }
+
     if (foodIndex !== -1) {
-        creature.energy = Math.min(creature.energy + CONFIG.FOOD_ENERGY, CONFIG.CREATURE_MAX_ENERGY);
+        creature.energy = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY);
         creature.stats.energyGained += CONFIG.FOOD_ENERGY;
         state.food.splice(foodIndex, 1);
     }

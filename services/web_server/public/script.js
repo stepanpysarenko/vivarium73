@@ -192,15 +192,10 @@
     };
 
     const renderer = {
-        updateScale() {
-            if (!app.config || !app.config.gridSize) {
-                console.error('Cannot set scale without grid size configuration.');
-                return false;
-            }
-
+        updateSettings() {
             app.scale = canvas.width / app.config.gridSize;
             app.halfScale = app.scale * 0.5;
-            return true;
+            app.animation.renderDelay = app.config.stateUpdateInterval ?? app.animation.renderDelay;
         },
         clear() {
             ctx.globalAlpha = 1;
@@ -453,7 +448,7 @@
 
     const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
-            frameBuffer.reset();
+            stateBuffer.reset();
             stats.stopObserving();
             connection.scheduleReconnect();
         }
@@ -517,10 +512,8 @@
             return;
         }
 
-        if (renderer.updateScale()) {
-            requestAnimationFrame(renderer.loop);
-        }
-
+        renderer.updateSettings();
+        requestAnimationFrame(renderer.loop);
         connection.open();
     };
 
