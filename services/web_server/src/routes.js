@@ -5,6 +5,8 @@ module.exports = function registerRoutes(app) {
     app.get("/api/health", (req, res) => res.json({ status: "OK" }));
 
     app.get('/api/config', (req, res) => res.json({
+        envCode: CONFIG.ENVIRONMENT,
+        appVersion: CONFIG.APP_VERSION,
         webSocketUrl: CONFIG.WEBSOCKET_URL,
         stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
         gridSize: CONFIG.GRID_SIZE,

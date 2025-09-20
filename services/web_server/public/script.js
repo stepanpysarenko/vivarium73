@@ -9,6 +9,8 @@
         aboutToggle: document.getElementById('about-toggle'),
         themeToggle: document.getElementById('theme-toggle'),
         metaThemeColor: document.querySelector('meta[name="theme-color"]'),
+        appVersionTag: document.getElementById('app-version-tag'),
+        envTag: document.getElementById('env-tag'),
         stats: {
             grid: {
                 panel: document.getElementById('stats-grid'),
@@ -154,7 +156,7 @@
             ui.stats.grid.food.textContent = `${latest.stats.foodCount}/${app.config.maxFoodCount}`;
         },
         updateObserved() {
-            if (!app.observedCreatureId || !app.state.latest) return;
+            if (app.observedCreatureId === null || !app.state.latest) return; 
 
             const creature = app.state.latest.creatureMap.get(app.observedCreatureId);
             if (!creature) {
@@ -169,7 +171,9 @@
             ui.stats.creature.score.textContent = `${creature.score}`;
         },
         startObserving(creature) {
-            if (typeof gtag === 'function') gtag('event', 'observe_creature');
+            if (typeof gtag === 'function') {
+                gtag('event', 'observe_creature');
+            }
 
             app.observedCreatureId = creature.id;
             this.updateObserved();
@@ -180,6 +184,21 @@
 
             app.observedCreatureId = null;
             this.showGridPanel();
+        }
+    };
+
+    const buildInfo = {
+        update(config) {
+            if (!config) return;
+
+            if (ui.envTag && config.envCode !== 'prod') {
+                ui.envTag.textContent = config.envCode;
+                ui.envTag.hidden = false;
+            }
+
+            if (ui.appVersionTag) {
+                ui.appVersionTag.textContent = 'v' + config.appVersion;
+            }
         }
     };
 
@@ -312,9 +331,17 @@
             };
         },
         async placeFood(x, y) {
-            if (typeof gtag === 'function') gtag('event', 'place_food');
+            if (typeof gtag === 'function') {
+                gtag('event', 'place_food');
+            }
 
-            if(app.state.latest.food.length >= app.config.maxFoodCount) {
+            const latestState = app.state.latest;
+            if (!latestState || !app.config) {
+                console.warn('Simulation state unavailable; cannot place food yet.');
+                return;
+            }
+
+            if (latestState.food.length >= app.config.maxFoodCount) {
                 console.warn('Max food count reached, cannot place more food.');
                 return;
             }
@@ -340,8 +367,7 @@
         },
         handleCanvasClick: async event => {
             const { x, y } = actions.getGridClickCoordinates(event);
-            const latestState = app.state.latest;
-            const creatures = latestState ? latestState.creatures : null;
+            const creatures = app.state.latest ? app.state.latest.creatures : null;
             const clickedCreature = creatures ? creatures.find(c => {
                 const dx = c.x - x;
                 const dy = c.y - y;
@@ -353,7 +379,7 @@
                 return;
             }
 
-            if (app.observedCreatureId) {
+            if (app.observedCreatureId !== null) {
                 stats.stopObserving();
                 return;
             }
@@ -378,7 +404,7 @@
                 this.close();
             }
 
-            app.socket = new WebSocket(app.config.webSocketUrl);;
+            app.socket = new WebSocket(app.config.webSocketUrl);
             app.socket.addEventListener('open', this.handleOpen);
             app.socket.addEventListener('message', this.handleMessage);
             app.socket.addEventListener('close', this.handleClose);
@@ -506,6 +532,7 @@
             }
 
             app.config = await response.json();
+            buildInfo.update(app.config);
         } catch (error) {
             console.error('Error loading configuration', error);
             showLoader();

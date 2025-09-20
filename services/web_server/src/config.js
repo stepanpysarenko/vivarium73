@@ -1,16 +1,23 @@
 require("dotenv").config();
 
+const packageJson = require("../package.json");
+
 const CONFIG = {
+    ENVIRONMENT: process.env.ENVIRONMENT || "local",
+    APP_VERSION: packageJson.version || "0.0.0",
+
     PORT: process.env.PORT || 3000,
     CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     NN_SERVICE_URL: process.env.NN_SERVICE_URL || "http://localhost:8000/api",
     STATE_SAVE_PATH: process.env.STATE_SAVE_PATH || "./data/state.json",
     STATE_SAVE_INTERVAL: 1000 * 60 * 5,
+
     STATE_UPDATE_INTERVAL: 300,
     STATE_UPDATE_LOOP_RETRY_LIMIT: parseInt(process.env.STATE_UPDATE_LOOP_RETRY_LIMIT || '3', 10),
     GRID_SIZE: 50,
     GRID_TARGET_ENERGY: 15000,
+
     CREATURE_INITIAL_COUNT: 20,
     CREATURE_INITIAL_ENERGY: 400,
     CREATURE_MAX_ENERGY: 1000,
@@ -26,12 +33,15 @@ const CONFIG = {
     CREATURE_MAX_SPEED: 0.4,
     CREATURE_MAX_TURN_ANGLE_RAD: 45 / 180 * Math.PI,
     CREATURE_PATH_LENGTH: 5,   
-    MUTATION_CHANCE: 0.5,
+
     FOOD_MAX_COUNT: 30,    
     FOOD_ENERGY: 130,   
-    FOOD_ENERGY_MULTIPLIER: 2,
+    FOOD_ENERGY_MULTIPLIER: 3,
     FOOD_ENERGY_MULTIPLIER_MAX_GEN: 100,
+    
+    MUTATION_CHANCE: 0.5,
     TOP_PERFORMERS_COUNT: 5,
+    
     POPULATION_RESTART_THRESHOLD: 3,
     POPULATION_TOP_RATIO: 0.2,
     POPULATION_MUTATED_RATIO: 0.6,
