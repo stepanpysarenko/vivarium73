@@ -3,6 +3,7 @@ services:
     container_name: ${ENVIRONMENT}-vivarium73-nn
     build: ./services/nn_service
     environment:
+      - ENVIRONMENT=${ENVIRONMENT}
       - PORT=${NN_PORT}
     expose:
       - "${NN_PORT}"
@@ -17,6 +18,7 @@ services:
     container_name: ${ENVIRONMENT}-vivarium73-web
     build: ./services/web_server
     environment:
+      - ENVIRONMENT=${ENVIRONMENT}
       - PORT=${WEB_PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - WEBSOCKET_URL=${WEBSOCKET_URL}
