@@ -158,7 +158,7 @@
         updateObserved() {
             if (app.observedCreatureId === null || !app.state.latest) return; 
 
-            const creature = app.state.latest.creatureMap.get(app.observedCreatureId);
+            const creature = app.state.latest.creaturesMap.get(app.observedCreatureId);
             if (!creature) {
                 this.stopObserving();
                 return;
@@ -241,7 +241,7 @@
         drawCreatures(prevState, currentState, t, now) {
             currentState.creatures.forEach(creature => {
                 let x, y, angle;
-                const previous = prevState ? prevState.creatureMap.get(creature.id) : null;
+                const previous = prevState ? prevState.creaturesMap.get(creature.id) : null;
 
                 if (previous) {
                     x = lerp(previous.x, creature.x, t);
@@ -417,10 +417,10 @@
         },
         handleMessage: event => {
             try {
-                const snapshot = JSON.parse(event.data);
-                snapshot.creatureMap = new Map(snapshot.creatures.map(creature => [creature.id, creature]));
-                snapshot.timestamp = performance.now();
-                stateBuffer.push(snapshot);
+                const state = JSON.parse(event.data);
+                state.creaturesMap = new Map(state.creatures.map(creature => [creature.id, creature]));
+                state.timestamp = performance.now();
+                stateBuffer.push(state);
 
                 if (isLoading()) hideLoader();
                 stats.updateGrid();

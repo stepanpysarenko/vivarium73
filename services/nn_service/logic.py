@@ -119,6 +119,7 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     output = np.tanh(np.dot(output_weights, hidden_layer))
 
     return {
+        "id": creature.id,
         "angleDelta": output[0] * max_turn_angle,
         "speed": ((output[1] + 1) / 2) * max_speed
     }

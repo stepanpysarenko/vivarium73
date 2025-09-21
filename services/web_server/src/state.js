@@ -99,27 +99,18 @@ function getPublicState() {
 
 async function updateState() {
     const movements = await getMovements(state);
-    for (let i = 0; i < state.creatures.length; i++) {
-        state.creatures[i] = applyMovement(state.creatures[i], movements[i]);
-        state.creatures[i] = handleObstacleCollision(state.creatures[i]);
-        handleEating(state.creatures[i]);
-    }
+    const movementsMap = new Map(movements.map(m => [m.id, m]));
 
-    const creatureMap = buildCreatureMap(state.creatures);
-    for (let i = 0; i < state.creatures.length; i++) {
-        state.creatures[i] = handleCreatureCollision(state.creatures[i], creatureMap);
-    }
+    state.creatures.forEach(c => {
+        applyMovement(c, movementsMap.get(c.id));
+        handleObstacleCollision(c);
+        handleEating(c);
+        c.wanderAngle = wrapAngle(c.wanderAngle + (Math.random() - 0.5) * 0.2); 
+        c.updatesToFlash = Math.max(c.updatesToFlash - 1, 0);
+    });
 
-    for (const creature of state.creatures) {
-        creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2);
-
-        if (creature._collisionOccurred) {
-            creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
-        } else {
-            creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
-        }
-        delete creature._collisionOccurred;
-    }
+    const creaturesMap = buildCreatureMap(state.creatures);
+    state.creatures.forEach(c => handleCreatureCollision(c, creaturesMap));
 
     state.creatures = await handleLifecycle();
     if (state.creatures.length == 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
@@ -136,36 +127,26 @@ async function updateState() {
 }
 
 function applyMovement(creature, movement) {
-    let newAngle = wrapAngle(creature.angle + movement.angleDelta);
-    let moveX = movement.speed * Math.cos(newAngle);
-    let moveY = movement.speed * Math.sin(newAngle);
-    let newX = creature.x + moveX;
-    let newY = creature.y + moveY;
+    creature.prev.angle = creature.angle;
+    creature.prev.x = creature.x;
+    creature.prev.y = creature.y;
+
+    creature.angle = wrapAngle(creature.angle + movement.angleDelta);
+    creature.x += movement.speed * Math.cos(creature.angle);
+    creature.y += movement.speed * Math.sin(creature.angle);
+
+    creature.recentPath.push({ x: creature.x, y: creature.y });
+    if (creature.recentPath.length > CONFIG.CREATURE_PATH_LENGTH) {
+        creature.recentPath.shift();
+    }
 
     const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
     const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RAD;
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
         + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
-    const newEnergy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
-
-    const path = [...creature.recentPath, { x: newX, y: newY }];
-    if (path.length > CONFIG.CREATURE_PATH_LENGTH) path.shift();
-
-    return {
-        ...creature,
-        x: newX,
-        y: newY,
-        angle: newAngle,
-        energy: newEnergy,
-        prev: {
-            x: creature.x,
-            y: creature.y,
-            angle: creature.angle,
-            energy: creature.energy
-        },
-        recentPath: path
-    };
+    creature.prev.energy = creature.energy;
+    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 }
 
 function isObstacleCollision(x, y) {
@@ -201,14 +182,12 @@ function handleObstacleCollision(creature) {
             newY = prevY;
         }
 
-        creature._collisionOccurred = true;
         creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
+        creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
     }
 
     creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
     creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
-
-    return creature;
 }
 
 function buildCreatureMap(creatures) {
@@ -230,8 +209,8 @@ function handleCreatureCollision(creature, creatureMap) {
                 if (other.id === creature.id) continue;
                 const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
                 if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
-                    creature._collisionOccurred = true;
                     creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
+                    creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
                     return creature;
                 }
             }
