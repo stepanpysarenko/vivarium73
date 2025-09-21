@@ -188,16 +188,16 @@
     };
 
     const buildInfo = {
-        update(config) {
-            if (!config) return;
+        update() {
+            if (!app.config) return;
 
-            if (ui.envTag && config.envCode !== 'prod') {
-                ui.envTag.textContent = config.envCode;
+            if (ui.envTag && app.config.envCode !== 'prod') {
+                ui.envTag.textContent = app.config.envCode;
                 ui.envTag.hidden = false;
             }
 
             if (ui.appVersionTag) {
-                ui.appVersionTag.textContent = 'v' + config.appVersion;
+                ui.appVersionTag.textContent = 'v' + app.config.appVersion;
             }
         }
     };
@@ -532,7 +532,7 @@
             }
 
             app.config = await response.json();
-            buildInfo.update(app.config);
+            buildInfo.update();
         } catch (error) {
             console.error('Error loading configuration', error);
             showLoader();

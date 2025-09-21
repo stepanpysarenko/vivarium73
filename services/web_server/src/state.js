@@ -25,7 +25,8 @@ async function initState() {
                 foodCount: 0
             },
             lastCreatureId: 0,
-            topPerformers: []
+            topPerformers: [],
+            createdAt: Date.now()
         };
 
         updateFood(state);
@@ -119,7 +120,7 @@ async function updateState() {
         }
         delete creature._collisionOccurred;
     }
-    
+
     state.creatures = await handleLifecycle();
     if (state.creatures.length == 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
         for (const creature of state.creatures) {
@@ -247,9 +248,10 @@ function handleEating(creature) {
     });
 
     let foodEnergy = CONFIG.FOOD_ENERGY;
-    if (state.stats.generation <= CONFIG.FOOD_ENERGY_MULTIPLIER_MAX_GEN) {
-        const multiplier = CONFIG.FOOD_ENERGY_MULTIPLIER * (1 - state.stats.generation / CONFIG.FOOD_ENERGY_MULTIPLIER_MAX_GEN);
-        foodEnergy = Math.round(CONFIG.FOOD_ENERGY * multiplier);
+    // apply a gradually decreasing energy bonus for early generations
+    if (state.stats.generation <= CONFIG.FOOD_ENERGY_BONUS_MAX_GEN) {
+        const progress = state.stats.generation / CONFIG.FOOD_ENERGY_BONUS_MAX_GEN;
+        foodEnergy += Math.round(CONFIG.FOOD_ENERGY_BONUS * (1 - progress));
     }
 
     if (foodIndex !== -1) {
