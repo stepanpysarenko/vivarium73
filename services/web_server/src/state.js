@@ -211,12 +211,10 @@ function handleCreatureCollision(creature, creatureMap) {
                 if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
                     creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
                     creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
-                    return creature;
                 }
             }
         }
     }
-    return creature;
 }
 
 function handleEating(creature) {
