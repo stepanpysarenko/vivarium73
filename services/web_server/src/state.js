@@ -8,7 +8,7 @@ const { appendTopPerformers, restartPopulation } = require("./performance");
 
 const r2Interaction = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
 
-var state = null;
+let state = null;
 
 async function initState() {
     state = await loadState();
@@ -99,13 +99,19 @@ function getPublicState() {
 
 async function updateState() {
     const movements = await getMovements(state);
-    const movementsMap = new Map(movements.map(m => [m.id, m]));
+    const movementEntries = Array.isArray(movements) ? movements : [];
+    const movementsMap = new Map(movementEntries.map(m => [m.id, m]));
 
     state.creatures.forEach(c => {
-        applyMovement(c, movementsMap.get(c.id));
+        const movement = movementsMap.get(c.id) || {};
+        const safeMovement = {
+            angleDelta: Number.isFinite(movement.angleDelta) ? movement.angleDelta : 0,
+            speed: Number.isFinite(movement.speed) ? movement.speed : 0,
+        };
+        applyMovement(c, safeMovement);
         handleObstacleCollision(c);
         handleEating(c);
-        c.wanderAngle = wrapAngle(c.wanderAngle + (Math.random() - 0.5) * 0.2); 
+        c.wanderAngle = wrapAngle(c.wanderAngle + (Math.random() - 0.5) * 0.2);
         c.updatesToFlash = Math.max(c.updatesToFlash - 1, 0);
     });
 
@@ -234,8 +240,9 @@ function handleEating(creature) {
     }
 
     if (foodIndex !== -1) {
+        const beforeEating = creature.energy;
         creature.energy = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY);
-        creature.stats.energyGained += CONFIG.FOOD_ENERGY;
+        creature.stats.energyGained += creature.energy - beforeEating;
         state.food.splice(foodIndex, 1);
     }
 }
@@ -294,10 +301,20 @@ function addFood(x, y) {
     state.stats.foodCount = state.food.length;
 }
 
+function __setStateForTesting(newState) {
+    state = newState;
+}
+
+function __getStateForTesting() {
+    return state;
+}
+
 module.exports = {
     initState,
     saveState,
     getPublicState,
     updateState,
-    addFood
+    addFood,
+    __setStateForTesting,
+    __getStateForTesting
 };
