@@ -95,17 +95,16 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 20px 0;
 }
 
 .header {
-    padding: 20px 0;
     margin-top: 10px;
 }
 
 .footer {
     flex-direction: column;
     gap: 5px;
-    padding: 20px 0;
     margin-bottom: 10px;
 }
 
@@ -160,6 +159,10 @@ body {
     font-size: clamp(10px, 1.4vw, 14px);
     font-weight: normal;
     margin: 0;
+}
+
+#stats-grid-food {
+    min-width: 5ch;
 }
 
 .content {

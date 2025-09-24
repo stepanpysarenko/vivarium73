@@ -3,20 +3,63 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
     <title>vivarium73 - maintenance</title>
+    <meta name="theme-color" content="#f8f8f8">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#282828">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-bg-light: #f8f8f8;
+            --color-accent-light: #e8e8e8;
+            --color-text-light: #383838;
+            --color-text-muted-light: #c8c8c8;
+
+            --color-bg-dark: #282828;
+            --color-accent-dark: #3c3c3c;
+            --color-text-dark: #d4d4d4;
+            --color-text-muted-dark: #858585;
+
+            --color-bg: var(--color-bg-light);
+            --color-accent: var(--color-accent-light);
+            --color-text: var(--color-text-light);
+            --color-text-muted: var(--color-text-muted-light);
+            color-scheme: light dark;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not(.light) {
+                --color-bg: var(--color-bg-dark);
+                --color-accent: var(--color-accent-dark);
+                --color-text: var(--color-text-dark);
+                --color-text-muted: var(--color-text-muted-dark);
+                color-scheme: dark;
+            }
+        }
+
+        :root.dark {
+            --color-bg: var(--color-bg-dark);
+            --color-accent: var(--color-accent-dark);
+            --color-text: var(--color-text-dark);
+            --color-text-muted: var(--color-text-muted-dark);
+            color-scheme: dark;
+        }
+
+        :root.light {
+            color-scheme: light;
+        }
+
         html,
         body {
             margin: 0;
             padding: 0;
             height: 100%;
-            background-color: #f8f8f8;
+            background-color: var(--color-bg);
             font-family: 'Press Start 2P', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #383838;
+            color: var(--color-text);
         }
 
         .wrapper {
@@ -42,6 +85,7 @@
         .message {
             margin-top: 20px;
             font-size: 32px;
+            color: var(--color-text);
         }
     </style>
 </head>

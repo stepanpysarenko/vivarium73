@@ -163,6 +163,7 @@ function handleObstacleCollision(creature) {
     let prevX = creature.prev.x;
     let prevY = creature.prev.y;
 
+    // when hiting an obstacle the creatures takes damage and slides along it if possible
     if (isObstacleCollision(newX, newY) || isBeyondGrid(newX, newY)) {
         const tryX = !isObstacleCollision(newX, prevY) && !isBeyondGrid(newX, prevY);
         const tryY = !isObstacleCollision(prevX, newY) && !isBeyondGrid(prevX, newY);
@@ -245,6 +246,7 @@ async function handleLifecycle() {
     for (const creature of state.creatures) {
         creature.justReproduced = false;
 
+        // creatures at 100% energy spawn an offspring andpay the reproduction cost
         if (creature.energy >= CONFIG.CREATURE_MAX_ENERGY) {
             const weights = Math.random() <= CONFIG.MUTATION_CHANCE
                 ? await mutateWeights(creature.weights)

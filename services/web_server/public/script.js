@@ -34,10 +34,10 @@
         light: {
             background: '#f8f8f8',
             obstacle: '#e8e8e8',
-            food: '#008000',
-            creature: '#0000ff',
+            food: '#34a064',
+            creature: '#4169e1',
             creatureFlash: '#ff0000',
-            creatureObservedShadow: '#0000ff',
+            creatureObservedHighlight: '#e8e8e8',
             creatureSecondary: '#ff9933'
         },
         dark: {
@@ -46,7 +46,7 @@
             food: '#34a064',
             creature: '#537bff',
             creatureFlash: '#ff0000',
-            creatureObservedShadow: '#537bff',
+            creatureObservedHighlight: '#e8e8e8',
             creatureSecondary: '#ffdd00'
         }
     };
@@ -238,6 +238,19 @@
                 ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
         },
+        drawObservedHighlight(x, y) {
+            const centerX = x * app.scale + app.halfScale;
+            const centerY = y * app.scale + app.halfScale;
+            const radius = app.halfScale * 3;
+
+            ctx.save();
+            ctx.globalAlpha = 0.05;
+            ctx.fillStyle = app.colors.creatureObservedHighlight;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        },
         drawCreatures(prevState, currentState, t, now) {
             currentState.creatures.forEach(creature => {
                 let x, y, angle;
@@ -254,6 +267,10 @@
                     angle = creature.angle;
                 }
 
+                if (creature.id === app.observedCreatureId) {
+                    renderer.drawObservedHighlight(x, y);
+                }
+
                 ctx.save();
                 ctx.translate(x * app.scale + app.halfScale, y * app.scale + app.halfScale);
                 ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
@@ -261,15 +278,6 @@
                 ctx.globalAlpha = creature.energy * 0.8 + 0.2;
                 const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
                 ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
-
-                if (creature.id === app.observedCreatureId) {
-                    ctx.shadowColor = app.colors.creatureObservedShadow;
-                    ctx.shadowBlur = 15;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                } else {
-                    ctx.shadowBlur = 0;
-                }
 
                 ctx.fillRect(-app.halfScale, -app.halfScale, app.scale, app.scale);
                 ctx.fillStyle = app.colors.creatureSecondary;
