@@ -94,13 +94,9 @@
         apply(dark, persist = false) {
             document.documentElement.classList.toggle('dark', dark);
             document.documentElement.classList.toggle('light', !dark);
-            if (ui.themeToggle) {
-                ui.themeToggle.textContent = dark ? 'light' : 'dark';
-            }
+            ui.themeToggle.textContent = dark ? 'light' : 'dark';
             app.colors = dark ? COLOR_PALETTE.dark : COLOR_PALETTE.light;
-            if (ui.metaThemeColor) {
-                ui.metaThemeColor.setAttribute('content', app.colors.background);
-            }
+            ui.metaThemeColor.setAttribute('content', app.colors.background);
 
             if (persist) {
                 localStorage.setItem('theme', dark ? 'dark' : 'light');
@@ -191,14 +187,12 @@
         update() {
             if (!app.config) return;
 
-            if (ui.envTag && app.config.envCode !== 'prod') {
+            if (app.config.envCode !== 'prod') {
                 ui.envTag.textContent = app.config.envCode;
                 ui.envTag.hidden = false;
             }
-
-            if (ui.appVersionTag) {
-                ui.appVersionTag.textContent = 'v' + app.config.appVersion;
-            }
+            
+            ui.appVersionTag.textContent = 'v' + app.config.appVersion;
         }
     };
 
@@ -211,7 +205,22 @@
     };
 
     const renderer = {
+        updateCanvasResolution() {
+            const rect = canvas.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            const width = Math.round(rect.width * devicePixelRatio);
+            const height = Math.round(rect.height * devicePixelRatio);
+
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
+        },
         updateSettings() {
+            renderer.updateCanvasResolution();
+
             app.scale = canvas.width / app.config.gridSize;
             app.halfScale = app.scale * 0.5;
             app.animation.renderDelay = app.config.stateUpdateInterval ?? app.animation.renderDelay;
@@ -502,21 +511,17 @@
     };
 
     const setupEventListeners = () => {
-        if (ui.about && ui.aboutToggle) {
-            ui.aboutToggle.addEventListener('click', () => {
-                const showAbout = ui.about.hidden;
-                ui.about.hidden = !showAbout;
-                canvas.hidden = showAbout;
-                ui.aboutToggle.textContent = showAbout ? 'grid' : 'about';
-            });
-        }
+        ui.aboutToggle.addEventListener('click', () => {
+            const showAbout = ui.about.hidden;
+            ui.about.hidden = !showAbout;
+            canvas.hidden = showAbout;
+            ui.aboutToggle.textContent = showAbout ? 'grid' : 'about';
+        });
 
-        if (ui.themeToggle) {
-            ui.themeToggle.addEventListener('click', () => {
-                const dark = !document.documentElement.classList.contains('dark');
-                theme.apply(dark, true);
-            });
-        }
+        ui.themeToggle.addEventListener('click', () => {
+            const dark = !document.documentElement.classList.contains('dark');
+            theme.apply(dark, true);
+        });
 
         canvas.addEventListener('click', actions.handleCanvasClick);
         document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -524,6 +529,8 @@
         window.addEventListener('focus', connection.scheduleReconnect);
         window.addEventListener('pageshow', connection.scheduleReconnect);
         window.addEventListener('online', connection.scheduleReconnect);
+        window.addEventListener('resize', renderer.updateSettings);
+        window.addEventListener('orientationchange', renderer.updateSettings);
         window.addEventListener('beforeunload', connection.close);
     };
 
