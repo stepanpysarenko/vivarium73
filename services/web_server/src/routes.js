@@ -2,7 +2,10 @@ const CONFIG = require("./config");
 const { addFood } = require("./state");
 
 module.exports = function registerRoutes(app) {
-    app.get("/api/health", (req, res) => res.json({ status: "OK" }));
+    app.get("/api/health", (req, res) => res.json({
+        status: "OK", 
+        appVersion: CONFIG.APP_VERSION
+    }));
 
     app.get('/api/config', (req, res) => res.json({
         envCode: CONFIG.ENVIRONMENT,

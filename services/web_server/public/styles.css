@@ -261,14 +261,11 @@ body.loading #loader {
     align-items: center;
     justify-content: flex-start;
     padding-top: 16px;
-    margin-top: 24px;
-    border-top: 1px solid var(--color-accent);
 }
 
 .about-meta__version {
     font-size: clamp(9px, 1.2vw, 12px);
     color: var(--color-text-muted);
-    text-transform: uppercase;
 }
 
 #about-content ul {

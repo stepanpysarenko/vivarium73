@@ -1,10 +1,8 @@
 require("dotenv").config();
 
-const packageJson = require("../package.json");
-
 const CONFIG = {
     ENVIRONMENT: process.env.ENVIRONMENT || "local",
-    APP_VERSION: packageJson.version || "0.0.0",
+    APP_VERSION: process.env.APP_VERSION || "dev",
 
     PORT: process.env.PORT || 3000,
     CORS_ORIGIN: process.env.CORS_ORIGIN || "*",

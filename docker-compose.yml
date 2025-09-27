@@ -4,6 +4,7 @@ services:
     build: ./services/nn_service
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
+      - APP_VERSION=${APP_VERSION}
       - PORT=${NN_PORT}
     expose:
       - "${NN_PORT}"
@@ -19,6 +20,7 @@ services:
     build: ./services/web_server
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
+      - APP_VERSION=${APP_VERSION}
       - PORT=${WEB_PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - WEBSOCKET_URL=${WEBSOCKET_URL}

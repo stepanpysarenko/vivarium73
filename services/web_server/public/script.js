@@ -191,8 +191,9 @@
                 ui.envTag.textContent = app.config.envCode;
                 ui.envTag.hidden = false;
             }
-            
-            ui.appVersionTag.textContent = 'v' + app.config.appVersion;
+
+            const versionPrefix = app.config.appVersion === 'dev' ? '' : 'v';
+            ui.appVersionTag.textContent = versionPrefix + app.config.appVersion;
         }
     };
 
@@ -217,6 +218,7 @@
                 canvas.width = width;
                 canvas.height = height;
             }
+            console.log(`Canvas resolution set to ${canvas.width}x${canvas.height}`);
         },
         updateSettings() {
             renderer.updateCanvasResolution();

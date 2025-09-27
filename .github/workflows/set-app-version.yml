@@ -1,0 +1,33 @@
+ame: "Set APP_VERSION"
+description: "Compute the application version and export it to the job environment"
+inputs: {}
+outputs:
+  app_version:
+    description: "Computed application version"
+    value: ${{ steps.compute.outputs.app_version }}
+runs:
+  using: "composite"
+  steps:
+    - id: compute
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        VERSION_BASE=$(jq -r .version package.json)
+        GIT_SHA_SHORT=$(git rev-parse --short HEAD)
+        DATE=$(date -u +%F)
+
+        if git describe --tags --exact-match --match "v${VERSION_BASE}" >/dev/null 2>&1; then
+          APP_VERSION="$VERSION_BASE"
+        else
+          APP_VERSION="${VERSION_BASE}-dev+${DATE}.sha.${GIT_SHA_SHORT}"
+        fi
+
+        {
+          echo "VERSION_BASE=${VERSION_BASE}"
+          echo "GIT_SHA_SHORT=${GIT_SHA_SHORT}"
+          echo "DATE=${DATE}"
+          echo "APP_VERSION=${APP_VERSION}"
+        } >> "$GITHUB_ENV"
+
+        echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
