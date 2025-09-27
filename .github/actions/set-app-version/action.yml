@@ -6,10 +6,7 @@ runs:
     - shell: bash
       run: |
         set -euo pipefail
-        # Adjust path if your version lives elsewhere
         VERSION=$(node -pe "require('./services/web_server/package.json').version")
-        # If you want a branch suffix, uncomment:
-        # if [ "${GITHUB_REF_NAME}" != "main" ]; then VERSION="${VERSION}-${GITHUB_REF_NAME}"; fi
         echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
         echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
         echo "APP_VERSION=${VERSION}"
