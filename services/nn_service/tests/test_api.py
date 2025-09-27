@@ -1,3 +1,4 @@
+import os
 from fastapi.testclient import TestClient
 
 from nn_service.main import app
@@ -9,7 +10,11 @@ client = TestClient(app)
 def test_healthcheck():
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "OK"}
+    expected_version = os.getenv("APP_VERSION", "dev")
+    assert response.json() == {
+        "status": "OK",
+        "appVersion": expected_version
+    }
 
 
 def test_init_weights_length():
