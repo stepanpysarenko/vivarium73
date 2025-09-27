@@ -73,7 +73,8 @@ jobs:
           fetch-depth: 0
 
       - name: Set APP_VERSION
-        uses: ./.github/workflows/set-app-version.yml
+        id: set_version
+        uses: ./.github/actions/set-app-version
 
       - name: Inject robots meta tag to block indexing on qa
         if: github.ref_name != 'main'
@@ -186,7 +187,7 @@ jobs:
             cd ${{ vars.DEPLOY_PATH }}
 
             echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" > .env
-            echo "APP_VERSION=${{ env.APP_VERSION }}" > .env
+            echo "APP_VERSION=${{ env.APP_VERSION }}" >> .env
             echo "CORS_ORIGIN=${{ vars.CORS_ORIGIN }}" >> .env
             echo "WEB_PORT=${{ vars.WEB_PORT }}" >> .env
             echo "NN_PORT=${{ vars.NN_PORT }}" >> .env
