@@ -28,6 +28,8 @@ async function getMovements(state) {
                 x: c.x,
                 y: c.y,
                 angle: c.angle,
+                wanderAngle: c.wanderAngle,
+                wanderStrength: c.wanderStrength,
                 energy: c.energy,
                 prevX: c.prev.x,
                 prevY: c.prev.y,

@@ -1,0 +1,12 @@
+name: "Set APP_VERSION"
+description: "Extract version and set APP_VERSION env/output"
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        VERSION=$(node -pe "require('./services/web_server/package.json').version")
+        echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+        echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "APP_VERSION=${VERSION}"

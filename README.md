@@ -12,5 +12,5 @@
 - You can click anywhere to add extra food  
 - Can be installed as a Progressive Web App (PWA) on desktop or mobile  
 
-### Live Demo  
+### Live  
 [https://vivarium73.life](https://vivarium73.life)

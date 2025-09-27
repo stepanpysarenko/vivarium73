@@ -1,12 +1,14 @@
 import numpy as np
 import random
 
-INPUT_SIZE = 16
+INPUT_SIZE = 17
 HIDDEN_SIZE = 9
 OUTPUT_SIZE = 2
 
 HIDDEN_SHAPE = (HIDDEN_SIZE, INPUT_SIZE)
 OUTPUT_SHAPE = (OUTPUT_SIZE, HIDDEN_SIZE)
+
+SQRT2 = np.sqrt(2)
 
 def xavier_uniform(shape):
     fan_in, fan_out = shape[1], shape[0]
@@ -30,6 +32,7 @@ def wrap_angle(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 def influence_vector(x, y, targets, repel=False):
+    """Return a unit attraction/repulsion vector using inverse-square weighting."""
     vector_x, vector_y = 0.0, 0.0
     for t in targets:
         dx = (x - t.x) if repel else (t.x - x)
@@ -48,16 +51,18 @@ def influence_vector(x, y, targets, repel=False):
     return vector_x, vector_y
 
 def angle_and_magnitude(x, y, angle=0.0):
+    """Convert a world vector into a relative heading and clipped magnitude."""
     orientation = angle
     angle = np.arctan2(y, x)
     rel_angle = wrap_angle(angle - orientation)
     magnitude = np.hypot(x, y)
-    return rel_angle / np.pi, np.clip(magnitude / np.sqrt(2), 0, 1)
+    return rel_angle / np.pi, np.clip(magnitude / SQRT2, 0, 1)
 
 def angle_delta(current, prev):
     return wrap_angle(current - prev) / np.pi
 
 def net_movement_vector(path, visibility_radius):
+    """Compare displacement to visibility radius and squash components to [-1, 1]."""
     if len(path) < 2:
         return 0.0, 0.0
 
@@ -88,6 +93,9 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
 
     angle_delta_val = angle_delta(creature.angle, creature.prev_angle)
 
+    wander_angle = wrap_angle(creature.wander_angle - creature.angle) / np.pi
+    wander_magnitude = np.clip(creature.wander_strength / SQRT2, 0, 1)
+
     inputs = np.array([
         energy_level,
         energy_dx,
@@ -103,7 +111,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
         angle_delta_val,
         move_angle,
         move_magnitude,
-        random.uniform(-1, 1),  # exploration noise
+        wander_angle,
+        wander_magnitude,
         1.0  # bias
     ])
 
@@ -115,6 +124,7 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     output = np.tanh(np.dot(output_weights, hidden_layer))
 
     return {
+        "id": creature.id,
         "angleDelta": output[0] * max_turn_angle,
         "speed": ((output[1] + 1) / 2) * max_speed
     }

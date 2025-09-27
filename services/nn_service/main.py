@@ -1,9 +1,12 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List
 from nn_service.logic import init_weights, mutate_weights, think
 
 app = FastAPI()
+
+APP_VERSION = os.getenv("APP_VERSION", "dev")
 
 class Position(BaseModel):
     x: float
@@ -15,6 +18,8 @@ class Creature(BaseModel):
     y: float
     angle: float
     energy: float
+    wander_angle: float = Field(..., alias="wanderAngle")
+    wander_strength: float = Field(..., alias="wanderStrength")
     prev_x: float = Field(..., alias="prevX")
     prev_y: float = Field(..., alias="prevY")
     prev_angle: float = Field(..., alias="prevAngle")
@@ -39,7 +44,10 @@ class MutateRequest(BaseModel):
 
 @app.get("/api/health")
 def healthcheck():
-    return {"status": "OK"}
+    return {
+        "status": "OK",
+        "appVersion": APP_VERSION
+    }
 
 @app.get("/api/weights/init")
 def initweights():

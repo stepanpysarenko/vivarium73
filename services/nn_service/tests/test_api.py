@@ -1,3 +1,4 @@
+import os
 from fastapi.testclient import TestClient
 
 from nn_service.main import app
@@ -9,7 +10,11 @@ client = TestClient(app)
 def test_healthcheck():
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "OK"}
+    expected_version = os.getenv("APP_VERSION", "dev")
+    assert response.json() == {
+        "status": "OK",
+        "appVersion": expected_version
+    }
 
 
 def test_init_weights_length():
@@ -43,6 +48,8 @@ def test_think_returns_movements():
                 "x": 0,
                 "y": 0,
                 "angle": 0,
+                "wanderAngle": 0.0,
+                "wanderStrength": 1.0,
                 "energy": 100.0,
                 "prevX": 0,
                 "prevY": 0,
@@ -71,3 +78,43 @@ def test_think_returns_movements():
     assert len(data["movements"]) == 1
     assert "angleDelta" in data["movements"][0]
     assert "speed" in data["movements"][0]
+
+
+def test_wander_vector_creates_movement():
+    weight_count = logic.HIDDEN_SIZE * logic.INPUT_SIZE + logic.OUTPUT_SIZE * logic.HIDDEN_SIZE
+    weights = logic.init_weights()["weights"]
+
+    state = {
+        "creatures": [
+            {
+                "id": 1,
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "wanderAngle": 1.0,
+                "wanderStrength": 1.0,
+                "energy": 100.0,
+                "prevX": 0,
+                "prevY": 0,
+                "prevAngle": 0,
+                "recentPath": [{"x": 0, "y": 0}, {"x": 0, "y": 0}],
+                "prevEnergy": 100.0,
+                "justReproduced": False,
+                "weights": weights,
+                "food": [],
+                "obstacles": [],
+                "creatures": []
+            }
+        ],
+        "gridSize": 50,
+        "visibilityRadius": 10,
+        "maxEnergy": 1000,
+        "maxTurnAngle": 50,
+        "maxSpeed": 1.0
+    }
+
+    response = client.post("/api/think", json=state)
+    assert response.status_code == 200
+    data = response.json()
+    movement = data["movements"][0]
+    assert movement["angleDelta"] != 0 or movement["speed"] != 0
