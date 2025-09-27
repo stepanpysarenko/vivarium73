@@ -73,7 +73,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set APP_VERSION
-        uses: ./.github/workflows/set-app-version
+        uses: ./.github/workflows/set-app-version.yml
 
       - name: Inject robots meta tag to block indexing on qa
         if: github.ref_name != 'main'
