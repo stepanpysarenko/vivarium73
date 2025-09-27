@@ -260,7 +260,7 @@ body.loading #loader {
     gap: 8px 16px;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 16px;
+    margin-top: 16px;
 }
 
 .about-meta__version {
