@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - qa
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+      - qa
+
+permissions:
+  contents: read
+
+jobs:
+  test-web-server:
+    name: Test Web Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: cd services/web_server && npm ci
+
+      - name: Run tests
+        run: cd services/web_server && npm test
+
+  test-nn-service:
+    name: Test NN Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install -r services/nn_service/requirements.txt
+
+      - name: Run tests
+        run: pytest nn_service/tests
+        env:
+          PYTHONPATH: .
+        working-directory: services
