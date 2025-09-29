@@ -58,6 +58,7 @@
         reconnectDelay: 250,
         colors: COLOR_PALETTE.light,
         observedCreatureId: null,
+        observedClickR2: 5, // squared radius for click detection
         scale: 1,
         halfScale: 0.5,
         animation: {
@@ -225,7 +226,7 @@
 
             app.scale = canvas.width / app.config.gridSize;
             app.halfScale = app.scale * 0.5;
-            app.animation.renderDelay = app.config.stateUpdateInterval ?? app.animation.renderDelay;
+            app.animation.renderDelay = app.config.stateUpdateInterval;
         },
         clear() {
             ctx.globalAlpha = 1;
@@ -390,7 +391,7 @@
             const clickedCreature = creatures ? creatures.find(c => {
                 const dx = c.x - x;
                 const dy = c.y - y;
-                return dx * dx + dy * dy < 2;
+                return dx * dx + dy * dy < app.observedClickR2;
             }) : null;
 
             if (clickedCreature) {
@@ -539,7 +540,6 @@
     const init = async () => {
         stats.showGridPanel();
         theme.loadPreferred();
-        setupEventListeners();
         registerServiceWorker();
 
         try {
@@ -556,6 +556,7 @@
             return;
         }
 
+        setupEventListeners();
         renderer.updateSettings();
         requestAnimationFrame(renderer.loop);
         connection.open();
