@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
     env:
-      ENVIRONMENT: ${{ job.environment }}
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
