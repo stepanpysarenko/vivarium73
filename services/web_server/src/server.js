@@ -100,3 +100,10 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 module.exports = { app, startServer };
+
+if (process.env.NODE_ENV === 'test') {
+    module.exports.__testUtils = {
+        wss,
+        broadcastState
+    };
+}
