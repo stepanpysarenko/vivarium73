@@ -58,7 +58,6 @@
         reconnectDelay: 250,
         colors: COLOR_PALETTE.light,
         observedCreatureId: null,
-        observedClickR2: 5, // squared radius for click detection
         scale: 1,
         halfScale: 0.5,
         animation: {
@@ -253,7 +252,7 @@
         drawObservedHighlight(x, y) {
             const centerX = x * app.scale + app.halfScale;
             const centerY = y * app.scale + app.halfScale;
-            const radius = app.halfScale * 3;
+            const radius = app.scale * 2;
 
             ctx.save();
             ctx.globalAlpha = 0.05;
@@ -391,7 +390,7 @@
             const clickedCreature = creatures ? creatures.find(c => {
                 const dx = c.x - x;
                 const dy = c.y - y;
-                return dx * dx + dy * dy < app.observedClickR2;
+                return dx * dx + dy * dy < 5;
             }) : null;
 
             if (clickedCreature) {
