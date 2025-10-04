@@ -26,10 +26,7 @@ module.exports = function registerRoutes(app) {
             addFood(x, y);
             res.status(201).json({ success: true });
         } catch (err) {
-            const status = err.message === "Max food count reached" || err.message === "Cell is occupied"
-                ? 409
-                : 400;
-            res.status(status).json({ success: false, error: err.message });
+            res.status(400).json({ success: false, error: err.message });
         }
     });
 

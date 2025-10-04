@@ -35,7 +35,7 @@ describe('POST /api/place-food', () => {
     expect(__testUtils.getState().food).toHaveLength(1);
   });
 
-  it('returns 409 when the grid already holds the maximum food', async () => {
+  it('returns 400 when the grid already holds the maximum food', async () => {
     const filled = Array.from({ length: CONFIG.FOOD_MAX_COUNT }, (_, idx) => ({ x: idx, y: 0 }));
     __testUtils.setState(createState(filled));
 
@@ -43,7 +43,7 @@ describe('POST /api/place-food', () => {
       .post('/api/place-food')
       .send({ x: 10, y: 10 });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
     expect(res.body).toEqual({ success: false, error: 'Max food count reached' });
   });
 
