@@ -18,11 +18,10 @@ permissions:
   contents: read
 
 jobs:
-  test-web-server:
-    name: Test Web Server
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -30,29 +29,46 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: cd services/web_server && npm ci
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm ci
 
-      - name: Run tests
-        run: cd services/web_server && npm test
-
-  test-nn-service:
-    name: Test NN Service
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Run Jest suites
+        working-directory: services/web_server
+        run: npm test -- --runInBand
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install -r services/nn_service/requirements.txt
 
-      - name: Run tests
-        run: pytest nn_service/tests
-        env:
-          PYTHONPATH: .
-        working-directory: services
+      - name: Run Pytest suite
+        run: PYTHONPATH=services pytest services/nn_service/tests
+
+  e2e:
+    needs: test
+    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'qa')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: services/web_server
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright smoke tests
+        working-directory: services/web_server
+        run: npm run test:e2e

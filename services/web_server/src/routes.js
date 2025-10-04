@@ -24,7 +24,7 @@ module.exports = function registerRoutes(app) {
 
         try {
             addFood(x, y);
-            res.json({ success: true });
+            res.status(201).json({ success: true });
         } catch (err) {
             res.status(400).json({ success: false, error: err.message });
         }

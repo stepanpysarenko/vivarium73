@@ -301,3 +301,19 @@ module.exports = {
     updateState,
     addFood
 };
+
+if (process.env.NODE_ENV === 'test') {
+    function setState(testState) {
+        state = testState;
+    }
+
+    module.exports.__testUtils = {
+        applyMovement,
+        handleEating,
+        handleCreatureCollision,
+        buildCreatureMap,
+        wrapAngle,
+        setState,
+        getState: () => state
+    };
+}
