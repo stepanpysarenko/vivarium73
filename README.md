@@ -10,7 +10,7 @@
 - When the population dies out, the simulation restarts using the top performers  
 - Evolution gradually leads to better survival strategies  
 - You can click anywhere to add extra food  
-- Can be installed as a Progressive Web App (PWA) on desktop or mobile  
+- Can be installed on desktop or mobile
 
 ### Live  
 [https://vivarium73.life](https://vivarium73.life)
