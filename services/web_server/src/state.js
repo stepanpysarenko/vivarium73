@@ -101,13 +101,14 @@ async function updateState() {
     const movements = await getMovements(state);
     const movementsMap = new Map(movements.map(m => [m.id, m]));
 
-    state.creatures.forEach(c => {
-        applyMovement(c, movementsMap.get(c.id));
-        handleObstacleCollision(c);
-        handleEating(c);
-        c.wanderAngle = wrapAngle(c.wanderAngle + (Math.random() - 0.5) * 0.2); 
-        c.updatesToFlash = Math.max(c.updatesToFlash - 1, 0);
-    });
+    for (const creature of state.creatures) {
+        creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2); 
+        creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
+
+        applyMovement(creature, movementsMap.get(creature.id));
+        handleObstacleCollision(creature);
+        handleEating(creature);
+    }
 
     const creaturesMap = buildCreatureMap(state.creatures);
     state.creatures.forEach(c => handleCreatureCollision(c, creaturesMap));
@@ -301,3 +302,19 @@ module.exports = {
     updateState,
     addFood
 };
+
+if (process.env.NODE_ENV === 'test') {
+    function setState(testState) {
+        state = testState;
+    }
+
+    module.exports.__testUtils = {
+        applyMovement,
+        handleEating,
+        handleCreatureCollision,
+        buildCreatureMap,
+        wrapAngle,
+        setState,
+        getState: () => state
+    };
+}

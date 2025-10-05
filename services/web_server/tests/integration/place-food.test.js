@@ -1,55 +1,58 @@
-jest.mock('../../src/state', () => ({
-  initState: jest.fn().mockResolvedValue(),
-  saveState: jest.fn(),
-  getPublicState: jest.fn(),
-  getPublicParams: jest.fn(),
-  updateState: jest.fn(),
-  addFood: jest.fn()
-}));
+process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
 const { app } = require('../../src/server');
 const state = require('../../src/state');
+const CONFIG = require('../../src/config');
+
+const { __testUtils } = state;
+
+const createState = (food = []) => ({
+  creatures: [],
+  food: [...food],
+  obstacles: [],
+  stats: {
+    restarts: 0,
+    generation: 1,
+    creatureCount: 0,
+    foodCount: food.length,
+  },
+  lastCreatureId: 0,
+});
 
 describe('POST /api/place-food', () => {
-  beforeEach(async () => {
-    state.addFood.mockReset();
-    await state.initState();
+  beforeEach(() => {
+    __testUtils.setState(createState());
   });
 
-  it('responds with success when valid input is provided', async () => {
+  it('returns 201 when food is placed on an empty cell', async () => {
     const res = await request(app)
       .post('/api/place-food')
-      .send({ x: 1, y: 2 });
+      .send({ x: 2, y: 3 });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body).toEqual({ success: true });
-    expect(state.addFood).toHaveBeenCalledWith(1, 2);
+    expect(__testUtils.getState().food).toHaveLength(1);
   });
 
-  it('responds with error when x or y is invalid', async () => {
-    state.addFood.mockImplementationOnce(() => { throw new Error('bad'); });
+  it('returns 400 when the grid already holds the maximum food', async () => {
+    const filled = Array.from({ length: CONFIG.FOOD_MAX_COUNT }, (_, idx) => ({ x: idx, y: 0 }));
+    __testUtils.setState(createState(filled));
+
     const res = await request(app)
       .post('/api/place-food')
-      .send({ x: 'bad', y: 2 });
+      .send({ x: 10, y: 10 });
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({
-      success: false,
-      error: 'Invalid coordinates'
-    });
+    expect(res.body).toEqual({ success: false, error: 'Max food count reached' });
   });
 
-  it('responds with error when coordinates out of grid', async () => {
-    state.addFood.mockImplementationOnce(() => { throw new Error('bad'); });
+  it('returns 400 for invalid coordinate payloads', async () => {
     const res = await request(app)
       .post('/api/place-food')
-      .send({ x: -1, y: -1 });
+      .send({ x: 'bad', y: 10 });
 
     expect(res.status).toBe(400);
-    expect(res.body).toMatchObject({
-      success: false,
-      error: expect.any(String)
-    });
+    expect(res.body).toEqual({ success: false, error: 'Invalid coordinates' });
   });
 });

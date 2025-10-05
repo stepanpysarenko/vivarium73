@@ -1,14 +1,10 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main
-      - qa
-    paths-ignore:
-      - 'LICENSE'
-      - '*.md'
-      - 'docs/**'
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main,qa]
 
 permissions:
   contents: read
@@ -18,37 +14,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  determine-deploy:
-    uses: ./.github/workflows/determine-environment.yml
-
   deploy:
     name: Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    needs: determine-deploy
-    environment: ${{ needs.determine-deploy.outputs.environment }}
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
+    env:
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
     steps:
-      - name: Set ENVIRONMENT variable
-        run: echo "ENVIRONMENT=${{ needs.determine-deploy.outputs.environment }}" >> $GITHUB_ENV
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set APP_VERSION
-        id: set_version
-        uses: ./.github/actions/set-app-version
+      - name: Set app version
+        id: set_app_version
+        run: |
+          VERSION=$(node -pe "require('./services/web_server/package.json').version")
 
-      - name: Inject robots meta tag to block indexing on qa
-        if: github.ref_name != 'main'
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "APP_VERSION=${VERSION}"
+
+      - name: Block indexing on qa
+        if: env.ENVIRONMENT == 'qa'
         run: |
           echo "Injecting robots meta tag"
           INDEX_FILE=services/web_server/public/index.html
           TAG='<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">'
           sed -i "s|<!-- __ROBOTS_TAG__ -->|$TAG|" "$INDEX_FILE"
 
-      - name: Inject GA tag into index.html on prod
-        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
+      - name: Inject GA tag on prod
+        if: env.ENVIRONMENT == 'prod' && vars.GA_TAG_ID != ''
         env:
           GA_TAG_ID: ${{ vars.GA_TAG_ID }}
         run: |
@@ -76,8 +72,8 @@ jobs:
             }
           ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
 
-      - name: Inject schema.org JSON-LD into index.html on prod
-        if: github.ref_name == 'main' && vars.GA_TAG_ID != ''
+      - name: Inject schema.org JSON-LD on prod
+        if: env.ENVIRONMENT == 'prod' && vars.GA_TAG_ID != ''
         env:
           CANONICAL_URL: ${{ vars.CANONICAL_URL }}
         run: |
@@ -106,8 +102,8 @@ jobs:
             }
           ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
 
-      - name: Inject canonical URL into index.html on prod
-        if: github.ref_name == 'main' && vars.CANONICAL_URL != ''
+      - name: Inject canonical URL on prod
+        if: env.ENVIRONMENT == 'prod' && vars.CANONICAL_URL != ''
         env:
           CANONICAL_URL: ${{ vars.CANONICAL_URL }}
         run: |
@@ -116,7 +112,7 @@ jobs:
           TAG="<link rel=\"canonical\" href=\"$CANONICAL_URL\">"
           sed -i "s|<!-- __CANONICAL_URL__ -->|$TAG|" "$INDEX_FILE"
 
-      - name: Clean or create a deploy directory (preserve /data)
+      - name: Clean or create a deploy directory
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ vars.DEPLOY_HOST }}
