@@ -18,9 +18,9 @@ jobs:
     name: Deploy
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' ? 'prod' : 'qa' }}
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
     env:
-      ENVIRONMENT: ${{ github.ref_name == 'main' ? 'prod' : 'qa' }}
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
