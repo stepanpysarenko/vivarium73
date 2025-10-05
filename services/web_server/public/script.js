@@ -58,6 +58,7 @@
         reconnectDelay: 250,
         colors: COLOR_PALETTE.light,
         observedCreatureId: null,
+        observedAreaRadius: 2,
         scale: 1,
         halfScale: 0.5,
         animation: {
@@ -252,7 +253,7 @@
         drawObservedHighlight(x, y) {
             const centerX = x * app.scale + app.halfScale;
             const centerY = y * app.scale + app.halfScale;
-            const radius = app.scale * 2;
+            const radius = app.scale * app.observedAreaRadius;
 
             ctx.save();
             ctx.globalAlpha = 0.05;
@@ -356,7 +357,7 @@
 
             const latestState = app.state.latest;
             if (!latestState || !app.config) {
-                console.warn('Simulation state unavailable; cannot place food yet.');
+                console.warn('State unavailable - cannot place food yet.');
                 return;
             }
 
@@ -385,13 +386,25 @@
             }
         },
         handleCanvasClick: async event => {
+            const distanceThreshold = app.observedAreaRadius * app.observedAreaRadius;
             const { x, y } = actions.getGridClickCoordinates(event);
             const creatures = app.state.latest ? app.state.latest.creatures : null;
-            const clickedCreature = creatures ? creatures.find(c => {
-                const dx = c.x - x;
-                const dy = c.y - y;
-                return dx * dx + dy * dy < 5;
-            }) : null;
+            let clickedCreature = null;
+            let closestDistanceSq = Infinity;
+
+            if (creatures) {
+                for (const creature of creatures) {
+                    const dx = creature.x - x;
+                    const dy = creature.y - y;
+                    const distanceSq = dx * dx + dy * dy;
+
+                    if (distanceSq >= distanceThreshold) continue;
+                    if (distanceSq >= closestDistanceSq) continue;
+
+                    clickedCreature = creature;
+                    closestDistanceSq = distanceSq;
+                }
+            }
 
             if (clickedCreature) {
                 stats.startObserving(clickedCreature);
