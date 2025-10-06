@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ github.event.workflow_run.ref == 'refs/heads/main' && 'prod' || 'qa' }}
-    environment: ${{ env.ENVIRONMENT }}
+    environment: ${{ github.event.workflow_run.ref == 'refs/heads/main' && 'prod' || 'qa' }}
     steps:
       - name: Debug (source & env)
         shell: bash
