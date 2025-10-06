@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-${{ github.event.workflow_run.ref || github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
 jobs:
@@ -18,14 +18,20 @@ jobs:
     name: Deploy
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
+    environment: ${{ github.event.workflow_run.ref == 'refs/heads/main' && 'prod' || 'qa' }}
     env:
-      ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
+      ENVIRONMENT: ${{ github.event.workflow_run.ref == 'refs/heads/main' && 'prod' || 'qa' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Set app version
         id: set_app_version
