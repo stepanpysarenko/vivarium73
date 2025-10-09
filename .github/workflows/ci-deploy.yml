@@ -1,36 +1,86 @@
-name: Deploy
+name: CI + Deploy
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main,qa]
+  pull_request:
+    branches: [main, qa]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+  push:
+    branches: [main, qa]
+    tags: ['v*']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 permissions:
   contents: read
 
-concurrency:
-  group: deploy-${{ github.event.workflow_run.ref || github.event.workflow_run.head_branch }}
-  cancel-in-progress: true
-
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm ci
+
+      - name: Run Jest suites
+        working-directory: services/web_server
+        run: npm test -- --runInBand
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r services/nn_service/requirements.txt
+
+      - name: Run Pytest suite
+        run: PYTHONPATH=services pytest services/nn_service/tests
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: services/web_server
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright smoke tests
+        working-directory: services/web_server
+        run: npm run test:e2e
+
   deploy:
     name: Deploy
-    if: ${{ github.event.workflow_run.conclusion == 'success'
-            && github.event.workflow_run.event == 'push'
-            && (
-              github.event.workflow_run.ref == 'refs/heads/main' ||
-              github.event.workflow_run.ref == 'refs/heads/qa'   ||
-              startsWith(github.event.workflow_run.ref, 'refs/tags/')
-            ) }}
+    needs: [test, e2e]
     runs-on: ubuntu-latest
-    environment: ${{ (startsWith(github.event.workflow_run.ref, 'refs/tags/') ||
-                    github.event.workflow_run.ref == 'refs/heads/main')
-                    && 'prod' || 'qa' }}
+    if: ${{ success() && github.event_name == 'push'
+          && (github.ref_name == 'main' || github.ref_name == 'qa' || github.ref_type == 'tag') }}
+    environment: ${{ (github.ref_type == 'tag' || github.ref_name == 'main') && 'prod' || 'qa' }}
     env:
-      ENVIRONMENT: ${{ (startsWith(github.event.workflow_run.ref, 'refs/tags/') ||
-                      github.event.workflow_run.ref == 'refs/heads/main')
-                      && 'prod' || 'qa' }}
+      ENVIRONMENT: ${{ (github.ref_type == 'tag' || github.ref_name == 'main') && 'prod' || 'qa' }}
 
     steps:
       - name: Debug (source & env)
