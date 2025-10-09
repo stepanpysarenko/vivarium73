@@ -73,7 +73,7 @@ jobs:
         run: npm run test:e2e
 
   deploy:
-    name: Deploy
+    name: deploy
     needs: [test, e2e]
     runs-on: ubuntu-latest
     if: ${{ success() && github.event_name == 'push'
