@@ -3,19 +3,18 @@ name: CI + Deploy
 on:
   pull_request:
     branches: [main, qa]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-
+    paths-ignore: ['**/*.md','docs/**']
   push:
     branches: [main, qa]
     tags: ['v*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    paths-ignore: ['**/*.md','docs/**']
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -41,6 +40,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: services/nn_service/requirements.txt
 
       - name: Install Python dependencies
         run: pip install -r services/nn_service/requirements.txt
@@ -76,11 +77,14 @@ jobs:
     name: deploy
     needs: [test, e2e]
     runs-on: ubuntu-latest
-    if: ${{ success() && github.event_name == 'push'
-          && (github.ref_name == 'main' || github.ref_name == 'qa' || github.ref_type == 'tag') }}
-    environment: ${{ (github.ref_type == 'tag' || github.ref_name == 'main') && 'prod' || 'qa' }}
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'qa' || github.ref_type == 'tag') }}
+    environment: ${{ github.ref_type == 'tag' && 'prod' || 'qa' }}
     env:
-      ENVIRONMENT: ${{ (github.ref_type == 'tag' || github.ref_name == 'main') && 'prod' || 'qa' }}
+      ENVIRONMENT: ${{ github.ref_type == 'tag' && 'prod' || 'qa' }}
+
+    permissions:
+      contents: read
+      deployments: write
 
     steps:
       - name: Debug (source & env)
@@ -96,7 +100,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -106,9 +109,14 @@ jobs:
       - name: Set app version
         id: set_app_version
         run: |
-          VERSION=$(node -pe "require('./services/web_server/package.json').version")
+          if [[ "${{ github.ref_type }}" == "tag" && "${{ github.ref_name }}" == v* ]]; then
+            echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            PKG_VER=$(node -pe "require('./services/web_server/package.json').version" 2>/dev/null || echo "0.0.0")
+            SHORT_SHA="${GITHUB_SHA::7}"
+            echo "APP_VERSION=${PKG_VER}+sha.${SHORT_SHA}" >> "$GITHUB_ENV"
+          fi
 
-          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "APP_VERSION=${VERSION}"
 
       - name: Block indexing on qa
