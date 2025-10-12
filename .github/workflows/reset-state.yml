@@ -6,7 +6,6 @@ on:
 jobs:
   reset-state:
     name: Reset State
-    needs: determine-deploy
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
 
