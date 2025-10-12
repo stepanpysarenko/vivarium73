@@ -4,14 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  determine-deploy:
-    uses: ./.github/workflows/determine-environment.yml
-
   reset-state:
     name: Reset State
     needs: determine-deploy
     runs-on: ubuntu-latest
-    environment: ${{ needs.determine-deploy.outputs.environment }}
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
 
     steps:
       - name: SSH and Reset State
