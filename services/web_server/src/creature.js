@@ -25,6 +25,10 @@ async function initCreature(state, x = null, y = null, angle = null, weights = n
         wanderAngle: (Math.random() * 2 * Math.PI) - Math.PI,
         wanderStrength: Math.random(),
         energy: CONFIG.CREATURE_INITIAL_ENERGY,
+        sex: Math.random() < 0.5 ? 'F' : 'M',
+        matingCooldown: 0,
+        mateIntent: 0,
+        matedThisTick: false,
         prev: {
             x,
             y,

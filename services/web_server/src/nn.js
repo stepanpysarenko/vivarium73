@@ -28,6 +28,7 @@ async function getMovements(state) {
                 x: c.x,
                 y: c.y,
                 angle: c.angle,
+                sex: c.sex,
                 wanderAngle: c.wanderAngle,
                 wanderStrength: c.wanderStrength,
                 energy: c.energy,
@@ -37,10 +38,16 @@ async function getMovements(state) {
                 recentPath: c.recentPath,
                 prevEnergy: c.prev.energy,
                 justReproduced: c.justReproduced,
+                matingCooldown: c.matingCooldown,
                 weights: c.weights,
                 food: getVisibleFood(c, state),
                 obstacles: getVisibleObstacles(c, state),
-                creatures: getVisibleCreatures(c, state)
+                creatures: getVisibleCreatures(c, state).map(other => ({
+                    id: other.id,
+                    x: other.x,
+                    y: other.y,
+                    sex: other.sex
+                }))
             })),
             gridSize: CONFIG.GRID_SIZE,
             visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,

@@ -39,6 +39,7 @@ const initialState = {
     { x: 14, y: 8 },
   ],
   obstacles: [],
+  eggs: [],
 };
 
 test.beforeEach(async ({ page }) => {
@@ -59,6 +60,7 @@ test.beforeEach(async ({ page }) => {
         creatures: clone(state.creatures),
         food: createFoodList(foodCount),
         obstacles: clone(state.obstacles),
+        eggs: clone(state.eggs || []),
         timestamp: performance.now(),
         ...clone(overrides || {}),
       };
@@ -74,6 +76,9 @@ test.beforeEach(async ({ page }) => {
       }
       if (overrides && overrides.obstacles) {
         frame.obstacles = clone(overrides.obstacles);
+      }
+      if (overrides && overrides.eggs) {
+        frame.eggs = clone(overrides.eggs);
       }
       return frame;
     };

@@ -17,6 +17,7 @@ const sampleFrame = () => ({
   ],
   food: [{ x: 1, y: 1 }],
   obstacles: [{ x: 0, y: 0 }],
+  eggs: [{ id: 1, x: 2, y: 2, hatchIn: 5000, generation: 2 }],
 });
 
 const attachClient = () => {
@@ -47,6 +48,7 @@ describe('WebSocket broadcasting', () => {
     expect(payload).toHaveProperty('creatures');
     expect(payload).toHaveProperty('food');
     expect(payload).toHaveProperty('obstacles');
+    expect(payload).toHaveProperty('eggs');
   });
 
   it('ensures each creature frame carries core fields', () => {

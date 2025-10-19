@@ -1,9 +1,9 @@
 import numpy as np
 import random
 
-INPUT_SIZE = 17
+INPUT_SIZE = 21
 HIDDEN_SIZE = 9
-OUTPUT_SIZE = 2
+OUTPUT_SIZE = 3
 
 HIDDEN_SHAPE = (HIDDEN_SIZE, INPUT_SIZE)
 OUTPUT_SHAPE = (OUTPUT_SIZE, HIDDEN_SIZE)
@@ -74,6 +74,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     energy_level = 2 * (creature.energy / max_energy) - 1
     energy_dx = np.clip((creature.energy - creature.prev_energy) / max_energy, -1, 1)
     just_reproduced = 1.0 if creature.just_reproduced else -1.0
+    energy_absolute = np.clip(creature.energy / max_energy, 0, 1)
+    sex_flag = 1.0 if getattr(creature, "sex", "F") == "F" else -1.0
 
     fx, fy = influence_vector(creature.x, creature.y, creature.food)
     food_angle, food_magnitude = angle_and_magnitude(fx, fy, creature.angle)
@@ -83,6 +85,16 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
 
     cx, cy = influence_vector(creature.x, creature.y, creature.creatures, repel=True)
     creature_angle, creature_magnitude = angle_and_magnitude(cx, cy, creature.angle)
+
+    opposite_sex = [c for c in creature.creatures if getattr(c, "sex", None) and getattr(c, "sex", None) != creature.sex]
+    if opposite_sex:
+        nearest = min(opposite_sex, key=lambda c: (c.x - creature.x) ** 2 + (c.y - creature.y) ** 2)
+        mate_dx = nearest.x - creature.x
+        mate_dy = nearest.y - creature.y
+        mate_angle, mate_distance = angle_and_magnitude(mate_dx, mate_dy, creature.angle)
+    else:
+        mate_angle = 0.0
+        mate_distance = 0.0
 
     net_dx, net_dy = net_movement_vector(creature.recent_path, visibility_radius)
     net_angle, net_magnitude = angle_and_magnitude(net_dx, net_dy, creature.angle)
@@ -113,6 +125,10 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
         move_magnitude,
         wander_angle,
         wander_magnitude,
+        energy_absolute,
+        sex_flag,
+        mate_angle,
+        mate_distance,
         1.0  # bias
     ])
 
@@ -126,5 +142,6 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     return {
         "id": creature.id,
         "angleDelta": output[0] * max_turn_angle,
-        "speed": ((output[1] + 1) / 2) * max_speed
+        "speed": ((output[1] + 1) / 2) * max_speed,
+        "mateIntent": (output[2] + 1) / 2
     }

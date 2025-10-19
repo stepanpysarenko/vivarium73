@@ -59,20 +59,23 @@ describe('getMovements', () => {
         x: 0,
         y: 0,
         angle: 0,
+        sex: 'F',
         wanderAngle: 0,
         wanderStrength: 1.0,
         energy: 10,
         prev: { x: 0, y: 0, angle: 0, energy: 10 },
         recentPath: [],
         justReproduced: false,
+        matingCooldown: 0,
+        mateIntent: 0,
         weights: []
       }
     ]
   };
 
   it('returns movements on success', async () => {
-    axios.post.mockResolvedValue({ data: { movements: [{ angleDelta: 0, speed: 1 }] } });
-    await expect(getMovements(baseState)).resolves.toEqual([{ angleDelta: 0, speed: 1 }]);
+    axios.post.mockResolvedValue({ data: { movements: [{ angleDelta: 0, speed: 1, mateIntent: 0.5 }] } });
+    await expect(getMovements(baseState)).resolves.toEqual([{ angleDelta: 0, speed: 1, mateIntent: 0.5 }]);
     expect(axios.post).toHaveBeenCalledWith(
       CONFIG.NN_SERVICE_URL + '/think',
       {
@@ -82,6 +85,7 @@ describe('getMovements', () => {
             x: 0,
             y: 0,
             angle: 0,
+            sex: 'F',
             wanderAngle: 0,
             wanderStrength: 1.0,
             energy: 10,
@@ -91,6 +95,7 @@ describe('getMovements', () => {
             recentPath: [],
             prevEnergy: 10,
             justReproduced: false,
+            matingCooldown: 0,
             weights: [],
             food: [],
             obstacles: [],

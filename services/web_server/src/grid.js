@@ -4,7 +4,8 @@ const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
 
 function isCellOccupied(x, y, state) {
     return state.food.some(f => f.x === x && f.y === y)
-        || state.obstacles.some(o => o.x === x && o.y === y);
+        || state.obstacles.some(o => o.x === x && o.y === y)
+        || (state.eggs ? state.eggs.some(e => Math.floor(e.x) === x && Math.floor(e.y) === y) : false);
 }
 
 function getTotalEnergy(state) {
