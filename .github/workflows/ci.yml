@@ -81,3 +81,26 @@ jobs:
       - name: Run Playwright smoke tests
         working-directory: services/web_server
         run: npm run test:e2e
+
+  package:
+    name: Publish source artifact
+    needs: [test, e2e]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create source archive
+        run: |
+          git archive --format=tar.gz --output=source.tar.gz ${{ github.sha }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-${{ github.sha }}
+          path: source.tar.gz
+          if-no-files-found: error
+          retention-days: 7
