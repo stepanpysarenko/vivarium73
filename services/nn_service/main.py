@@ -12,12 +12,18 @@ class Position(BaseModel):
     x: float
     y: float
 
+class ObservedCreature(Position):
+    id: int
+    sex: str
+
+
 class Creature(BaseModel):
     id: int
     x: float
     y: float
     angle: float
     energy: float
+    sex: str
     wander_angle: float = Field(..., alias="wanderAngle")
     wander_strength: float = Field(..., alias="wanderStrength")
     prev_x: float = Field(..., alias="prevX")
@@ -26,10 +32,11 @@ class Creature(BaseModel):
     recent_path: List[Position] = Field(..., alias="recentPath")
     prev_energy: float = Field(..., alias="prevEnergy")
     just_reproduced: bool = Field(..., alias="justReproduced")
+    mating_cooldown: float = Field(..., alias="matingCooldown")
     weights: List[float]
     food: List[Position]
     obstacles: List[Position]
-    creatures: List[Position]
+    creatures: List[ObservedCreature]
 
 class State(BaseModel):
     creatures: List[Creature]

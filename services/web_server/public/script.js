@@ -35,6 +35,7 @@
             background: '#f8f8f8',
             obstacle: '#e8e8e8',
             food: '#34a064',
+            egg: '#d9b97c',
             creature: '#4169e1',
             creatureFlash: '#ff0000',
             creatureObservedHighlight: '#e8e8e8',
@@ -44,6 +45,7 @@
             background: '#282828',
             obstacle: '#3c3c3c',
             food: '#34a064',
+            egg: '#d9b97c',
             creature: '#537bff',
             creatureFlash: '#ff0000',
             creatureObservedHighlight: '#e8e8e8',
@@ -250,6 +252,27 @@
                 ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
         },
+        drawEggs() {
+            if (!app.state.latest) return;
+
+            const eggs = app.state.latest.eggs || [];
+            if (!eggs.length) return;
+
+            ctx.save();
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = app.colors.egg;
+            const radius = app.halfScale * 0.35;
+
+            eggs.forEach(({ x, y }) => {
+                const centerX = x * app.scale + app.halfScale;
+                const centerY = y * app.scale + app.halfScale;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        },
         drawObservedHighlight(x, y) {
             const centerX = x * app.scale + app.halfScale;
             const centerY = y * app.scale + app.halfScale;
@@ -332,6 +355,7 @@
             renderer.clear();
             renderer.drawObstacles();
             renderer.drawFood();
+            renderer.drawEggs();
             renderer.drawCreatures(prevState, nextState, t, now);
 
             requestAnimationFrame(renderer.loop);

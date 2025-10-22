@@ -48,6 +48,7 @@ def test_think_returns_movements():
                 "x": 0,
                 "y": 0,
                 "angle": 0,
+                "sex": "F",
                 "wanderAngle": 0.0,
                 "wanderStrength": 1.0,
                 "energy": 100.0,
@@ -57,6 +58,7 @@ def test_think_returns_movements():
                 "recentPath": [{"x": 0, "y": 0}, {"x": 0, "y": 0}],
                 "prevEnergy": 100.0,
                 "justReproduced": False,
+                "matingCooldown": 0.0,
                 "weights": weights,
                 "food": [],
                 "obstacles": [],
@@ -78,6 +80,7 @@ def test_think_returns_movements():
     assert len(data["movements"]) == 1
     assert "angleDelta" in data["movements"][0]
     assert "speed" in data["movements"][0]
+    assert "mateIntent" in data["movements"][0]
 
 
 def test_wander_vector_creates_movement():
@@ -91,6 +94,7 @@ def test_wander_vector_creates_movement():
                 "x": 0,
                 "y": 0,
                 "angle": 0,
+                "sex": "F",
                 "wanderAngle": 1.0,
                 "wanderStrength": 1.0,
                 "energy": 100.0,
@@ -100,6 +104,7 @@ def test_wander_vector_creates_movement():
                 "recentPath": [{"x": 0, "y": 0}, {"x": 0, "y": 0}],
                 "prevEnergy": 100.0,
                 "justReproduced": False,
+                "matingCooldown": 0.0,
                 "weights": weights,
                 "food": [],
                 "obstacles": [],

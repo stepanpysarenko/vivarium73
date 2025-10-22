@@ -1,7 +1,13 @@
 process.env.NODE_ENV = 'test';
 
+jest.mock('../../src/nn', () => ({
+  getMovements: jest.fn(),
+  mutateWeights: jest.fn(async weights => weights),
+}));
+
 const CONFIG = require('../../src/config');
 const stateModule = require('../../src/state');
+const nn = require('../../src/nn');
 
 const { __testUtils } = stateModule;
 
@@ -9,6 +15,8 @@ const createBaseState = () => ({
   creatures: [],
   food: [],
   obstacles: [],
+  borderObstacles: [],
+  eggs: [],
   stats: {
     restarts: 0,
     generation: CONFIG.FOOD_ENERGY_BONUS_MAX_GEN + 1,
@@ -16,6 +24,12 @@ const createBaseState = () => ({
     foodCount: 0,
   },
   lastCreatureId: 0,
+  lastEggId: 0,
+});
+
+beforeEach(() => {
+  nn.mutateWeights.mockClear();
+  nn.mutateWeights.mockImplementation(async weights => weights);
 });
 
 describe('applyMovement', () => {
@@ -89,6 +103,83 @@ describe('energy adjustments', () => {
 
     expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_PENALTY);
     expect(creature.updatesToFlash).toBe(CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH);
+  });
+});
+
+describe('mating lifecycle', () => {
+  beforeEach(() => {
+    __testUtils.setState(createBaseState());
+  });
+
+  const buildCreature = (overrides = {}) => ({
+    id: overrides.id || 1,
+    x: overrides.x || 5,
+    y: overrides.y || 5,
+    angle: overrides.angle || 0,
+    sex: overrides.sex || 'F',
+    energy: overrides.energy ?? (CONFIG.CREATURE_MIN_ENERGY_TO_MATE + 50),
+    matingCooldown: overrides.matingCooldown ?? 0,
+    mateIntent: overrides.mateIntent ?? 1,
+    weights: overrides.weights || [0, 0],
+    generation: overrides.generation || 1,
+    matedThisTick: overrides.matedThisTick || false,
+    prev: overrides.prev || { x: overrides.x || 5, y: overrides.y || 5, angle: overrides.angle || 0, energy: overrides.energy ?? (CONFIG.CREATURE_MIN_ENERGY_TO_MATE + 50) },
+    stats: overrides.stats || { msLived: 0, energyGained: 0, score: 0 },
+    justReproduced: overrides.justReproduced || false,
+    recentPath: overrides.recentPath || [{ x: overrides.x || 5, y: overrides.y || 5 }],
+    wanderAngle: overrides.wanderAngle || 0,
+    wanderStrength: overrides.wanderStrength || 0,
+  });
+
+  it('creates an egg when two creatures meet mating conditions', () => {
+    const state = __testUtils.getState();
+    const female = buildCreature({ id: 1, sex: 'F' });
+    const male = buildCreature({ id: 2, sex: 'M', x: 5.8 });
+    state.creatures = [female, male];
+
+    const femaleEnergyBefore = female.energy;
+    const maleEnergyBefore = male.energy;
+
+    const immune = __testUtils.handleMating();
+
+    expect(state.eggs).toHaveLength(1);
+    expect(state.eggs[0]).toMatchObject({ parentGeneration: 1 });
+    expect(female.energy).toBe(femaleEnergyBefore - CONFIG.CREATURE_MATE_COST_FEMALE);
+    expect(male.energy).toBe(maleEnergyBefore - CONFIG.CREATURE_MATE_COST_MALE);
+    expect(female.matedThisTick).toBe(true);
+    expect(male.matedThisTick).toBe(true);
+    expect(female.matingCooldown).toBe(CONFIG.CREATURE_MATING_COOLDOWN);
+    expect(male.matingCooldown).toBe(CONFIG.CREATURE_MATING_COOLDOWN);
+    expect(Array.from(immune)).toEqual(expect.arrayContaining([1, 2]));
+  });
+});
+
+describe('egg lifecycle', () => {
+  beforeEach(() => {
+    __testUtils.setState(createBaseState());
+  });
+
+  it('hatches ready eggs into creatures when space is clear', async () => {
+    const state = __testUtils.getState();
+    state.creatures = [];
+    state.eggs.push({
+      id: 1,
+      x: 3,
+      y: 3,
+      hatchAt: Date.now() - 1,
+      parentGeneration: 2,
+      weights: [0.1, 0.2],
+    });
+    nn.mutateWeights.mockResolvedValue([0.3, 0.4]);
+
+    const updatedCreatures = await __testUtils.handleLifecycle();
+
+    expect(state.eggs).toHaveLength(0);
+    expect(updatedCreatures).toHaveLength(1);
+    expect(nn.mutateWeights).toHaveBeenCalledWith([0.1, 0.2]);
+    const hatchling = updatedCreatures[0];
+    expect(hatchling.generation).toBe(3);
+    expect(hatchling.weights).toEqual([0.3, 0.4]);
   });
 });
 
