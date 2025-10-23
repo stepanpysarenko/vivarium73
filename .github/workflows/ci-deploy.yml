@@ -165,36 +165,6 @@ jobs:
             }
           ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
 
-      - name: Inject schema.org JSON-LD on prod
-        if: env.ENVIRONMENT == 'prod' && vars.GA_TAG_ID != ''
-        env:
-          CANONICAL_URL: ${{ vars.CANONICAL_URL }}
-        run: |
-          echo "Injecting schema.org JSON-LD with canonical URL: $CANONICAL_URL"
-          INDEX_FILE=services/web_server/public/index.html
-
-          TAG=$(cat <<EOF
-              <script type="application/ld+json">
-                  {
-                    "@context": "https://schema.org",
-                    "@type": "WebSite",
-                    "name": "vivarium73",
-                    "url": "$CANONICAL_URL"
-                  }
-              </script>
-          EOF
-          )
-
-          awk -v replacement="$TAG" '
-            {
-              if ($0 ~ /<!-- __SCHEMA_ORG_JSON__ -->/) {
-                print replacement
-              } else {
-                print $0
-              }
-            }
-          ' "$INDEX_FILE" > tmp_index.html && mv tmp_index.html "$INDEX_FILE"
-
       - name: Inject canonical URL on prod
         if: env.ENVIRONMENT == 'prod' && vars.CANONICAL_URL != ''
         env:
