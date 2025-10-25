@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -53,7 +54,7 @@ jobs:
 
   build_images:
     needs: test
-    name: Build images
+    name: Build Images
     runs-on: ubuntu-latest
     outputs:
       WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
@@ -126,9 +127,9 @@ jobs:
 
   deploy:
     needs: [build_images]
-    name: deploy
+    name: Deploy
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && (github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags_v')) }}
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags/v')) }}
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
     env:
       ENVIRONMENT: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
@@ -149,9 +150,7 @@ jobs:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          source: |
-            docker-compose.yml
-            docker-compose.prod.yml
+          source: "docker-compose*.yml"
           target: ${{ vars.DEPLOY_PATH }}
 
       - name: Prepare remote directories
@@ -173,6 +172,7 @@ jobs:
             images/${{ needs.build_images.outputs.WEB_ARTIFACT }}
             images/${{ needs.build_images.outputs.NN_ARTIFACT }}
           target: /tmp/images/
+          debug: true
 
       - name: Load and deploy on server
         uses: appleboy/ssh-action@v0.1.10
@@ -208,7 +208,7 @@ jobs:
             cd "$DEPLOY_PATH"
             docker compose down --remove-orphans
             docker compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
-              -f docker-compose.yml -f docker-compose.prod.yml up -d
+              -f docker-compose.yml -f docker-compose.deploy.yml up -d
 
       - name: Health check
         uses: appleboy/ssh-action@v0.1.10
