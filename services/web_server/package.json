@@ -3,13 +3,16 @@
   "version": "0.7.4",
   "description": "Evolutionary simulation",
   "main": "index.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "jest",
     "test:e2e": "playwright test"
   },
   "keywords": [],
-  "author": "",
+  "author": "Stepan Pysarenko",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.12.2",
@@ -22,9 +25,6 @@
     "@playwright/test": "^1.56.1",
     "jest": "^30.2.0",
     "supertest": "^7.1.4"
-  },
-  "engines": {
-    "node": "22.x"
   },
   "jest": {
     "testEnvironment": "node",

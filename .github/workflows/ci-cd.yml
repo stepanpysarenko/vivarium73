@@ -1,0 +1,224 @@
+name: CI + Deploy
+
+on:
+  pull_request:
+    branches: [main, qa]
+    paths-ignore: ['**/*.md','docs/**']
+  push:
+    branches: [main, qa]
+    tags: ['v*']
+    paths-ignore: ['**/*.md','docs/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: services/web_server/package-lock.json
+
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm ci
+
+      - name: Run Jest suites
+        working-directory: services/web_server
+        run: npm test -- --runInBand
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: services/nn_service/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r services/nn_service/requirements.txt
+
+      - name: Run Pytest suite
+        run: PYTHONPATH=services pytest services/nn_service/tests
+
+  build_images:
+    needs: test
+    name: Build images
+    runs-on: ubuntu-latest
+    outputs:
+      WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
+      NN_IMAGE_TAG:  ${{ steps.meta.outputs.NN_IMAGE_TAG }}
+      WEB_ARTIFACT:  ${{ steps.meta.outputs.WEB_ARTIFACT }}
+      NN_ARTIFACT:   ${{ steps.meta.outputs.NN_ARTIFACT }}
+      APP_VERSION:   ${{ steps.meta.outputs.APP_VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Decide image tags
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            APP_VERSION="${GITHUB_REF#refs/tags/v}"
+            TAG="${APP_VERSION}"
+          else
+            APP_VERSION="${GITHUB_SHA}"
+            TAG="${APP_VERSION}"
+          fi
+
+          WEB_IMAGE_TAG="local/vivarium73-web:${TAG}"
+          NN_IMAGE_TAG="local/vivarium73-nn:${TAG}"
+          WEB_ARTIFACT="image-web-${TAG}.tar"
+          NN_ARTIFACT="image-nn-${TAG}.tar"
+
+          echo "WEB_IMAGE_TAG=$WEB_IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "NN_IMAGE_TAG=$NN_IMAGE_TAG"   >> $GITHUB_OUTPUT
+          echo "WEB_ARTIFACT=$WEB_ARTIFACT"   >> $GITHUB_OUTPUT
+          echo "NN_ARTIFACT=$NN_ARTIFACT"     >> $GITHUB_OUTPUT
+          echo "APP_VERSION=$APP_VERSION"     >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build web_server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/web_server/Dockerfile
+          load: true
+          tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build nn_service
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/nn_service/Dockerfile
+          load: true
+          tags: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export images to tar
+        shell: bash
+        run: |
+          docker save ${{ steps.meta.outputs.WEB_IMAGE_TAG }} -o ${{ steps.meta.outputs.WEB_ARTIFACT }}
+          docker save ${{ steps.meta.outputs.NN_IMAGE_TAG }}  -o ${{ steps.meta.outputs.NN_ARTIFACT }}
+
+      - name: Upload image artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images-${{ github.sha }}
+          path: |
+            ${{ steps.meta.outputs.WEB_ARTIFACT }}
+            ${{ steps.meta.outputs.NN_ARTIFACT }}
+          retention-days: 7
+
+  deploy:
+    needs: [build_images]
+    name: deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags_v')) }}
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
+    env:
+      ENVIRONMENT: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images-${{ github.sha }}
+          path: images
+
+      - name: Upload compose files
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: |
+            docker-compose.yml
+            docker-compose.prod.yml
+          target: ${{ vars.DEPLOY_PATH }}
+
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p "${{ vars.DEPLOY_PATH }}" /tmp/images
+
+      - name: Upload images to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: |
+            images/${{ needs.build_images.outputs.WEB_ARTIFACT }}
+            images/${{ needs.build_images.outputs.NN_ARTIFACT }}
+          target: /tmp/images/
+
+      - name: Load and deploy on server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
+            mkdir -p "$DEPLOY_PATH" /tmp/images
+
+            WEB_TAR="/tmp/images/${{ needs.build_images.outputs.WEB_ARTIFACT }}"
+            NN_TAR="/tmp/images/${{ needs.build_images.outputs.NN_ARTIFACT }}"
+
+            docker load -i "$WEB_TAR"
+            docker load -i "$NN_TAR"
+
+            WEB_IMAGE="${{ needs.build_images.outputs.WEB_IMAGE_TAG }}"
+            NN_IMAGE="${{ needs.build_images.outputs.NN_IMAGE_TAG }}"
+
+            cat > "$DEPLOY_PATH/.env" <<EOF
+            ENVIRONMENT=${{ env.ENVIRONMENT }}
+            APP_VERSION=${{ needs.build_images.outputs.APP_VERSION }}
+            CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
+            WEB_PORT=${{ vars.WEB_PORT }}
+            NN_PORT=${{ vars.NN_PORT }}
+            WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
+            WEB_IMAGE=${WEB_IMAGE}
+            NN_IMAGE=${NN_IMAGE}
+            EOF
+
+            cd "$DEPLOY_PATH"
+            docker compose down --remove-orphans
+            docker compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
+              -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+      - name: Health check
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            curl --retry 3 --retry-delay 3 --max-time 5 -f -sS http://localhost:${{ vars.WEB_PORT }}/api/health >/dev/null \
+              && echo "Health check passed" \
+              || (echo "Health check failed" && exit 1)

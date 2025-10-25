@@ -4,4 +4,6 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm ci
 COPY . .
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "index.js"]

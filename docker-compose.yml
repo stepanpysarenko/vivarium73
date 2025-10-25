@@ -1,6 +1,5 @@
 services:
   nn_service:
-    container_name: ${ENVIRONMENT}-vivarium73-nn
     build: ./services/nn_service
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
@@ -16,7 +15,6 @@ services:
       retries: 3
 
   web_server:
-    container_name: ${ENVIRONMENT}-vivarium73-web
     build: ./services/web_server
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
@@ -24,7 +22,7 @@ services:
       - PORT=${WEB_PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - WEBSOCKET_URL=${WEBSOCKET_URL}
-      - NN_SERVICE_URL=http://${ENVIRONMENT}-vivarium73-nn:${NN_PORT}/api
+      - NN_SERVICE_URL=http://nn_service:${NN_PORT}/api
     ports:
       - "${WEB_PORT}:${WEB_PORT}"
     volumes:
