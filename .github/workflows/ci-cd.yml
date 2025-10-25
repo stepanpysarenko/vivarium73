@@ -209,8 +209,8 @@ jobs:
             EOF
 
             cd "$DEPLOY_PATH"
-            docker compose down --remove-orphans
-            docker compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
+            docker-compose down --volumes --remove-orphans
+            docker-compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
               -f docker-compose.yml -f docker-compose.deploy.yml up -d
 
       - name: Health check
