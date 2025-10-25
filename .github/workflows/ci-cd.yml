@@ -166,7 +166,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            mkdir -p "${{ vars.DEPLOY_PATH }}" /tmp/images
+            mkdir -p "${{ vars.DEPLOY_PATH }}" /tmp
 
       - name: Upload images to server
         uses: appleboy/scp-action@v0.1.4
@@ -174,9 +174,8 @@ jobs:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          source: "images/*.tar"
-          target: /tmp/images/
-          debug: true
+          source: "images"
+          target: /tmp
 
       - name: Load and deploy on server
         uses: appleboy/ssh-action@v0.1.10
