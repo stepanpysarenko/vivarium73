@@ -94,8 +94,7 @@ jobs:
       - name: Build web_server
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: services/web_server/Dockerfile
+          context: services/web_server
           load: true
           tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
           cache-from: type=gha
@@ -104,8 +103,7 @@ jobs:
       - name: Build nn_service
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: services/nn_service/Dockerfile
+          context: services/nn_service
           load: true
           tags: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
           cache-from: type=gha
