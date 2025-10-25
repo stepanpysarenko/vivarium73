@@ -144,6 +144,12 @@ jobs:
           name: docker-images-${{ github.sha }}
           path: images
 
+      - name: List downloaded images
+        shell: bash
+        run: |
+          echo "Listing downloaded image tars:"
+          ls -lah images || true
+
       - name: Upload compose files
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -168,9 +174,7 @@ jobs:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          source: |
-            images/${{ needs.build_images.outputs.WEB_ARTIFACT }}
-            images/${{ needs.build_images.outputs.NN_ARTIFACT }}
+          source: "images/*.tar"
           target: /tmp/images/
           debug: true
 
