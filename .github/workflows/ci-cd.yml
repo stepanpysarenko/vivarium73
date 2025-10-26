@@ -73,23 +73,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set app version
+        id: set_app_version
+        shell: bash
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$REF_TYPE" == "tag" && "$REF_NAME" == v* ]]; then
+            APP_VERSION="${REF_NAME#v}"
+          else
+            PKG_VER=$(jq -r '.version' services/web_server/package.json 2>/dev/null || echo "0.0.0")
+            SHORT_SHA="${GIT_SHA::7}"
+            APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
+          fi
+
+          echo "APP_VERSION=${APP_VERSION}"
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Decide image tags
         id: meta
         shell: bash
+        env:
+          APP_VERSION: ${{ steps.set_app_version.outputs.APP_VERSION }}
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            APP_VERSION="${GITHUB_REF#refs/tags/v}"
-            TAG="${APP_VERSION}"
-          else
-            SHORT_SHA="${GITHUB_SHA::8}"
-            APP_VERSION="${SHORT_SHA}"
-            TAG="${APP_VERSION}"
-          fi
+          TAG="${APP_VERSION}"
 
           WEB_IMAGE_TAG="local/vivarium73-web:${TAG}"
           NN_IMAGE_TAG="local/vivarium73-nn:${TAG}"
-          WEB_ARTIFACT="image-web-${TAG}.tar"
-          NN_ARTIFACT="image-nn-${TAG}.tar"
+          WEB_ARTIFACT="vivarium73-web-${TAG}.tar"
+          NN_ARTIFACT="vivarium73-nn-${TAG}.tar"
 
           echo "WEB_IMAGE_TAG=$WEB_IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "NN_IMAGE_TAG=$NN_IMAGE_TAG"   >> $GITHUB_OUTPUT
