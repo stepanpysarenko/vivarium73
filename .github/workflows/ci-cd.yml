@@ -102,6 +102,7 @@ jobs:
         shell: bash
         env:
           APP_VERSION: ${{ steps.set_app_version.outputs.APP_VERSION }}
+          TAG: ${{ steps.set_app_version.outputs.TAG }}
         run: |
           WEB_IMAGE_TAG="local/vivarium73-web:${TAG}"
           NN_IMAGE_TAG="local/vivarium73-nn:${TAG}"
