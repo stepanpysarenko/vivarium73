@@ -2,8 +2,8 @@
 
 ## Architecture
 - Two services managed via Docker Compose:
-  - `services/web_server` – web server with client app and WebSocket API built with Node.js/Express
-  - `services/nn_service` – neural network service built with FastAPI
+  - `services/web_server` - web server with client app and WebSocket API built with Node.js/Express
+  - `services/nn_service` - neural network service built with FastAPI
 - Web server communicates with NN service over HTTP.
 - Clients communicate with the web server via HTTP and WebSocket for real-time updates.
 
@@ -11,11 +11,12 @@
 
 ### Prerequisites
 - Python 3.11
-- Node.js 18+ and npm
+- Node.js 22.x and npm
 - pip (latest version)
 
 ### Steps
-1. Copy `services/web_server/.env.example` to `.env` and update values for your local environment.
+1. Copy `services/web_server/.env.example` to `services/web_server/.env` and update values for your local environment.
+   - When using Docker Compose, also copy the repo root `.env.example` to `.env` (root) and adjust values as needed.
 2. Set up **nn_service**:
    ```bash
    python3.11 -m venv .venv
@@ -43,10 +44,16 @@ Run these steps once after cloning, or again if dependencies change. For daily d
   ```bash
   cd services/web_server && npm test
   ```
+ - Optional E2E tests (Playwright):
+   ```bash
+   cd services/web_server && npm run test:e2e
+   ```
 
 ## Docker notes
 - `docker-compose.yml` builds and runs both services.
-- Persistent state is stored at `services/web_server/data/state.json`.
+- Persistent state path:
+  - Local (without Docker): `services/web_server/data/state.json` (default `STATE_SAVE_PATH`).
+  - With Docker Compose: host directory `./data` is mounted to `/app/data` in the web service; the state file resolves to `./data/state.json` on the host.
 
 ## PR guidelines
 - Keep commit messages and PR descriptions concise.
