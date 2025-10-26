@@ -6,5 +6,5 @@ RUN npm ci
 COPY . .
 RUN chmod +x /app/entrypoint.sh
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+# ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "index.js"]

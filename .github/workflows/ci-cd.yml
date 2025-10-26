@@ -81,7 +81,8 @@ jobs:
             APP_VERSION="${GITHUB_REF#refs/tags/v}"
             TAG="${APP_VERSION}"
           else
-            APP_VERSION="${GITHUB_SHA}"
+            SHORT_SHA="${GITHUB_SHA::8}"
+            APP_VERSION="${SHORT_SHA}"
             TAG="${APP_VERSION}"
           fi
 
