@@ -48,6 +48,8 @@ jobs:
     name: Test Web Server
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      CI: true
     defaults:
       run:
         working-directory: services/web_server
@@ -83,6 +85,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node for metadata
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
 
       - name: Compute build metadata
         id: meta
@@ -234,7 +242,7 @@ jobs:
             EOF
 
             cd "${{ vars.DEPLOY_PATH }}"
-            docker compose -p "${{ env.ENVIRONMENT }}_vivarium73" \
+            docker compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
               -f docker-compose.yml -f docker-compose.deploy.yml up -d --remove-orphans
 
       - name: Health check
