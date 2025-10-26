@@ -84,23 +84,25 @@ jobs:
           set -euo pipefail
           if [[ "$REF_TYPE" == "tag" && "$REF_NAME" == v* ]]; then
             APP_VERSION="${REF_NAME#v}"
+            TAG="${APP_VERSION}"
           else
             PKG_VER=$(jq -r '.version' services/web_server/package.json 2>/dev/null || echo "0.0.0")
             SHORT_SHA="${GIT_SHA::7}"
             APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
+            TAG="${PKG_VER}-${SHORT_SHA}"
           fi
 
           echo "APP_VERSION=${APP_VERSION}"
+          echo "TAG=${TAG}"
           echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "TAG=${TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Decide image tags
+      - name: Build image tags
         id: meta
         shell: bash
         env:
           APP_VERSION: ${{ steps.set_app_version.outputs.APP_VERSION }}
         run: |
-          TAG="${APP_VERSION}"
-
           WEB_IMAGE_TAG="local/vivarium73-web:${TAG}"
           NN_IMAGE_TAG="local/vivarium73-nn:${TAG}"
           WEB_ARTIFACT="vivarium73-web-${TAG}.tar"
