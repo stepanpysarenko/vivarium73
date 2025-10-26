@@ -37,7 +37,7 @@
             food: '#34a064',
             creature: '#4169e1',
             creatureFlash: '#ff0000',
-            creatureObservedHighlight: '#e8e8e8',
+            creatureObservedHighlight: '#282828',
             creatureSecondary: '#ff9933'
         },
         dark: {
