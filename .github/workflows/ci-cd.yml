@@ -208,6 +208,9 @@ jobs:
             ENVIRONMENT=${{ env.ENVIRONMENT }}
             APP_VERSION=${{ needs.build_images.outputs.APP_VERSION }}
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
+            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
+            GA_TAG_ID=${{ vars.GA_TAG_ID }}
+            CANONICAL_URL=${{ vars.CANONICAL_URL }}
             WEB_PORT=${{ vars.WEB_PORT }}
             NN_PORT=${{ vars.NN_PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}

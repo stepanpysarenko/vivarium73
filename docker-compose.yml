@@ -21,6 +21,9 @@ services:
       - APP_VERSION=${APP_VERSION}
       - PORT=${WEB_PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
+      - ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}
+      - GA_TAG_ID=${GA_TAG_ID}
+      - CANONICAL_URL=${CANONICAL_URL}
       - WEBSOCKET_URL=${WEBSOCKET_URL}
       - NN_SERVICE_URL=http://nn_service:${NN_PORT}/api
     ports:
