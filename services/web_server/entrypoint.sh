@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_PUBLIC_DIR="${APP_PUBLIC_DIR:-/app/public}"
-TPL="${APP_PUBLIC_DIR}/index.html.tpl"
-OUT="${APP_PUBLIC_DIR}/index.html"
+INDEX="${APP_PUBLIC_DIR:-/app/public}/index.html"
 
 ENVIRONMENT="${ENVIRONMENT:-}"
 CANONICAL_URL="${CANONICAL_URL:-}"
@@ -24,13 +22,13 @@ fi
 
 if [[ "${ENVIRONMENT}" == "prod" && -n "${GA_TAG_ID}" ]]; then
   read -r -d '' GA_TAG_SCRIPT <<EOF || true
-<script async src="https://www.googletagmanager.com/gtag/js?id=${GA_TAG_ID}"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${GA_TAG_ID}');
-</script>
+              <script async src="https://www.googletagmanager.com/gtag/js?id=${GA_TAG_ID}"></script>
+              <script>
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_TAG_ID}');
+              </script>
 EOF
 else
   GA_TAG_SCRIPT=""
@@ -45,11 +43,11 @@ GA_TAG_SCRIPT_ESCAPED="$(esc "${GA_TAG_SCRIPT}")"
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
-sed -e "s|<!-- __ROBOTS_TAG__ -->|${ROBOTS_TAG_ESCAPED}|g" \
-    -e "s|<!-- __GA_TAG_SCRIPT__ -->|${GA_TAG_SCRIPT_ESCAPED}|g" \
-    -e "s|<!-- __CANONICAL_URL__ -->|${CANONICAL_TAG_ESCAPED}|g" \
-    "${TPL}" > "${tmp}"
+sed -i \
+  -e "s|<!-- __ROBOTS_TAG__ -->|${ROBOTS_TAG_ESCAPED}|g" \
+  -e "s|<!-- __GA_TAG_SCRIPT__ -->|${GA_TAG_SCRIPT_ESCAPED}|g" \
+  -e "s|<!-- __CANONICAL_URL__ -->|${CANONICAL_TAG_ESCAPED}|g" \
+  "${INDEX}"
 
-mv "${tmp}" "${OUT}"
 
 exec "$@"
