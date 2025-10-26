@@ -1,4 +1,4 @@
-name: CI + Deploy
+name: CI+CD
 
 on:
   pull_request:
@@ -13,12 +13,32 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-cd-${{ github.ref }}
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Run Tests
+  test_nn_service:
+    name: Test NN Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: services/nn_service/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r services/nn_service/requirements.txt
+
+      - name: Run Pytest suite
+        run: PYTHONPATH=services pytest services/nn_service/tests
+
+  test_web_server:
+    name: Test Web Server
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,21 +59,8 @@ jobs:
         working-directory: services/web_server
         run: npm test -- --runInBand
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: services/nn_service/requirements.txt
-
-      - name: Install Python dependencies
-        run: pip install -r services/nn_service/requirements.txt
-
-      - name: Run Pytest suite
-        run: PYTHONPATH=services pytest services/nn_service/tests
-
   build_images:
-    needs: test
+    needs: [test_nn_service, test_web_server]
     name: Build Images
     runs-on: ubuntu-latest
     outputs:
@@ -150,6 +157,16 @@ jobs:
           echo "Listing downloaded image tars:"
           ls -lah images || true
 
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p "/tmp/images"
+            mkdir -p "${{ vars.DEPLOY_PATH }}"
+
       - name: Upload compose files
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -159,15 +176,6 @@ jobs:
           source: "docker-compose*.yml"
           target: ${{ vars.DEPLOY_PATH }}
 
-      - name: Prepare remote directories
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            mkdir -p "${{ vars.DEPLOY_PATH }}" /tmp
-
       - name: Upload images to server
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -175,7 +183,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           source: "images"
-          target: /tmp
+          target: "/tmp"
 
       - name: Load and deploy on server
         uses: appleboy/ssh-action@v0.1.10
@@ -185,8 +193,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
-            mkdir -p "$DEPLOY_PATH" /tmp/images
 
             WEB_TAR="/tmp/images/${{ needs.build_images.outputs.WEB_ARTIFACT }}"
             NN_TAR="/tmp/images/${{ needs.build_images.outputs.NN_ARTIFACT }}"
@@ -197,7 +203,7 @@ jobs:
             WEB_IMAGE="${{ needs.build_images.outputs.WEB_IMAGE_TAG }}"
             NN_IMAGE="${{ needs.build_images.outputs.NN_IMAGE_TAG }}"
 
-            cat > "$DEPLOY_PATH/.env" <<EOF
+            cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=${{ env.ENVIRONMENT }}
             APP_VERSION=${{ needs.build_images.outputs.APP_VERSION }}
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
@@ -208,9 +214,9 @@ jobs:
             NN_IMAGE=${NN_IMAGE}
             EOF
 
-            cd "$DEPLOY_PATH"
-            docker-compose down --volumes --remove-orphans
-            docker-compose -p "${{ env.ENVIRONMENT }}-vivarium73" \
+            cd "${{ vars.DEPLOY_PATH }}"
+            docker compose down --remove-orphans
+            docker compose -p "${{ env.ENVIRONMENT }}_vivarium73" \
               -f docker-compose.yml -f docker-compose.deploy.yml up -d
 
       - name: Health check
