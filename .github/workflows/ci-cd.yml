@@ -156,8 +156,120 @@ jobs:
             ${{ steps.meta.outputs.NN_ARTIFACT }}
           retention-days: 7
 
-  deploy:
+  smoke_tests:
     needs: [build_images]
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WEB_IMAGE: ${{ needs.build_images.outputs.WEB_IMAGE_TAG }}
+      NN_IMAGE: ${{ needs.build_images.outputs.NN_IMAGE_TAG }}
+      APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
+      ENVIRONMENT: ci
+      WEB_PORT: "3800"
+      NN_PORT: "8800"
+      CORS_ORIGIN: http://localhost:3800
+      WEBSOCKET_URL: ws://localhost:3800
+      CANONICAL_URL: http://localhost:3800
+      ROBOTS_TAG_CONTENT: noindex, nofollow
+      GA_TAG_ID: G-TEST
+      SMOKE_BASE_URL: http://localhost:3800
+      SMOKE_APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images-${{ github.sha }}
+          path: images
+
+      - name: Load Docker images
+        run: |
+          docker load -i "images/${{ needs.build_images.outputs.WEB_ARTIFACT }}"
+          docker load -i "images/${{ needs.build_images.outputs.NN_ARTIFACT }}"
+
+      - name: Start services
+        run: |
+          set -euo pipefail
+          ENV_FILE="$RUNNER_TEMP/smoke.env"
+          {
+            echo "ENVIRONMENT=${ENVIRONMENT}"
+            echo "APP_VERSION=${APP_VERSION}"
+            echo "WEB_PORT=${WEB_PORT}"
+            echo "NN_PORT=${NN_PORT}"
+            echo "CORS_ORIGIN=${CORS_ORIGIN}"
+            echo "WEBSOCKET_URL=${WEBSOCKET_URL}"
+            echo "CANONICAL_URL=${CANONICAL_URL}"
+            echo "ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}"
+            echo "GA_TAG_ID=${GA_TAG_ID}"
+            echo "WEB_IMAGE=${WEB_IMAGE}"
+            echo "NN_IMAGE=${NN_IMAGE}"
+          } >"$ENV_FILE"
+          echo "SMOKE_ENV_FILE=$ENV_FILE" >> "$GITHUB_ENV"
+          export COMPOSE_PROJECT_NAME=vivarium73_smoke
+          echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME" >> "$GITHUB_ENV"
+          docker compose -f docker-compose.yml -f docker-compose.deploy.yml --env-file "$ENV_FILE" up -d
+
+      - name: Wait for services
+        run: |
+          set -euo pipefail
+
+          wait_for() {
+            local name="$1"
+            local url="$2"
+            for attempt in {1..40}; do
+              if curl -fsS "$url" >/dev/null 2>&1; then
+                echo "$name is ready"
+                return 0
+              fi
+              echo "Waiting for $name... (${attempt}/40)"
+              sleep 3
+            done
+            echo "$name did not become ready at $url" >&2
+            return 1
+          }
+
+          wait_for "web_server" "http://localhost:${WEB_PORT}/api/health"
+          curl -fsS "http://localhost:${WEB_PORT}/api/config" >/dev/null
+          wait_for "nn_service" "http://localhost:${NN_PORT}/api/health"
+
+      - name: Setup Node for Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
+          cache: 'npm'
+          cache-dependency-path: services/web_server/package-lock.json
+
+      - name: Install Node dependencies
+        working-directory: services/web_server
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: services/web_server
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright smoke tests
+        working-directory: services/web_server
+        env:
+          SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
+          SMOKE_APP_VERSION: ${{ env.SMOKE_APP_VERSION }}
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: npm run test:e2e
+
+      - name: Stop services
+        if: always()
+        run: |
+          set +e
+          if [[ -n "${SMOKE_ENV_FILE:-}" ]]; then
+            docker compose -f docker-compose.yml -f docker-compose.deploy.yml --env-file "$SMOKE_ENV_FILE" down -v
+            rm -f "$SMOKE_ENV_FILE"
+          fi
+
+  deploy:
+    needs: [build_images, smoke_tests]
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
