@@ -40,9 +40,6 @@ ROBOTS_TAG_ESCAPED="$(esc "${ROBOTS_TAG}")"
 CANONICAL_TAG_ESCAPED="$(esc "${CANONICAL_TAG}")"
 GA_TAG_SCRIPT_ESCAPED="$(esc "${GA_TAG_SCRIPT}")"
 
-tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
-
 sed -i \
   -e "s|<!-- __ROBOTS_TAG__ -->|${ROBOTS_TAG_ESCAPED}|g" \
   -e "s|<!-- __GA_TAG_SCRIPT__ -->|${GA_TAG_SCRIPT_ESCAPED}|g" \
