@@ -239,7 +239,9 @@ body.loading #loader {
     padding-right: 15px;
     font-size: clamp(10px, 1.4vw, 14px);
     text-align: left;
-    line-height: 1.6;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+    font-weight: 400;
     pointer-events: auto;
     touch-action: auto;
     -webkit-overflow-scrolling: touch;
@@ -248,6 +250,9 @@ body.loading #loader {
 #about-content h3 {
     margin: 18px 0 10px;
     font-size: clamp(11px, 1.5vw, 15px);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.02em;
 }
 
 #about-content h3:first-of-type {
@@ -271,6 +276,14 @@ body.loading #loader {
 #about-content ul {
     margin: 0;
     padding-left: 15px;
+}
+
+#about-content li {
+    margin-bottom: 8px;
+}
+
+#about-content p {
+    margin: 0 0 14px;
 }
 
 .button-row {
