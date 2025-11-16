@@ -189,7 +189,7 @@ jobs:
           WEB_IMAGE: ${{ needs.build_images.outputs.WEB_IMAGE_TAG }}
           NN_IMAGE: ${{ needs.build_images.outputs.NN_IMAGE_TAG }}
           APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
-          GHCR_USERNAME: ${{ toLower(vars.GHCR_USERNAME || github.repository_owner) }}
+          GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.repository_owner }}
           GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
         with:
           host: ${{ vars.DEPLOY_HOST }}
@@ -200,6 +200,7 @@ jobs:
             set -e
 
             if [ -n "$GHCR_TOKEN" ]; then
+              GHCR_USERNAME=$(echo "$GHCR_USERNAME" | tr '[:upper:]' '[:lower:]')
               echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
             else
               echo "GHCR_DEPLOY_TOKEN not set; assuming images are public and pulling anonymously (may be throttled)." >&2
