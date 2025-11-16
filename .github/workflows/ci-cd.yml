@@ -79,8 +79,6 @@ jobs:
     outputs:
       WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
       NN_IMAGE_TAG:  ${{ steps.meta.outputs.NN_IMAGE_TAG }}
-      WEB_ARTIFACT:  ${{ steps.meta.outputs.WEB_ARTIFACT }}
-      NN_ARTIFACT:   ${{ steps.meta.outputs.NN_ARTIFACT }}
       APP_VERSION:   ${{ steps.meta.outputs.APP_VERSION }}
     steps:
       - name: Checkout
@@ -98,6 +96,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           GIT_SHA: ${{ github.sha }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
           if [[ "$REF_TYPE" == "tag" && "$REF_NAME" == v* ]]; then
@@ -110,51 +109,47 @@ jobs:
             TAG="${PKG_VER}-${SHORT_SHA}"
           fi
 
-          WEB_IMAGE_TAG="local/vivarium73-web:${TAG}"
-          NN_IMAGE_TAG="local/vivarium73-nn:${TAG}"
-          WEB_ARTIFACT="vivarium73-web-${TAG}.tar"
-          NN_ARTIFACT="vivarium73-nn-${TAG}.tar"
+          OWNER=$(echo "${REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          REGISTRY="ghcr.io"
+          IMAGE_PREFIX="${REGISTRY}/${OWNER}/vivarium73"
+
+          WEB_IMAGE_TAG="${IMAGE_PREFIX}-web:${TAG}"
+          NN_IMAGE_TAG="${IMAGE_PREFIX}-nn:${TAG}"
 
           {
             echo "APP_VERSION=${APP_VERSION}"
             echo "TAG=${TAG}"
             echo "WEB_IMAGE_TAG=${WEB_IMAGE_TAG}"
             echo "NN_IMAGE_TAG=${NN_IMAGE_TAG}"
-            echo "WEB_ARTIFACT=${WEB_ARTIFACT}"
-            echo "NN_ARTIFACT=${NN_ARTIFACT}"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build web_server
         uses: docker/build-push-action@v6
         with:
           context: services/web_server
           tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=${{ steps.meta.outputs.WEB_ARTIFACT }}
 
       - name: Build nn_service
         uses: docker/build-push-action@v6
         with:
           context: services/nn_service
           tags: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=${{ steps.meta.outputs.NN_ARTIFACT }}
-
-      
-
-      - name: Upload image artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-images-${{ github.sha }}
-          path: |
-            ${{ steps.meta.outputs.WEB_ARTIFACT }}
-            ${{ steps.meta.outputs.NN_ARTIFACT }}
-          retention-days: 7
 
   deploy:
     needs: [build_images]
@@ -170,17 +165,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download images artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-images-${{ github.sha }}
-          path: images
-
-      - name: List downloaded images
-        run: |
-          echo "Listing downloaded image tars:"
-          ls -lah images || true
-
       - name: Prepare remote directories
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -188,7 +172,6 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            mkdir -p "/tmp/images"
             mkdir -p "${{ vars.DEPLOY_PATH }}"
 
       - name: Upload compose files
@@ -200,36 +183,34 @@ jobs:
           source: "docker-compose*.yml"
           target: ${{ vars.DEPLOY_PATH }}
 
-      - name: Upload images to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.SSH_KEY }}
-          source: "images"
-          target: "/tmp"
-
-      - name: Load and deploy on server
+      - name: Deploy via GHCR images
         uses: appleboy/ssh-action@v0.1.10
+        env:
+          WEB_IMAGE: ${{ needs.build_images.outputs.WEB_IMAGE_TAG }}
+          NN_IMAGE: ${{ needs.build_images.outputs.NN_IMAGE_TAG }}
+          APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
+          GHCR_USERNAME: ${{ toLower(vars.GHCR_USERNAME || github.repository_owner) }}
+          GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
         with:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
+          envs: ENVIRONMENT,WEB_IMAGE,NN_IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -e
 
-            WEB_TAR="/tmp/images/${{ needs.build_images.outputs.WEB_ARTIFACT }}"
-            NN_TAR="/tmp/images/${{ needs.build_images.outputs.NN_ARTIFACT }}"
+            if [ -n "$GHCR_TOKEN" ]; then
+              echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            else
+              echo "GHCR_DEPLOY_TOKEN not set; assuming images are public and pulling anonymously (may be throttled)." >&2
+            fi
 
-            docker load -i "$WEB_TAR"
-            docker load -i "$NN_TAR"
-
-            WEB_IMAGE="${{ needs.build_images.outputs.WEB_IMAGE_TAG }}"
-            NN_IMAGE="${{ needs.build_images.outputs.NN_IMAGE_TAG }}"
+            docker pull "$WEB_IMAGE"
+            docker pull "$NN_IMAGE"
 
             cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=${{ env.ENVIRONMENT }}
-            APP_VERSION=${{ needs.build_images.outputs.APP_VERSION }}
+            APP_VERSION=${APP_VERSION}
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
             ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
             GA_TAG_ID=${{ vars.GA_TAG_ID }}
