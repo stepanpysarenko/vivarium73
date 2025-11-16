@@ -76,6 +76,7 @@ jobs:
     name: Build Images
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ github.event_name != 'pull_request' }}
     outputs:
       WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
       NN_IMAGE_TAG:  ${{ steps.meta.outputs.NN_IMAGE_TAG }}
@@ -90,7 +91,7 @@ jobs:
           node-version: 22
           check-latest: true
 
-      - name: Compute build metadata
+      - name: Generate build metadata
         id: meta
         env:
           REF_TYPE: ${{ github.ref_type }}
