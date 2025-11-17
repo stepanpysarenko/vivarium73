@@ -1,6 +1,6 @@
 # vivarium73
 
-vivarium73 is a continuous evolutionary simulation where autonomous agents battle scarcity, mutate under pressure, and either persist or disappear. The project ships as a Node.js web client backed by a neural-network service so the entire ecosystem updates in real time across browsers and WebSocket streams.
+vivarium73 is a continuous evolutionary simulation where autonomous agents battle scarcity, mutate under pressure, and either persist or disappear. The project ships as a Node.js web client backed by a neural network service so the entire ecosystem updates in real-time across browsers and WebSocket streams.
 
 ## Mechanics
 - Creatures scan every frame for nearby food, obstacles, and neighboring agents.
@@ -13,5 +13,5 @@ vivarium73 is a continuous evolutionary simulation where autonomous agents battl
 - Select an individual creature to pin its live stats in the header.
 - Install the web app on desktop or mobile to keep a persistent viewport.
 
-## Live  
+## Live
 [https://vivarium73.life](https://vivarium73.life)
