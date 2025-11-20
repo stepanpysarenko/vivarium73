@@ -21,21 +21,13 @@ else
 fi
 
 if [[ "${ENVIRONMENT}" == "prod" && -n "${GA_TAG_ID}" ]]; then
-  read -r -d '' GA_TAG_SCRIPT <<EOF || true
-              <script async src="https://www.googletagmanager.com/gtag/js?id=${GA_TAG_ID}"></script>
-              <script>
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${GA_TAG_ID}');
-              </script>
-EOF
+  GA_TAG_SCRIPT="<script async src=\"https://www.googletagmanager.com/gtag/js?id=${GA_TAG_ID}\"></script><script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${GA_TAG_ID}');</script>"
 else
   GA_TAG_SCRIPT=""
 fi
 
 
-esc() { printf '%s' "$1" | sed -e 's/[\/&]/\\&/g'; }
+esc() { printf '%s' "$1" | sed -e 's/[|\/&]/\\&/g'; }
 ROBOTS_TAG_ESCAPED="$(esc "${ROBOTS_TAG}")"
 CANONICAL_TAG_ESCAPED="$(esc "${CANONICAL_TAG}")"
 GA_TAG_SCRIPT_ESCAPED="$(esc "${GA_TAG_SCRIPT}")"
