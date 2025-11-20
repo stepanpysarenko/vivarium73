@@ -103,7 +103,6 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags/v') }}
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
     env:
       ENVIRONMENT: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
