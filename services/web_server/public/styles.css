@@ -110,7 +110,7 @@ body {
 
 .title-wrapper {
     display: flex;
-    align-items: left;
+    align-items: flex-start;
     gap: 5px;
     flex-grow: 1;
 }

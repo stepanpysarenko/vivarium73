@@ -1,17 +1,17 @@
 # vivarium73
 
-vivarium73 is a continuous evolutionary simulation where autonomous agents battle scarcity, mutate under pressure, and either persist or disappear. The project ships as a Node.js web client backed by a neural-network service so the entire ecosystem updates in real time across browsers and WebSocket streams.
+vivarium73 is a real-time evolutionary simulation where autonomous creatures search for food, avoid obstacles, and evolve over generations.
 
 ## Mechanics
-- Creatures scan every frame for nearby food, obstacles, and neighboring agents.
-- Energy is earned through food intake and spent on movement or collisions.
-- Full-energy creatures reproduce with built-in mutation probabilities.
-- When a generation collapses, the top performers reseed the simulation.
+- Creatures sense nearby food, obstacles, and neighboring creatures.
+- Energy is gained through food intake and depleted through travel or collisions.
+- Creatures that reach full energy reproduce with mutations.
+- Population collapse triggers a fresh restart with the ancestors of top performers.
 
 ## Controls
-- Click anywhere inside the arena to inject additional food.
-- Select an individual creature to pin its live stats in the header.
-- Install the web app on desktop or mobile to keep a persistent viewport.
+- Click on any free space to place food.
+- Select an individual creature to see its live stats.
+- Install on desktop or mobile.
 
 ## Live  
 [https://vivarium73.life](https://vivarium73.life)
