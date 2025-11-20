@@ -1,9 +1,6 @@
-name: CI+CD
+name: CD
 
 on:
-  pull_request:
-    branches: [main, qa]
-    paths-ignore: ['**/*.md','docs/**']
   push:
     branches: [main, qa]
     tags: ['v*']
@@ -18,65 +15,14 @@ defaults:
     shell: bash
 
 concurrency:
-  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  group: cd-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test_nn_service:
-    name: Test NN Service
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          check-latest: true
-          cache: pip
-          cache-dependency-path: services/nn_service/requirements.txt
-
-      - name: Install Python dependencies
-        run: pip install -r services/nn_service/requirements.txt
-
-      - name: Run Pytest suite
-        run: PYTHONPATH=services pytest services/nn_service/tests
-
-  test_web_server:
-    name: Test Web Server
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      CI: true
-    defaults:
-      run:
-        working-directory: services/web_server
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          check-latest: true
-          cache: 'npm'
-          cache-dependency-path: services/web_server/package-lock.json
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      - name: Run Jest suites
-        run: npm test
-
   build_images:
-    needs: [test_nn_service, test_web_server]
     name: Build Images
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ github.event_name != 'pull_request' }}
     outputs:
       WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
       NN_IMAGE_TAG:  ${{ steps.meta.outputs.NN_IMAGE_TAG }}
@@ -157,7 +103,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ github.event_name == 'push' && (github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags/v')) }}
+    if: ${{ github.ref_name == 'qa' || startsWith(github.ref, 'refs/tags/v') }}
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
     env:
       ENVIRONMENT: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
