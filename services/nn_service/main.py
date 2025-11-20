@@ -50,11 +50,11 @@ def healthcheck():
     }
 
 @app.get("/api/weights/init")
-def initweights():
+def init_weights_endpoint():
     return init_weights()
 
 @app.post("/api/weights/mutate")
-def mutateweights(request: MutateRequest):
+def mutate_weights_endpoint(request: MutateRequest):
     return mutate_weights(request.weights)
 
 @app.post("/api/think")
