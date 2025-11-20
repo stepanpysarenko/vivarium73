@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [main, qa]
+    branches: [qa]
     tags: ['v*']
     paths-ignore: ['**/*.md','docs/**']
 
