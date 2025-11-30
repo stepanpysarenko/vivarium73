@@ -49,6 +49,5 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            curl --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 -f -sS "http://localhost:${{ vars.WEB_PORT }}/api/health" >/dev/null \
-              && echo "Health check passed" \
-              || (echo "Health check failed" && exit 1)
+            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.WEB_PORT }}/api/health >/dev/null \
+              && echo "Health check passed" || (echo "Health check failed" && exit 1)
