@@ -76,3 +76,4 @@ Run these steps once after cloning, or again if dependencies change. For daily d
 - Mention which service(s) are affected.
 - Link related issues if available.
 - Ensure files end with a single trailing newline.
+- Leave an empty line at the end of each file so EOF is well-formed.
