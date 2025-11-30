@@ -2,25 +2,53 @@ name: Reset State
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options:
+          - qa
+          - prod
+        default: qa
 
 jobs:
   reset-state:
     name: Reset State
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'prod' || 'qa' }}
+    environment: ${{ inputs.environment }}
+    concurrency: reset-state-${{ inputs.environment || 'qa' }}
 
     steps:
       - name: SSH and Reset State
+        uses: appleboy/ssh-action@v0.1.10
+        env:
+          TARGET_ENV: ${{ inputs.environment || 'qa' }}
+          WEB_PORT: ${{ vars.WEB_PORT }}
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          envs: TARGET_ENV,WEB_PORT
+          script: |
+            set -euo pipefail
+            cd "${{ vars.DEPLOY_PATH }}"
+
+            echo "Stopping containers for ${TARGET_ENV}..."
+            docker compose -p "${TARGET_ENV}-vivarium73" -f docker-compose.yml -f docker-compose.deploy.yml down
+
+            echo "Removing state.json..."
+            rm -f data/state.json
+
+            echo "Starting containers..."
+            docker compose -p "${TARGET_ENV}-vivarium73" -f docker-compose.yml -f docker-compose.deploy.yml up -d --remove-orphans
+
+      - name: Health check
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd ${{ vars.DEPLOY_PATH }}
-            echo "Stopping containers..."
-            docker-compose down
-            echo "Removing state.json..."
-            rm -f data/state.json
-            echo "Starting containers..."
-            docker-compose up -d
+            curl --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 -f -sS "http://localhost:${{ vars.WEB_PORT }}/api/health" >/dev/null \
+              && echo "Health check passed" \
+              || (echo "Health check failed" && exit 1)
