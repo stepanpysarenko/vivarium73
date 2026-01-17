@@ -22,7 +22,7 @@
    - When using Docker Compose, also copy the repo root `.env.example` to `.env` (root) and adjust values as needed.
 2. Set up **nn_service**:
    ```bash
-   python3.11 -m venv .venv
+   python -m venv .venv
    source .venv/bin/activate
    pip install --upgrade pip
    pip install -r services/nn_service/requirements.txt

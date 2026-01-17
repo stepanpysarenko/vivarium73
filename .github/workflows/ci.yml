@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: services/nn_service/requirements.txt
 
       - name: Install Python dependencies
-        run: pip install -r services/nn_service/requirements.txt
+        run: pip install -r services/nn_service/requirements.txt -r services/nn_service/requirements-dev.txt
 
       - name: Run Pytest suite
         run: PYTHONPATH=services pytest services/nn_service/tests

@@ -101,7 +101,6 @@ function getVisibleObstacles(creature, state) {
 
 module.exports = {
     isCellOccupied,
-    getTotalEnergy,
     getRandomEmptyCell,
     updateFood,
     getObstacles,
