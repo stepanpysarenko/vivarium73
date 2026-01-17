@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup Node for metadata
         uses: actions/setup-node@v4
@@ -48,9 +50,9 @@ jobs:
       - name: Generate build metadata
         id: meta
         env:
-          REF_TYPE: ${{ github.ref_type }}
-          REF_NAME: ${{ github.ref_name }}
-          GIT_SHA: ${{ github.sha }}
+          REF_TYPE: ${{ github.event_name == 'workflow_run' && 'branch' || github.ref_type }}
+          REF_NAME: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+          GIT_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
@@ -118,6 +120,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Prepare remote directories
         uses: appleboy/ssh-action@v0.1.10
