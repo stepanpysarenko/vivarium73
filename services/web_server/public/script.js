@@ -34,8 +34,8 @@
         light: {
             background: '#f8f8f8',
             obstacle: '#e8e8e8',
-            food: '#34a064',
-            creature: '#4169e1',
+            food: '#2fba70',
+            creature: '#2f5fe8',
             creatureFlash: '#ff0000',
             creatureObservedHighlight: '#282828',
             creatureSecondary: '#ff9933'
