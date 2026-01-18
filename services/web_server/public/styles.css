@@ -270,12 +270,13 @@ body.loading #loader {
     text-align: center;
 }
 
-.about-meta > span {
+.about-meta>span {
     display: block;
 }
 
-.about-meta > span.version-tag {
+.about-meta>span.version-tag {
     color: var(--color-text-muted);
+    font-size: 10px;
 }
 
 #about-content ul {
