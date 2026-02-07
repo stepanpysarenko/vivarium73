@@ -100,7 +100,7 @@ describe('getMovements', () => {
         gridSize: CONFIG.GRID_SIZE,
         visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
         maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
-        maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RAD,
+        maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS,
         maxSpeed: CONFIG.CREATURE_MAX_SPEED
       }
     );

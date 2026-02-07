@@ -80,23 +80,43 @@ function isWithinRadius(x1, y1, x2, y2, r2) {
     return dx * dx + dy * dy <= r2;
 }
 
-function getVisibleObjects(objects, x, y) {
-    return objects.filter(o => isWithinRadius(o.x, o.y, x, y, r2Visibility));
+function isWithinFOV(creatureX, creatureY, creatureAngle, targetX, targetY, fovRadians) {
+    const dx = targetX - creatureX;
+    const dy = targetY - creatureY;
+    const angleToTarget = Math.atan2(dy, dx);
+
+    let angleDiff = angleToTarget - creatureAngle;
+
+    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+    return Math.abs(angleDiff) <= fovRadians / 2;
+}
+
+function getVisibleObjects(objects, creature) {
+    const { x, y, angle } = creature;
+    const fov = CONFIG.CREATURE_VISIBILITY_FOV_RADIANS;
+
+    return objects.filter(obj => {
+        if (!isWithinRadius(obj.x, obj.y, x, y, r2Visibility)) {
+            return false;
+        }
+        return isWithinFOV(x, y, angle, obj.x, obj.y, fov);
+    });
 }
 
 function getVisibleFood(creature, state) {
-    return getVisibleObjects(state.food, creature.x, creature.y);
+    return getVisibleObjects(state.food, creature);
 }
 
 function getVisibleCreatures(creature, state) {
-    return getVisibleObjects(state.creatures.filter(c => c.id != creature.id), creature.x, creature.y);
+    const otherCreatures = state.creatures.filter(c => c.id !== creature.id);
+    return getVisibleObjects(otherCreatures, creature);
 }
 
 function getVisibleObstacles(creature, state) {
-    const { x: cx, y: cy } = creature;
-    const visible = getVisibleObjects(state.obstacles, cx, cy);
-    visible.push(...state.borderObstacles.filter(b => isWithinRadius(b.x, b.y, cx, cy, r2Visibility)));
-    return visible;
+    const allObstacles = [...state.obstacles, ...state.borderObstacles];
+    return getVisibleObjects(allObstacles, creature);
 }
 
 module.exports = {
@@ -106,6 +126,7 @@ module.exports = {
     getObstacles,
     getBorderObstacles,
     isWithinRadius,
+    isWithinFOV,
     getVisibleFood,
     getVisibleCreatures,
     getVisibleObstacles

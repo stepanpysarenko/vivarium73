@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Glob(*)",
+      "Grep(*)",
       "Read(*)",
       "Search(*)",
       "Edit(*)",

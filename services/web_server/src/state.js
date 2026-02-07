@@ -142,10 +142,10 @@ function applyMovement(creature, movement) {
     }
 
     const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
-    const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RAD;
+    const turnLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS;
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
-        + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
+        + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnLoss;
     creature.prev.energy = creature.energy;
     creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
 }
