@@ -58,7 +58,7 @@ async function handleStateUpdate() {
     await updateState();
     broadcastState(getPublicState());
     const elapsed = performance.now() - start;
-    await sleep(Math.max(0, CONFIG.STATE_UPDATE_INTERVAL - elapsed));
+    await sleep(Math.max(0, CONFIG.STATE_UPDATE_INTERVAL_MS - elapsed));
 }
 
 async function loop() {
@@ -83,8 +83,8 @@ function startServer(port = CONFIG.PORT) {
         await initState();
         loop();
 
-        if (CONFIG.STATE_SAVE_INTERVAL && CONFIG.STATE_SAVE_PATH) {
-            setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL);
+        if (CONFIG.STATE_SAVE_INTERVAL_MS && CONFIG.STATE_SAVE_PATH) {
+            setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL_MS);
         }
     });
 }

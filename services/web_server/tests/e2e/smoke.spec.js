@@ -11,7 +11,7 @@ const configMock = {
   webSocketUrl: 'ws://mock',
   stateUpdateInterval: 100,
   gridSize: 50,
-  maxFoodCount: 30,
+  foodMaxCount: 30,
 };
 
 const initialState = {
@@ -162,7 +162,7 @@ test.beforeEach(async ({ page }) => {
       },
       broadcast,
       incrementFood() {
-        foodCount = Math.min(foodCount + 1, config.maxFoodCount);
+        foodCount = Math.min(foodCount + 1, config.foodMaxCount);
         broadcast({ stats: { foodCount } });
       },
       forceDisconnect() {
@@ -181,7 +181,7 @@ test.beforeEach(async ({ page }) => {
       }
 
       if (typeof input === 'string' && input.endsWith('/api/place-food')) {
-        foodCount = Math.min(foodCount + 1, config.maxFoodCount);
+        foodCount = Math.min(foodCount + 1, config.foodMaxCount);
         broadcast({ stats: { foodCount } });
         return Promise.resolve({
           ok: true,

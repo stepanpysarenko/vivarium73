@@ -150,7 +150,7 @@
             ui.stats.grid.restarts.textContent = latest.stats.restarts;
             ui.stats.grid.generation.textContent = latest.stats.generation;
             ui.stats.grid.creatures.textContent = latest.stats.creatureCount;
-            ui.stats.grid.food.textContent = `${latest.stats.foodCount}/${app.config.maxFoodCount}`;
+            ui.stats.grid.food.textContent = `${latest.stats.foodCount}/${app.config.foodMaxCount}`;
         },
         updateObserved() {
             if (app.observedCreatureId === null || !app.state.latest) return; 
@@ -367,7 +367,7 @@
                 return;
             }
 
-            if (latestState.food.length >= app.config.maxFoodCount) {
+            if (latestState.food.length >= app.config.foodMaxCount) {
                 console.warn('Max food count reached, cannot place more food.');
                 return;
             }
