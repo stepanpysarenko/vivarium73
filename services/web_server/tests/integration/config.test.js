@@ -11,7 +11,7 @@ describe('GET /api/config', () => {
       envCode: CONFIG.ENVIRONMENT,
       webSocketUrl: CONFIG.WEBSOCKET_URL,
       gridSize: CONFIG.GRID_SIZE,
-      maxFoodCount: CONFIG.FOOD_MAX_COUNT,
+      foodMaxCount: CONFIG.FOOD_MAX_COUNT,
     });
     expect(res.body).toHaveProperty('appVersion');
     expect(res.body).toHaveProperty('stateUpdateInterval');

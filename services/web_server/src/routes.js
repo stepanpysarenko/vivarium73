@@ -11,9 +11,13 @@ module.exports = function registerRoutes(app) {
         envCode: CONFIG.ENVIRONMENT,
         appVersion: CONFIG.APP_VERSION,
         webSocketUrl: CONFIG.WEBSOCKET_URL,
-        stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL,
+        stateUpdateInterval: CONFIG.STATE_UPDATE_INTERVAL_MS,
         gridSize: CONFIG.GRID_SIZE,
-        maxFoodCount: CONFIG.FOOD_MAX_COUNT
+        foodMaxCount: CONFIG.FOOD_MAX_COUNT,
+        creature: {
+            visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
+            visibilityFovRadians: Math.round(CONFIG.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
+        }
     }));
 
     app.post("/api/place-food", (req, res) => {

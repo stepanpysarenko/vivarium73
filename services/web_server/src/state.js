@@ -137,17 +137,17 @@ function applyMovement(creature, movement) {
     creature.y += movement.speed * Math.sin(creature.angle);
 
     creature.recentPath.push({ x: creature.x, y: creature.y });
-    if (creature.recentPath.length > CONFIG.CREATURE_PATH_LENGTH) {
+    if (creature.recentPath.length > CONFIG.CREATURE_PATH_MAX_ENTRIES) {
         creature.recentPath.shift();
     }
 
     const speedLoss = movement.speed / CONFIG.CREATURE_MAX_SPEED;
-    const turnPLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RAD;
+    const turnLoss = Math.abs(movement.angleDelta) / CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS;
     const activityCost = CONFIG.CREATURE_ENERGY_LOSS_BASE
         + CONFIG.CREATURE_ENERGY_LOSS_SPEED_FACTOR * speedLoss
-        + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnPLoss;
+        + CONFIG.CREATURE_ENERGY_LOSS_TURN_FACTOR * turnLoss;
     creature.prev.energy = creature.energy;
-    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS * activityCost, 0);
+    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_ENERGY_LOSS_FACTOR * activityCost, 0);
 }
 
 function isObstacleCollision(x, y) {
@@ -184,8 +184,8 @@ function handleObstacleCollision(creature) {
             newY = prevY;
         }
 
-        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
-        creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
+        creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY, 0);
+        creature.updatesToFlash = CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH;
     }
 
     creature.x = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newX));
@@ -211,8 +211,8 @@ function handleCreatureCollision(creature, creatureMap) {
                 if (other.id === creature.id) continue;
                 const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
                 if (dist < CONFIG.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
-                    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_PENALTY, 0);
-                    creature.updatesToFlash = CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH;
+                    creature.energy = Math.max(creature.energy - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY, 0);
+                    creature.updatesToFlash = CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH;
                 }
             }
         }
@@ -228,8 +228,8 @@ function handleEating(creature) {
 
     let foodEnergy = CONFIG.FOOD_ENERGY;
     // apply a gradually decreasing energy bonus for early generations
-    if (state.stats.generation <= CONFIG.FOOD_ENERGY_BONUS_MAX_GEN) {
-        const progress = state.stats.generation / CONFIG.FOOD_ENERGY_BONUS_MAX_GEN;
+    if (state.stats.generation <= CONFIG.FOOD_ENERGY_BONUS_MAX_GENERATION) {
+        const progress = state.stats.generation / CONFIG.FOOD_ENERGY_BONUS_MAX_GENERATION;
         foodEnergy += Math.round(CONFIG.FOOD_ENERGY_BONUS * (1 - progress));
     }
 
@@ -271,7 +271,7 @@ async function handleLifecycle() {
             continue;
         }
 
-        creature.stats.msLived += CONFIG.STATE_UPDATE_INTERVAL;
+        creature.stats.msLived += CONFIG.STATE_UPDATE_INTERVAL_MS;
         creature.stats.score = getScore(creature);
         survivors.push(creature);
     }

@@ -11,7 +11,7 @@ const createBaseState = () => ({
   obstacles: [],
   stats: {
     restarts: 0,
-    generation: CONFIG.FOOD_ENERGY_BONUS_MAX_GEN + 1,
+    generation: CONFIG.FOOD_ENERGY_BONUS_MAX_GENERATION + 1,
     creatureCount: 0,
     foodCount: 0,
   },
@@ -87,8 +87,8 @@ describe('energy adjustments', () => {
 
     __testUtils.handleCreatureCollision(creature, map);
 
-    expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_PENALTY);
-    expect(creature.updatesToFlash).toBe(CONFIG.CREATURE_COLLISION_UPDATES_TO_FLASH);
+    expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
+    expect(creature.updatesToFlash).toBe(CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH);
   });
 });
 

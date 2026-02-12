@@ -58,7 +58,7 @@
         reconnectDelay: 250,
         colors: COLOR_PALETTE.light,
         observedCreatureId: null,
-        observedAreaRadius: 2,
+        observedClickRadius: 2,
         scale: 1,
         halfScale: 0.5,
         animation: {
@@ -150,7 +150,7 @@
             ui.stats.grid.restarts.textContent = latest.stats.restarts;
             ui.stats.grid.generation.textContent = latest.stats.generation;
             ui.stats.grid.creatures.textContent = latest.stats.creatureCount;
-            ui.stats.grid.food.textContent = `${latest.stats.foodCount}/${app.config.maxFoodCount}`;
+            ui.stats.grid.food.textContent = `${latest.stats.foodCount}/${app.config.foodMaxCount}`;
         },
         updateObserved() {
             if (app.observedCreatureId === null || !app.state.latest) return; 
@@ -218,8 +218,7 @@
             if (canvas.width !== width || canvas.height !== height) {
                 canvas.width = width;
                 canvas.height = height;
-            }
-            console.log(`Canvas resolution set to ${canvas.width}x${canvas.height}`);
+            }         
         },
         updateSettings() {
             renderer.updateCanvasResolution();
@@ -250,16 +249,22 @@
                 ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
         },
-        drawObservedHighlight(x, y) {
+        drawObservedHighlight(x, y, angle, fovRadians) {
             const centerX = x * app.scale + app.halfScale;
             const centerY = y * app.scale + app.halfScale;
-            const radius = app.scale * app.observedAreaRadius;
+            const radius = app.scale * app.config.creature.visibilityRadius;
 
             ctx.save();
             ctx.globalAlpha = 0.05;
             ctx.fillStyle = app.colors.creatureObservedHighlight;
+
             ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.moveTo(centerX, centerY); 
+            const halfFOV = fovRadians / 2;
+            const startAngle = angle - halfFOV;
+            const endAngle = angle + halfFOV;
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineTo(centerX, centerY);
             ctx.fill();
             ctx.restore();
         },
@@ -280,7 +285,8 @@
                 }
 
                 if (creature.id === app.observedCreatureId) {
-                    renderer.drawObservedHighlight(x, y);
+                    const fovRadians = app.config.creature.visibilityFovRadians;
+                    renderer.drawObservedHighlight(x, y, angle, fovRadians);
                 }
 
                 ctx.save();
@@ -361,7 +367,7 @@
                 return;
             }
 
-            if (latestState.food.length >= app.config.maxFoodCount) {
+            if (latestState.food.length >= app.config.foodMaxCount) {
                 console.warn('Max food count reached, cannot place more food.');
                 return;
             }
@@ -386,7 +392,7 @@
             }
         },
         handleCanvasClick: async event => {
-            const distanceThreshold = app.observedAreaRadius * app.observedAreaRadius;
+            const distanceThreshold = app.observedClickRadius * app.observedClickRadius;
             const { x, y } = actions.getGridClickCoordinates(event);
             const creatures = app.state.latest ? app.state.latest.creatures : null;
             let clickedCreature = null;

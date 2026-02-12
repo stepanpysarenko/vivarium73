@@ -117,7 +117,7 @@ body {
 }
 
 .title {
-    font-size: clamp(18px, 2.4vw, 24px);
+    font-size: 26px;
     font-weight: normal;
     line-height: 1;
     margin: 0;
@@ -126,7 +126,7 @@ body {
 .env-tag {
     display: inline-flex;
     align-items: center;
-    font-size: clamp(9px, 1.2vw, 12px);
+    font-size: 12px;
     line-height: 1.2;
     padding: 2px 6px;
     border-radius: 4px;
@@ -148,7 +148,7 @@ body {
 
 .stats dt {
     grid-row: 1;
-    font-size: clamp(9px, 1.2vw, 10px);
+    font-size: 10px;
     color: var(--color-text-muted);
     font-weight: normal;
     margin: 0;
@@ -157,7 +157,7 @@ body {
 .stats dd {
     min-height: 1em;
     grid-row: 2;
-    font-size: clamp(10px, 1.4vw, 14px);
+    font-size: 14px;
     font-weight: normal;
     margin: 0;
 }
@@ -238,7 +238,7 @@ body.loading #loader {
     max-height: 100%;
     width: 100%;
     padding-right: 15px;
-    font-size: clamp(10px, 1.4vw, 14px);
+    font-size: 14px;
     text-align: left;
     line-height: 1.7;
     letter-spacing: 0.01em;
@@ -250,7 +250,7 @@ body.loading #loader {
 
 #about-content h3 {
     margin: 18px 0 10px;
-    font-size: clamp(11px, 1.5vw, 15px);
+    font-size: 16px;
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0.02em;
@@ -267,8 +267,9 @@ body.loading #loader {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    margin-top: 30px;
+    margin-top: 20px;
     text-align: center;
+    font-size: 10px;
 }
 
 .about-meta>span {
@@ -277,7 +278,6 @@ body.loading #loader {
 
 .about-meta>span.version-tag {
     color: var(--color-text-muted);
-    font-size: 10px;
 }
 
 #about-content ul {
@@ -305,7 +305,7 @@ body.loading #loader {
     font-family: inherit;
     font-size: 10px;
     color: var(--color-text-muted);
-    padding: 7px 10px;
+    padding: 8px 10px;
     border: none;
     background-color: var(--color-bg);
     cursor: pointer;
@@ -328,6 +328,18 @@ body.loading #loader {
         text-align: center;
     }
 
+    .title {
+        font-size: 18px;
+    }
+
+    .stats dt {
+        font-size: 10px;
+    }
+
+    .stats dd {
+        font-size: 10px;
+    }
+
     .title-wrapper {
         margin-bottom: 8px;
     }
@@ -337,5 +349,13 @@ body.loading #loader {
     .content {
         border-left: none;
         border-right: none;
+    }
+
+    #about-content {
+        font-size: 10px;
+    }
+
+    #about-content h3 {
+        font-size: 12px;
     }
 }
