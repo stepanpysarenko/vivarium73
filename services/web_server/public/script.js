@@ -3,6 +3,8 @@
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const staticCanvas = document.createElement('canvas');
+    const staticCtx = staticCanvas.getContext('2d');
 
     const ui = {
         about: document.getElementById('about'),
@@ -98,6 +100,7 @@
             ui.themeToggle.textContent = dark ? 'light' : 'dark';
             app.colors = dark ? COLOR_PALETTE.dark : COLOR_PALETTE.light;
             ui.metaThemeColor.setAttribute('content', app.colors.background);
+            renderer.updateStaticLayer();
 
             if (persist) {
                 localStorage.setItem('theme', dark ? 'dark' : 'light');
@@ -222,31 +225,32 @@
         },
         updateSettings() {
             renderer.updateCanvasResolution();
+            staticCanvas.width = canvas.width;
+            staticCanvas.height = canvas.height;
 
             app.scale = canvas.width / app.config.gridSize;
             app.halfScale = app.scale * 0.5;
             app.animation.renderDelay = app.config.stateUpdateInterval;
+            renderer.updateStaticLayer();
         },
         clear() {
             ctx.globalAlpha = 1;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         },
-        drawObstacles() {
+        updateStaticLayer() {
             if (!app.state.latest) return;
 
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = app.colors.obstacle;
+            staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
+
+            staticCtx.globalAlpha = 1;
+            staticCtx.fillStyle = app.colors.obstacle;
             app.state.latest.obstacles.forEach(({ x, y }) => {
-                ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
+                staticCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
-        },
-        drawFood() {
-            if (!app.state.latest) return;
 
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = app.colors.food;
+            staticCtx.fillStyle = app.colors.food;
             app.state.latest.food.forEach(({ x, y }) => {
-                ctx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
+                staticCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
         },
         drawObservedHighlight(x, y, angle, fovRadians) {
@@ -336,8 +340,7 @@
             }
 
             renderer.clear();
-            renderer.drawObstacles();
-            renderer.drawFood();
+            ctx.drawImage(staticCanvas, 0, 0); // add layer with food and obstacles
             renderer.drawCreatures(prevState, nextState, t, now);
 
             requestAnimationFrame(renderer.loop);
@@ -459,6 +462,7 @@
                 state.creaturesMap = new Map(state.creatures.map(creature => [creature.id, creature]));
                 state.timestamp = performance.now();
                 stateBuffer.push(state);
+                renderer.updateStaticLayer();
 
                 if (isLoading()) hideLoader();
                 stats.updateGrid();
