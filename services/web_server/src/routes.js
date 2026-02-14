@@ -26,8 +26,14 @@ module.exports = function registerRoutes(app) {
             return res.status(400).json({ success: false, error: "Invalid coordinates" });
         }
 
+        const gridX = Math.floor(x);
+        const gridY = Math.floor(y);
+        if (gridX < 0 || gridX >= CONFIG.GRID_SIZE || gridY < 0 || gridY >= CONFIG.GRID_SIZE) {
+            return res.status(400).json({ success: false, error: "Coordinates out of bounds" });
+        }
+
         try {
-            addFood(x, y);
+            addFood(gridX, gridY);
             res.status(201).json({ success: true });
         } catch (err) {
             res.status(400).json({ success: false, error: err.message });

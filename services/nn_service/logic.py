@@ -7,6 +7,7 @@ OUTPUT_SIZE = 2
 
 HIDDEN_SHAPE = (HIDDEN_SIZE, INPUT_SIZE)
 OUTPUT_SHAPE = (OUTPUT_SIZE, HIDDEN_SIZE)
+EXPECTED_WEIGHT_COUNT = int(np.prod(HIDDEN_SHAPE) + np.prod(OUTPUT_SHAPE))
 
 SQRT2 = np.sqrt(2)
 
@@ -117,6 +118,8 @@ def think(creature, grid_size, visibility_radius, max_energy, max_turn_angle, ma
     ])
 
     weights = np.array(creature.weights)
+    if len(weights) != EXPECTED_WEIGHT_COUNT:
+        raise ValueError(f"Expected {EXPECTED_WEIGHT_COUNT} weights, got {len(weights)}")
     hidden_weights = weights[:np.prod(HIDDEN_SHAPE)].reshape(HIDDEN_SHAPE)
     output_weights = weights[np.prod(HIDDEN_SHAPE):].reshape(OUTPUT_SHAPE)
 

@@ -43,7 +43,7 @@ describe('isWithinFOV', () => {
     expect(isWithinFOV(0, 0, -Math.PI / 2, 0, -5, Math.PI / 2)).toBe(true);
   });
 
-  it('handles angle wraparound at π boundary', () => {
+  it('handles angle wraparound at pi boundary', () => {
     expect(isWithinFOV(0, 0, Math.PI, -5, 0, Math.PI / 2)).toBe(true);
     expect(isWithinFOV(0, 0, -Math.PI, -5, 0, Math.PI / 2)).toBe(true);
   });

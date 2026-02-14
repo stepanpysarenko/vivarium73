@@ -117,3 +117,121 @@ describe('addFood validation', () => {
     expect(() => stateModule.addFood(1, 1)).toThrow('Max food count reached');
   });
 });
+
+describe('wrapAngle', () => {
+  it('returns 0 for 0', () => {
+    expect(__testUtils.wrapAngle(0)).toBeCloseTo(0);
+  });
+
+  it('wraps 2pi to 0', () => {
+    expect(__testUtils.wrapAngle(2 * Math.PI)).toBeCloseTo(0);
+  });
+
+  it('returns -pi for -pi', () => {
+    expect(__testUtils.wrapAngle(-Math.PI)).toBeCloseTo(-Math.PI);
+  });
+
+  it('wraps positive overflow into [-pi, pi]', () => {
+    // 3pi wraps to -pi (equivalent angle)
+    expect(__testUtils.wrapAngle(3 * Math.PI)).toBeCloseTo(-Math.PI);
+  });
+
+  it('wraps negative overflow into [-pi, pi]', () => {
+    expect(__testUtils.wrapAngle(-3 * Math.PI)).toBeCloseTo(-Math.PI);
+  });
+
+  it('leaves values already in range unchanged', () => {
+    expect(__testUtils.wrapAngle(1.0)).toBeCloseTo(1.0);
+    expect(__testUtils.wrapAngle(-1.0)).toBeCloseTo(-1.0);
+  });
+});
+
+describe('handleObstacleCollision', () => {
+  beforeEach(() => {
+    __testUtils.setState({
+      ...createBaseState(),
+      obstacles: [{ x: 10, y: 10 }],
+      borderObstacles: [],
+    });
+  });
+
+  it('does not alter position when there is no collision', () => {
+    const creature = {
+      x: 5, y: 5,
+      prev: { x: 4, y: 4 },
+      energy: 100,
+      updatesToFlash: 0,
+    };
+
+    __testUtils.handleObstacleCollision(creature);
+
+    expect(creature.x).toBeCloseTo(5);
+    expect(creature.y).toBeCloseTo(5);
+    expect(creature.energy).toBe(100);
+  });
+
+  it('retreats to previous position when both axes are blocked', () => {
+    // obstacle at (10,10) blocks current pos; (10,9) blocks X-slide; (9,10) blocks Y-slide
+    __testUtils.setState({
+      ...createBaseState(),
+      obstacles: [{ x: 10, y: 10 }, { x: 10, y: 9 }, { x: 9, y: 10 }],
+      borderObstacles: [],
+    });
+
+    const creature = {
+      x: 10, y: 10,
+      prev: { x: 9, y: 9 },
+      energy: 100,
+      updatesToFlash: 0,
+    };
+
+    __testUtils.handleObstacleCollision(creature);
+
+    expect(creature.x).toBeCloseTo(9);
+    expect(creature.y).toBeCloseTo(9);
+    expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
+    expect(creature.updatesToFlash).toBe(CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH);
+  });
+
+  it('clamps position to grid bounds when beyond grid', () => {
+    __testUtils.setState({
+      ...createBaseState(),
+      obstacles: [],
+      borderObstacles: [],
+    });
+
+    const creature = {
+      x: -2, y: -2,
+      prev: { x: 0, y: 0 },
+      energy: 100,
+      updatesToFlash: 0,
+    };
+
+    __testUtils.handleObstacleCollision(creature);
+
+    expect(creature.x).toBe(0);
+    expect(creature.y).toBe(0);
+    expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
+  });
+
+  it('slides along Y when X is blocked', () => {
+    __testUtils.setState({
+      ...createBaseState(),
+      obstacles: [{ x: 10, y: 10 }],
+      borderObstacles: [],
+    });
+
+    const creature = {
+      x: 10, y: 10,
+      prev: { x: 9, y: 10 },
+      energy: 100,
+      updatesToFlash: 0,
+    };
+
+    __testUtils.handleObstacleCollision(creature);
+
+    expect(creature.x).toBeCloseTo(9);
+    expect(creature.y).toBeCloseTo(10);
+    expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
+  });
+});

@@ -571,6 +571,9 @@
             }
 
             app.config = await response.json();
+            if (!app.config.gridSize || !app.config.webSocketUrl || !app.config.creature?.visibilityRadius) {
+                throw new Error('Incomplete config received from server');
+            }
             buildInfo.update();
         } catch (error) {
             console.error('Error loading configuration', error);

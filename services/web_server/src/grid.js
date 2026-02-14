@@ -66,7 +66,7 @@ function getObstacles() {
 }
 
 function getBorderObstacles() {
-    var obstacles = [];
+    const obstacles = [];
     for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
         obstacles.push({ x: i, y: 0 }, { x: i, y: CONFIG.GRID_SIZE - 1 });
         obstacles.push({ x: 0, y: i }, { x: CONFIG.GRID_SIZE - 1, y: i });

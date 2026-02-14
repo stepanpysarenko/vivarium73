@@ -8,7 +8,7 @@ const { appendTopPerformers, restartPopulation } = require("./performance");
 
 const r2Interaction = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
 
-var state = null;
+let state = null;
 
 async function initState() {
     state = await loadState();
@@ -102,10 +102,13 @@ async function updateState() {
     const movementsMap = new Map(movements.map(m => [m.id, m]));
 
     for (const creature of state.creatures) {
-        creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2); 
+        creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2);
         creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
 
-        applyMovement(creature, movementsMap.get(creature.id));
+        const movement = movementsMap.get(creature.id);
+        if (!movement) continue;
+
+        applyMovement(creature, movement);
         handleObstacleCollision(creature);
         handleEating(creature);
     }
@@ -114,7 +117,7 @@ async function updateState() {
     state.creatures.forEach(c => handleCreatureCollision(c, creaturesMap));
 
     state.creatures = await handleLifecycle();
-    if (state.creatures.length == 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
+    if (state.creatures.length === 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
         for (const creature of state.creatures) {
             appendTopPerformers(creature, state);
         }
@@ -235,7 +238,7 @@ function handleEating(creature) {
 
     if (foodIndex !== -1) {
         creature.energy = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY);
-        creature.stats.energyGained += CONFIG.FOOD_ENERGY;
+        creature.stats.energyGained += foodEnergy;
         state.food.splice(foodIndex, 1);
     }
 }
@@ -318,6 +321,8 @@ if (process.env.NODE_ENV === 'test') {
     module.exports.__testUtils = {
         applyMovement,
         handleEating,
+        handleObstacleCollision,
+        handleLifecycle,
         handleCreatureCollision,
         buildCreatureMap,
         wrapAngle,
