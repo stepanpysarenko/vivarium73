@@ -70,7 +70,8 @@ function round2(x) {
 }
 
 function wrapAngle(angle) {
-    return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+    const TWO_PI = 2 * Math.PI;
+    return ((angle + Math.PI) % TWO_PI + TWO_PI) % TWO_PI - Math.PI;
 }
 
 function getPublicState() {
@@ -123,7 +124,7 @@ async function updateState() {
         }
         await restartPopulation(state);
         state.stats.restarts++;
-        saveState();
+        await saveState();
     }
 
     updateFood(state);
@@ -237,8 +238,9 @@ function handleEating(creature) {
     }
 
     if (foodIndex !== -1) {
-        creature.energy = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY);
-        creature.stats.energyGained += foodEnergy;
+        const energyGained = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY) - creature.energy;
+        creature.energy += energyGained;
+        creature.stats.energyGained += energyGained;
         state.food.splice(foodIndex, 1);
     }
 }
@@ -285,7 +287,10 @@ async function handleLifecycle() {
 function updateStats() {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
-    state.stats.generation = Math.max(...state.creatures.map(c => c.generation), 0);
+    const maxGen = Math.max(...state.creatures.map(c => c.generation), 0);
+    if (maxGen > state.stats.generation) {
+        state.stats.generation = maxGen;
+    }
 }
 
 function addFood(x, y) {
