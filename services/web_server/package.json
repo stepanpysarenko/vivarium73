@@ -1,6 +1,6 @@
 {
   "name": "vivarium73",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Evolutionary simulation",
   "main": "index.js",
   "engines": {
