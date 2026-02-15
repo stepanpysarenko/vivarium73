@@ -3,7 +3,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const { initCreature, getScore } = require("./creature");
 const { getMovements, mutateWeights } = require("./nn");
-const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius } = require("./grid");
+const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
 
 const r2Interaction = CONFIG.CREATURE_INTERACTION_RADIUS ** 2;
@@ -29,6 +29,7 @@ async function initState() {
             createdAt: Date.now()
         };
 
+        buildStateIndexes(state);
         updateFood(state);
 
         for (let i = 0; i < CONFIG.CREATURE_INITIAL_COUNT; i++) {
@@ -37,6 +38,8 @@ async function initState() {
         }
 
         console.log("New random state initialized");
+    } else {
+        buildStateIndexes(state);
     }
 }
 
@@ -114,8 +117,8 @@ async function updateState() {
         handleEating(creature);
     }
 
-    const creaturesMap = buildCreatureMap(state.creatures);
-    state.creatures.forEach(c => handleCreatureCollision(c, creaturesMap));
+    state.creatureMap = buildCreatureIndex(state.creatures);
+    state.creatures.forEach(c => handleCreatureCollision(c));
 
     state.creatures = await handleLifecycle();
     if (state.creatures.length === 0 || state.creatures.length < CONFIG.POPULATION_RESTART_THRESHOLD) {
@@ -155,7 +158,15 @@ function applyMovement(creature, movement) {
 }
 
 function isObstacleCollision(x, y) {
-    return state.obstacles.some(o => isWithinRadius(o.x, o.y, x, y, r2Interaction));
+    const fx = Math.floor(x);
+    const fy = Math.floor(y);
+    for (let dx = 0; dx <= 1; dx++) {
+        for (let dy = 0; dy <= 1; dy++) {
+            const obstacle = state.obstacleMap.get(`${fx + dx},${fy + dy}`);
+            if (obstacle && isWithinRadius(obstacle.x, obstacle.y, x, y, r2Interaction)) return true;
+        }
+    }
+    return false;
 }
 
 function isBeyondGrid(x, y) {
@@ -196,21 +207,12 @@ function handleObstacleCollision(creature) {
     creature.y = Math.max(0, Math.min(CONFIG.GRID_SIZE - 1, newY));
 }
 
-function buildCreatureMap(creatures) {
-    const map = new Map();
-    for (const c of creatures) {
-        const key = `${Math.floor(c.x)},${Math.floor(c.y)}`;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key).push(c);
-    }
-    return map;
-}
-
-function handleCreatureCollision(creature, creatureMap) {
+function handleCreatureCollision(creature) {
+    const fx = Math.floor(creature.x);
+    const fy = Math.floor(creature.y);
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
-            const key = `${Math.floor(creature.x) + dx},${Math.floor(creature.y) + dy}`;
-            const others = creatureMap.get(key) || [];
+            const others = state.creatureMap.get(`${fx + dx},${fy + dy}`) || [];
             for (const other of others) {
                 if (other.id === creature.id) continue;
                 const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
@@ -224,12 +226,6 @@ function handleCreatureCollision(creature, creatureMap) {
 }
 
 function handleEating(creature) {
-    const foodIndex = state.food.findIndex(f => {
-        const dx = f.x - creature.x;
-        const dy = f.y - creature.y;
-        return dx * dx + dy * dy < r2Interaction;
-    });
-
     let foodEnergy = CONFIG.FOOD_ENERGY;
     // apply a gradually decreasing energy bonus for early generations
     if (state.stats.generation <= CONFIG.FOOD_ENERGY_BONUS_MAX_GENERATION) {
@@ -237,11 +233,25 @@ function handleEating(creature) {
         foodEnergy += Math.round(CONFIG.FOOD_ENERGY_BONUS * (1 - progress));
     }
 
-    if (foodIndex !== -1) {
-        const energyGained = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY) - creature.energy;
-        creature.energy += energyGained;
-        creature.stats.energyGained += energyGained;
-        state.food.splice(foodIndex, 1);
+    const fx = Math.floor(creature.x);
+    const fy = Math.floor(creature.y);
+    for (let dx = 0; dx <= 1; dx++) {
+        for (let dy = 0; dy <= 1; dy++) {
+            const key = `${fx + dx},${fy + dy}`;
+            const food = state.foodMap.get(key);
+            if (!food) continue;
+            const ddx = food.x - creature.x;
+            const ddy = food.y - creature.y;
+            if (ddx * ddx + ddy * ddy < r2Interaction) {
+                const energyGained = Math.min(creature.energy + foodEnergy, CONFIG.CREATURE_MAX_ENERGY) - creature.energy;
+                creature.energy += energyGained;
+                creature.stats.energyGained += energyGained;
+                const idx = state.food.indexOf(food);
+                if (idx !== -1) state.food.splice(idx, 1);
+                state.foodMap.delete(key);
+                return;
+            }
+        }
     }
 }
 
@@ -306,7 +316,9 @@ function addFood(x, y) {
         throw new Error("Cell is occupied");
     }
 
-    state.food.push({ x, y });
+    const food = { x, y };
+    state.food.push(food);
+    state.foodMap.set(`${x},${y}`, food);
     state.stats.foodCount = state.food.length;
 }
 
@@ -321,6 +333,7 @@ module.exports = {
 if (process.env.NODE_ENV === 'test') {
     function setState(testState) {
         state = testState;
+        buildStateIndexes(state);
     }
 
     module.exports.__testUtils = {
@@ -329,7 +342,6 @@ if (process.env.NODE_ENV === 'test') {
         handleObstacleCollision,
         handleLifecycle,
         handleCreatureCollision,
-        buildCreatureMap,
         wrapAngle,
         setState,
         getState: () => state

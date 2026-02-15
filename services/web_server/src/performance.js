@@ -3,8 +3,15 @@ const { initCreature } = require("./creature");
 const { mutateWeights } = require("./nn");
 
 function appendTopPerformers(creature, state) {
-    state.topPerformers.push(creature);
-    state.topPerformers.sort((a, b) => b.stats.score - a.stats.score);
+    const score = creature.stats.score ?? 0;
+    // binary search for insertion point to maintain descending score order
+    let lo = 0, hi = state.topPerformers.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if ((state.topPerformers[mid].stats.score ?? 0) > score) lo = mid + 1;
+        else hi = mid;
+    }
+    state.topPerformers.splice(lo, 0, creature);
 
     if (state.topPerformers.length > CONFIG.TOP_PERFORMERS_COUNT) {
         state.topPerformers.length = CONFIG.TOP_PERFORMERS_COUNT;

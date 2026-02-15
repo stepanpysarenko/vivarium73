@@ -51,7 +51,9 @@ describe('energy adjustments', () => {
 
   it('increases energy when eating food', () => {
     const state = __testUtils.getState();
-    state.food.push({ x: 5, y: 5 });
+    const food = { x: 5, y: 5 };
+    state.food.push(food);
+    state.foodMap.set('5,5', food);
     const creature = {
       id: 2,
       x: 5,
@@ -83,9 +85,9 @@ describe('energy adjustments', () => {
       y: 1.2,
     };
 
-    const map = __testUtils.buildCreatureMap([creature, other]);
+    __testUtils.setState({ ...createBaseState(), creatures: [creature, other] });
 
-    __testUtils.handleCreatureCollision(creature, map);
+    __testUtils.handleCreatureCollision(creature);
 
     expect(creature.energy).toBe(100 - CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
     expect(creature.updatesToFlash).toBe(CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH);

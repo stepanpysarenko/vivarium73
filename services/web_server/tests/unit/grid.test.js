@@ -1,13 +1,15 @@
-const { isCellOccupied, isWithinRadius, isWithinFOV, getRandomEmptyCell, getVisibleFood } = require('../../src/grid');
+const { buildStateIndexes, isCellOccupied, isWithinRadius, isWithinFOV, getRandomEmptyCell, getVisibleFood } = require('../../src/grid');
 
 describe('isCellOccupied', () => {
   it('returns true when food occupies cell', () => {
     const state = { food: [{ x: 1, y: 2 }], obstacles: [] };
+    buildStateIndexes(state);
     expect(isCellOccupied(1, 2, state)).toBe(true);
   });
 
   it('returns false for empty cell', () => {
     const state = { food: [], obstacles: [] };
+    buildStateIndexes(state);
     expect(isCellOccupied(0, 0, state)).toBe(false);
   });
 });

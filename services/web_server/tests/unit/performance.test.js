@@ -4,8 +4,8 @@ const { appendTopPerformers } = require('../../src/performance');
 describe('appendTopPerformers', () => {
   it('adds creature and sorts by score', () => {
     const state = { topPerformers: [] };
-    const a = { stats: { totalFoodCollected: 2, updatesSurvived: 1 } };
-    const b = { stats: { totalFoodCollected: 1, updatesSurvived: 1 } };
+    const a = { stats: { score: 200, totalFoodCollected: 2, updatesSurvived: 1 } };
+    const b = { stats: { score: 100, totalFoodCollected: 1, updatesSurvived: 1 } };
     appendTopPerformers(a, state);
     appendTopPerformers(b, state);
     expect(state.topPerformers[0]).toBe(a);

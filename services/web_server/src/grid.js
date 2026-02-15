@@ -2,9 +2,25 @@ const CONFIG = require("./config");
 
 const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
 
+function buildCreatureIndex(creatures) {
+    const map = new Map();
+    for (const c of creatures) {
+        const key = `${Math.floor(c.x)},${Math.floor(c.y)}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(c);
+    }
+    return map;
+}
+
+function buildStateIndexes(state) {
+    state.obstacleMap = new Map(state.obstacles.map(o => [`${o.x},${o.y}`, o]));
+    state.foodMap = new Map(state.food.map(f => [`${f.x},${f.y}`, f]));
+    state.creatureMap = buildCreatureIndex(state.creatures || []);
+}
+
 function isCellOccupied(x, y, state) {
-    return state.food.some(f => f.x === x && f.y === y)
-        || state.obstacles.some(o => o.x === x && o.y === y);
+    const key = `${x},${y}`;
+    return state.foodMap.has(key) || state.obstacleMap.has(key);
 }
 
 function getTotalEnergy(state) {
@@ -33,6 +49,7 @@ function updateFood(state) {
         const cell = getRandomEmptyCell(state);
         if (!cell) break;
         state.food.push(cell);
+        state.foodMap.set(`${cell.x},${cell.y}`, cell);
     }
 }
 
@@ -120,6 +137,8 @@ function getVisibleObstacles(creature, state) {
 }
 
 module.exports = {
+    buildCreatureIndex,
+    buildStateIndexes,
     isCellOccupied,
     getRandomEmptyCell,
     updateFood,
