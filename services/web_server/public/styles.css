@@ -228,6 +228,7 @@ body.loading #loader {
     display: flex;
 }
 
+
 #about {
     z-index: 3;
     padding: 20px 20px;

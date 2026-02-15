@@ -193,7 +193,7 @@
 
             if (app.config.envCode !== 'prod') {
                 ui.envTag.textContent = app.config.envCode;
-                ui.envTag.hidden = false;
+                document.fonts.ready.then(() => { ui.envTag.hidden = false; });
             }
 
             const versionPrefix = app.config.appVersion === 'dev' ? '' : 'v';
