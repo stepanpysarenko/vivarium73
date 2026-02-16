@@ -1,10 +1,10 @@
 const axios = require("axios");
-const CONFIG = require("./config");
+const { SERVER_CONFIG } = require("./config");
 const { getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
 
 async function initWeights() {
     try {
-        const response = await axios.get(CONFIG.NN_SERVICE_URL + "/weights/init");
+        const response = await axios.get(SERVER_CONFIG.NN_SERVICE_URL + "/weights/init");
         return response.data.weights;
     } catch (err) {
         throw new Error('Failed to initialize weights: ' + err.message);
@@ -13,16 +13,16 @@ async function initWeights() {
 
 async function mutateWeights(weights) {
     try {
-        const response = await axios.post(CONFIG.NN_SERVICE_URL + "/weights/mutate", { weights });
+        const response = await axios.post(SERVER_CONFIG.NN_SERVICE_URL + "/weights/mutate", { weights });
         return response.data.weights;
     } catch (err) {
         throw new Error('Failed to mutate weights: ' + err.message);
     }
 }
 
-async function getMovements(state) {
+async function getMovements(state, config) {
     try {
-        const response = await axios.post(CONFIG.NN_SERVICE_URL + "/think", {
+        const response = await axios.post(SERVER_CONFIG.NN_SERVICE_URL + "/think", {
             creatures: state.creatures.map(c => ({
                 id: c.id,
                 x: c.x,
@@ -38,15 +38,15 @@ async function getMovements(state) {
                 prevEnergy: c.prev.energy,
                 justReproduced: c.justReproduced,
                 weights: c.weights,
-                food: getVisibleFood(c, state),
-                obstacles: getVisibleObstacles(c, state),
-                creatures: getVisibleCreatures(c, state)
+                food: getVisibleFood(c, state, config),
+                obstacles: getVisibleObstacles(c, state, config),
+                creatures: getVisibleCreatures(c, state, config)
             })),
-            gridSize: CONFIG.GRID_SIZE,
-            visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
-            maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
-            maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS,
-            maxSpeed: CONFIG.CREATURE_MAX_SPEED 
+            gridSize: config.GRID_SIZE,
+            visibilityRadius: config.CREATURE_VISIBILITY_RADIUS,
+            maxEnergy: config.CREATURE_MAX_ENERGY,
+            maxTurnAngle: config.CREATURE_MAX_TURN_ANGLE_RADIANS,
+            maxSpeed: config.CREATURE_MAX_SPEED
         });
         return response.data.movements;
     } catch (err) {

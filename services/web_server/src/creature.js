@@ -1,10 +1,9 @@
-const CONFIG = require("./config");
 const { initWeights } = require("./nn");
 const { getRandomEmptyCell } = require("./grid");
 
-async function initCreature(state, x = null, y = null, angle = null, weights = null, generation = 1) {
+async function initCreature(state, config, x = null, y = null, angle = null, weights = null, generation = 1) {
     if (x === null || y === null) {
-        const cell = getRandomEmptyCell(state);
+        const cell = getRandomEmptyCell(state, config);
         if (!cell) {
             throw new Error("No empty cells available to place a creature");
         }
@@ -24,12 +23,12 @@ async function initCreature(state, x = null, y = null, angle = null, weights = n
         angle,
         wanderAngle: (Math.random() * 2 * Math.PI) - Math.PI,
         wanderStrength: Math.random(),
-        energy: CONFIG.CREATURE_INITIAL_ENERGY,
+        energy: config.CREATURE_INITIAL_ENERGY,
         prev: {
             x,
             y,
             angle,
-            energy: CONFIG.CREATURE_INITIAL_ENERGY
+            energy: config.CREATURE_INITIAL_ENERGY
         },
         recentPath: [{ x, y }],
         generation,

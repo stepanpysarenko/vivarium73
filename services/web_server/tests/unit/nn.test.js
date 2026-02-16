@@ -1,5 +1,5 @@
 const axios = require('axios');
-const CONFIG = require('../../src/config');
+const { SERVER_CONFIG, SIM_CONFIG } = require('../../src/config');
 const { initWeights, mutateWeights, getMovements } = require('../../src/nn');
 const grid = require('../../src/grid');
 
@@ -19,7 +19,7 @@ describe('mutateWeights', () => {
     axios.post.mockResolvedValue({ data: { weights: [2, 3] } });
     await expect(mutateWeights([1])).resolves.toEqual([2, 3]);
     expect(axios.post).toHaveBeenCalledWith(
-      CONFIG.NN_SERVICE_URL + '/weights/mutate',
+      SERVER_CONFIG.NN_SERVICE_URL + '/weights/mutate',
       { weights: [1] }
     );
   });
@@ -38,7 +38,7 @@ describe('initWeights', () => {
   it('returns weights on success', async () => {
     axios.get.mockResolvedValue({ data: { weights: [5, 6] } });
     await expect(initWeights()).resolves.toEqual([5, 6]);
-    expect(axios.get).toHaveBeenCalledWith(CONFIG.NN_SERVICE_URL + '/weights/init');
+    expect(axios.get).toHaveBeenCalledWith(SERVER_CONFIG.NN_SERVICE_URL + '/weights/init');
   });
 
   it('throws when request fails', async () => {
@@ -72,9 +72,9 @@ describe('getMovements', () => {
 
   it('returns movements on success', async () => {
     axios.post.mockResolvedValue({ data: { movements: [{ angleDelta: 0, speed: 1 }] } });
-    await expect(getMovements(baseState)).resolves.toEqual([{ angleDelta: 0, speed: 1 }]);
+    await expect(getMovements(baseState, SIM_CONFIG)).resolves.toEqual([{ angleDelta: 0, speed: 1 }]);
     expect(axios.post).toHaveBeenCalledWith(
-      CONFIG.NN_SERVICE_URL + '/think',
+      SERVER_CONFIG.NN_SERVICE_URL + '/think',
       {
         creatures: [
           {
@@ -97,17 +97,17 @@ describe('getMovements', () => {
             creatures: []
           }
         ],
-        gridSize: CONFIG.GRID_SIZE,
-        visibilityRadius: CONFIG.CREATURE_VISIBILITY_RADIUS,
-        maxEnergy: CONFIG.CREATURE_MAX_ENERGY,
-        maxTurnAngle: CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS,
-        maxSpeed: CONFIG.CREATURE_MAX_SPEED
+        gridSize: SIM_CONFIG.GRID_SIZE,
+        visibilityRadius: SIM_CONFIG.CREATURE_VISIBILITY_RADIUS,
+        maxEnergy: SIM_CONFIG.CREATURE_MAX_ENERGY,
+        maxTurnAngle: SIM_CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS,
+        maxSpeed: SIM_CONFIG.CREATURE_MAX_SPEED
       }
     );
   });
 
   it('throws when request fails', async () => {
     axios.post.mockRejectedValue(new Error('down'));
-    await expect(getMovements(baseState)).rejects.toThrow('Failed to fetch movements: down');
+    await expect(getMovements(baseState, SIM_CONFIG)).rejects.toThrow('Failed to fetch movements: down');
   });
 });

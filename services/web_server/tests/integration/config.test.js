@@ -1,6 +1,15 @@
 const request = require('supertest');
 const { app } = require('../../src/server');
-const CONFIG = require('../../src/config');
+const { SERVER_CONFIG, SIM_CONFIG } = require('../../src/config');
+const { simulationManager } = require('../../src/simulation');
+
+const SIM_ID = 'main';
+
+beforeAll(async () => {
+  if (!simulationManager.get(SIM_ID)) {
+    await simulationManager.create(SIM_ID);
+  }
+});
 
 describe('GET /api/config', () => {
   it('returns environment configuration', async () => {
@@ -8,10 +17,10 @@ describe('GET /api/config', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
-      envCode: CONFIG.ENVIRONMENT,
-      webSocketUrl: CONFIG.WEBSOCKET_URL,
-      gridSize: CONFIG.GRID_SIZE,
-      foodMaxCount: CONFIG.FOOD_MAX_COUNT,
+      envCode: SERVER_CONFIG.ENVIRONMENT,
+      webSocketUrl: SERVER_CONFIG.WEBSOCKET_URL,
+      gridSize: SIM_CONFIG.GRID_SIZE,
+      foodMaxCount: SIM_CONFIG.FOOD_MAX_COUNT,
     });
     expect(res.body).toHaveProperty('appVersion');
     expect(res.body).toHaveProperty('stateUpdateInterval');

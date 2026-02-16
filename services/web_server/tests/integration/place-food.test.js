@@ -2,15 +2,16 @@ process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
 const { app } = require('../../src/server');
-const state = require('../../src/state');
-const CONFIG = require('../../src/config');
+const { simulationManager, __testUtils } = require('../../src/simulation');
+const { SIM_CONFIG } = require('../../src/config');
 
-const { __testUtils } = state;
+const SIM_ID = 'main';
 
 const createState = (food = []) => ({
   creatures: [],
   food: [...food],
   obstacles: [],
+  borderObstacles: [],
   stats: {
     restarts: 0,
     generation: 1,
@@ -18,11 +19,18 @@ const createState = (food = []) => ({
     foodCount: food.length,
   },
   lastCreatureId: 0,
+  topPerformers: [],
+});
+
+beforeAll(async () => {
+  if (!simulationManager.get(SIM_ID)) {
+    await simulationManager.create(SIM_ID);
+  }
 });
 
 describe('POST /api/place-food', () => {
   beforeEach(() => {
-    __testUtils.setState(createState());
+    __testUtils.setSimState(SIM_ID, createState());
   });
 
   it('returns 201 when food is placed on an empty cell', async () => {
@@ -32,12 +40,12 @@ describe('POST /api/place-food', () => {
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ success: true });
-    expect(__testUtils.getState().food).toHaveLength(1);
+    expect(__testUtils.getSimState(SIM_ID).food).toHaveLength(1);
   });
 
   it('returns 400 when the grid already holds the maximum food', async () => {
-    const filled = Array.from({ length: CONFIG.FOOD_MAX_COUNT }, (_, idx) => ({ x: idx, y: 0 }));
-    __testUtils.setState(createState(filled));
+    const filled = Array.from({ length: SIM_CONFIG.FOOD_MAX_COUNT }, (_, idx) => ({ x: idx, y: 0 }));
+    __testUtils.setSimState(SIM_ID, createState(filled));
 
     const res = await request(app)
       .post('/api/place-food')

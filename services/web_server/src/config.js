@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const CONFIG = {
+const SERVER_CONFIG = {
     ENVIRONMENT: process.env.ENVIRONMENT || "local",
     APP_VERSION: process.env.APP_VERSION || "dev",
 
@@ -8,6 +8,9 @@ const CONFIG = {
     CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     NN_SERVICE_URL: process.env.NN_SERVICE_URL || "http://localhost:8000/api",
+};
+
+const SIM_CONFIG = {
     STATE_SAVE_PATH: process.env.STATE_SAVE_PATH || "./data/state.json",
     STATE_SAVE_INTERVAL_MS: 1000 * 60 * 5,
 
@@ -33,17 +36,17 @@ const CONFIG = {
     CREATURE_MAX_TURN_ANGLE_RADIANS: 45 / 180 * Math.PI,
     CREATURE_PATH_MAX_ENTRIES: 5,
 
-    FOOD_MAX_COUNT: 30,    
-    FOOD_ENERGY: 130,   
+    FOOD_MAX_COUNT: 30,
+    FOOD_ENERGY: 130,
     FOOD_ENERGY_BONUS: 130,
     FOOD_ENERGY_BONUS_MAX_GENERATION: 100,
-    
+
     MUTATION_CHANCE: 0.5,
     TOP_PERFORMERS_COUNT: 5,
 
     POPULATION_RESTART_THRESHOLD: 3,
     POPULATION_TOP_RATIO: 0.2,
     POPULATION_MUTATED_RATIO: 0.6,
-};  
+};
 
-module.exports = CONFIG;
+module.exports = { SERVER_CONFIG, SIM_CONFIG };

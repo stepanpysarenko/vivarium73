@@ -1,7 +1,3 @@
-const CONFIG = require("./config");
-
-const r2Visibility = CONFIG.CREATURE_VISIBILITY_RADIUS ** 2;
-
 function buildCreatureIndex(creatures) {
     const map = new Map();
     for (const c of creatures) {
@@ -23,20 +19,20 @@ function isCellOccupied(x, y, state) {
     return state.foodMap.has(key) || state.obstacleMap.has(key);
 }
 
-function getTotalEnergy(state) {
+function getTotalEnergy(state, config) {
     const creatureEnergy = state.creatures.reduce((sum, c) => sum + c.energy, 0);
-    const foodEnergy = state.food.length * CONFIG.FOOD_ENERGY;
+    const foodEnergy = state.food.length * config.FOOD_ENERGY;
     return creatureEnergy + foodEnergy;
 }
 
-function getRandomEmptyCell(state) {
-    const maxAttempts = CONFIG.GRID_SIZE ** 2 - state.food.length - state.obstacles.length;
+function getRandomEmptyCell(state, config) {
+    const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length;
     let cell = null;
     let attempts = 0;
     do {
         cell = {
-            x: Math.floor(Math.random() * CONFIG.GRID_SIZE),
-            y: Math.floor(Math.random() * CONFIG.GRID_SIZE)
+            x: Math.floor(Math.random() * config.GRID_SIZE),
+            y: Math.floor(Math.random() * config.GRID_SIZE)
         };
         attempts++;
     } while (isCellOccupied(cell.x, cell.y, state) && attempts < maxAttempts);
@@ -44,9 +40,9 @@ function getRandomEmptyCell(state) {
     return isCellOccupied(cell.x, cell.y, state) ? null : cell;
 }
 
-function updateFood(state) {
-    while (getTotalEnergy(state) < CONFIG.GRID_TARGET_ENERGY && state.food.length < CONFIG.FOOD_MAX_COUNT) {
-        const cell = getRandomEmptyCell(state);
+function updateFood(state, config) {
+    while (getTotalEnergy(state, config) < config.GRID_TARGET_ENERGY && state.food.length < config.FOOD_MAX_COUNT) {
+        const cell = getRandomEmptyCell(state, config);
         if (!cell) break;
         state.food.push(cell);
         state.foodMap.set(`${cell.x},${cell.y}`, cell);
@@ -82,11 +78,11 @@ function getObstacles() {
     ];
 }
 
-function getBorderObstacles() {
+function getBorderObstacles(config) {
     const obstacles = [];
-    for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
-        obstacles.push({ x: i, y: 0 }, { x: i, y: CONFIG.GRID_SIZE - 1 });
-        obstacles.push({ x: 0, y: i }, { x: CONFIG.GRID_SIZE - 1, y: i });
+    for (let i = 0; i < config.GRID_SIZE; i++) {
+        obstacles.push({ x: i, y: 0 }, { x: i, y: config.GRID_SIZE - 1 });
+        obstacles.push({ x: 0, y: i }, { x: config.GRID_SIZE - 1, y: i });
     }
     return obstacles;
 }
@@ -110,9 +106,10 @@ function isWithinFOV(creatureX, creatureY, creatureAngle, targetX, targetY, fovR
     return Math.abs(angleDiff) <= fovRadians / 2;
 }
 
-function getVisibleObjects(objects, creature) {
+function getVisibleObjects(objects, creature, config) {
+    const r2Visibility = config.CREATURE_VISIBILITY_RADIUS ** 2;
     const { x, y, angle } = creature;
-    const fov = CONFIG.CREATURE_VISIBILITY_FOV_RADIANS;
+    const fov = config.CREATURE_VISIBILITY_FOV_RADIANS;
 
     return objects.filter(obj => {
         if (!isWithinRadius(obj.x, obj.y, x, y, r2Visibility)) {
@@ -122,18 +119,18 @@ function getVisibleObjects(objects, creature) {
     });
 }
 
-function getVisibleFood(creature, state) {
-    return getVisibleObjects(state.food, creature);
+function getVisibleFood(creature, state, config) {
+    return getVisibleObjects(state.food, creature, config);
 }
 
-function getVisibleCreatures(creature, state) {
+function getVisibleCreatures(creature, state, config) {
     const otherCreatures = state.creatures.filter(c => c.id !== creature.id);
-    return getVisibleObjects(otherCreatures, creature);
+    return getVisibleObjects(otherCreatures, creature, config);
 }
 
-function getVisibleObstacles(creature, state) {
+function getVisibleObstacles(creature, state, config) {
     const allObstacles = [...state.obstacles, ...state.borderObstacles];
-    return getVisibleObjects(allObstacles, creature);
+    return getVisibleObjects(allObstacles, creature, config);
 }
 
 module.exports = {

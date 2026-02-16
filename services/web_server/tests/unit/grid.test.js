@@ -1,3 +1,4 @@
+const { SIM_CONFIG } = require('../../src/config');
 const { buildStateIndexes, isCellOccupied, isWithinRadius, isWithinFOV, getRandomEmptyCell, getVisibleFood } = require('../../src/grid');
 
 describe('isCellOccupied', () => {
@@ -62,7 +63,7 @@ describe('getVisibleFood with FOV', () => {
       ]
     };
 
-    const visible = getVisibleFood(creature, state);
+    const visible = getVisibleFood(creature, state, SIM_CONFIG);
 
     expect(visible.find(f => f.x === 5 && f.y === 0)).toBeDefined();
     expect(visible.find(f => f.x === -5 && f.y === 0)).toBeUndefined();

@@ -3,16 +3,12 @@ const http = require("http");
 const WebSocket = require("ws");
 const cors = require("cors");
 const path = require("path");
-const { performance } = require("perf_hooks");
 
-const CONFIG = require("./config");
-const {
-    initState,
-    saveState,
-    getPublicState,
-    updateState
-} = require("./state");
+const { SERVER_CONFIG } = require("./config");
+const { simulationManager } = require("./simulation");
 const registerRoutes = require("./routes");
+
+const SIM_ID = 'main';
 
 const app = express();
 const server = http.createServer(app);
@@ -25,11 +21,11 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors({ origin: CONFIG.CORS_ORIGIN }));
+app.use(cors({ origin: SERVER_CONFIG.CORS_ORIGIN }));
 app.use(express.json({ limit: "1kb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
-registerRoutes(app);
+registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
     console.log("Client connected");
@@ -49,49 +45,21 @@ function broadcastState(state) {
     }
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function handleStateUpdate() {
-    const start = performance.now();
-    await updateState();
-    broadcastState(getPublicState());
-    const elapsed = performance.now() - start;
-    await sleep(Math.max(0, CONFIG.STATE_UPDATE_INTERVAL_MS - elapsed));
-}
-
-async function loop() {
-    let retries = 0;
-    while (true) {
-        try {
-            await handleStateUpdate();
-            retries = 0;
-        } catch (err) {
-            console.error("Critical error:", err);
-            if (++retries >= CONFIG.STATE_UPDATE_LOOP_RETRY_LIMIT) {
-                console.error("Retry limit reached. Exiting.");
-                process.exit(1);
-            }
-        }
-    }
-}
-
-function startServer(port = CONFIG.PORT) {
+function startServer(port = SERVER_CONFIG.PORT) {
     server.listen(port, async () => {
         console.log(`Server running on http://localhost:${port}`);
-        await initState();
-        loop();
-
-        if (CONFIG.STATE_SAVE_INTERVAL_MS && CONFIG.STATE_SAVE_PATH) {
-            setInterval(saveState, CONFIG.STATE_SAVE_INTERVAL_MS);
-        }
+        const sim = await simulationManager.create(SIM_ID);
+        sim.start(state => broadcastState(state));
     });
 }
 
 async function shutdown() {
     console.log("Shutting down...");
-    await saveState();
+    const sim = simulationManager.get(SIM_ID);
+    if (sim) {
+        sim.stop();
+        await sim.save();
+    }
     wss.clients.forEach(c => c.readyState === WebSocket.OPEN && c.close());
     server.close(() => process.exit(0));
 }
