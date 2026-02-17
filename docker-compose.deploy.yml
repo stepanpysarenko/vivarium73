@@ -1,3 +1,5 @@
 services:
-  app:
-    image: ${IMAGE}
+  nn_service:
+    image: ${NN_IMAGE}
+  web_server:
+    image: ${WEB_IMAGE}

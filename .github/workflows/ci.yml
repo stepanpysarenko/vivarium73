@@ -22,12 +22,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test
+  test_nn_service:
+    name: Test NN Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          check-latest: true
+          cache: pip
+          cache-dependency-path: services/nn_service/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r services/nn_service/requirements.txt -r services/nn_service/requirements-dev.txt
+
+      - name: Run Pytest suite
+        run: PYTHONPATH=services pytest services/nn_service/tests
+
+  test_web_server:
+    name: Test Web Server
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       CI: true
+    defaults:
+      run:
+        working-directory: services/web_server
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +63,7 @@ jobs:
           node-version: 22
           check-latest: true
           cache: 'npm'
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: services/web_server/package-lock.json
 
       - name: Install Node dependencies
         run: npm ci

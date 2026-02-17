@@ -1,23 +1,41 @@
 services:
-  app:
-    build: .
+  nn_service:
+    build: ./services/nn_service
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
       - APP_VERSION=${APP_VERSION}
-      - PORT=${PORT}
+      - PORT=${NN_PORT}
+    expose:
+      - "${NN_PORT}"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${NN_PORT}/api/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+  web_server:
+    build: ./services/web_server
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT}
+      - APP_VERSION=${APP_VERSION}
+      - PORT=${WEB_PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}
       - GA_TAG_ID=${GA_TAG_ID}
       - CANONICAL_URL=${CANONICAL_URL}
       - WEBSOCKET_URL=${WEBSOCKET_URL}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - NN_SERVICE_URL=http://nn_service:${NN_PORT}/api
     ports:
-      - "${PORT}:${PORT}"
+      - "${WEB_PORT}:${WEB_PORT}"
     volumes:
       - ./data:/app/data
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${WEB_PORT}/api/health"]
       interval: 3s
       timeout: 3s
       retries: 3
+    depends_on:
+      nn_service:
+        condition: service_healthy

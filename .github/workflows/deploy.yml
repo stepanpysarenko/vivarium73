@@ -22,8 +22,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  build_images:
+    name: Build Images
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ github.event_name == 'push' ||
@@ -32,7 +32,8 @@ jobs:
              github.event.workflow_run.head_branch == 'qa' &&
              github.event.workflow_run.conclusion == 'success') }}
     outputs:
-      IMAGE_TAG: ${{ steps.meta.outputs.IMAGE_TAG }}
+      WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
+      NN_IMAGE_TAG: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
       APP_VERSION: ${{ steps.meta.outputs.APP_VERSION }}
     steps:
       - name: Checkout
@@ -59,7 +60,7 @@ jobs:
             APP_VERSION="${REF_NAME#v}"
             TAG="${APP_VERSION}"
           else
-            PKG_VER=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+            PKG_VER=$(node -p "require('./services/web_server/package.json').version" 2>/dev/null || echo "0.0.0")
             SHORT_SHA="${GIT_SHA::7}"
             APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
             TAG="${PKG_VER}-${SHORT_SHA}"
@@ -69,12 +70,14 @@ jobs:
           REGISTRY="ghcr.io"
           IMAGE_PREFIX="${REGISTRY}/${OWNER}/vivarium73"
 
-          IMAGE_TAG="${IMAGE_PREFIX}:${TAG}"
+          WEB_IMAGE_TAG="${IMAGE_PREFIX}-web:${TAG}"
+          NN_IMAGE_TAG="${IMAGE_PREFIX}-nn:${TAG}"
 
           {
             echo "APP_VERSION=${APP_VERSION}"
             echo "TAG=${TAG}"
-            echo "IMAGE_TAG=${IMAGE_TAG}"
+            echo "WEB_IMAGE_TAG=${WEB_IMAGE_TAG}"
+            echo "NN_IMAGE_TAG=${NN_IMAGE_TAG}"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
@@ -87,17 +90,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build web_server
         uses: docker/build-push-action@v6
         with:
-          context: .
-          tags: ${{ steps.meta.outputs.IMAGE_TAG }}
+          context: services/web_server
+          tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build nn_service
+        uses: docker/build-push-action@v6
+        with:
+          context: services/nn_service
+          tags: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [build]
+    needs: [build_images]
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -132,15 +144,16 @@ jobs:
       - name: Deploy via GHCR images
         uses: appleboy/ssh-action@v0.1.10
         env:
-          IMAGE: ${{ needs.build.outputs.IMAGE_TAG }}
-          APP_VERSION: ${{ needs.build.outputs.APP_VERSION }}
+          WEB_IMAGE: ${{ needs.build_images.outputs.WEB_IMAGE_TAG }}
+          NN_IMAGE: ${{ needs.build_images.outputs.NN_IMAGE_TAG }}
+          APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
           GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.repository_owner }}
           GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
         with:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          envs: ENVIRONMENT,IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
+          envs: ENVIRONMENT,WEB_IMAGE,NN_IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -euo pipefail
 
@@ -151,7 +164,8 @@ jobs:
               echo "GHCR_DEPLOY_TOKEN not set; assuming images are public and pulling anonymously (may be throttled)." >&2
             fi
 
-            docker pull "$IMAGE"
+            docker pull "$WEB_IMAGE"
+            docker pull "$NN_IMAGE"
 
             cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=${{ env.ENVIRONMENT }}
@@ -160,9 +174,11 @@ jobs:
             ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
             GA_TAG_ID=${{ vars.GA_TAG_ID }}
             CANONICAL_URL=${{ vars.CANONICAL_URL }}
-            PORT=${{ vars.PORT }}
+            WEB_PORT=${{ vars.WEB_PORT }}
+            NN_PORT=${{ vars.NN_PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
-            IMAGE=${IMAGE}
+            WEB_IMAGE=${WEB_IMAGE}
+            NN_IMAGE=${NN_IMAGE}
             EOF
 
             cd "${{ vars.DEPLOY_PATH }}"
@@ -176,5 +192,5 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.PORT }}/api/health >/dev/null \
+            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.WEB_PORT }}/api/health >/dev/null \
               && echo "Health check passed" || (echo "Health check failed" && exit 1)
