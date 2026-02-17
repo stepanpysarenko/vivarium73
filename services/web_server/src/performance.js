@@ -1,5 +1,6 @@
 const { initCreature } = require("./creature");
 const { mutateWeights } = require("./nn");
+const logger = require("./logger");
 
 function appendTopPerformers(creature, state, config) {
     const score = creature.stats.score ?? 0;
@@ -19,15 +20,15 @@ function appendTopPerformers(creature, state, config) {
 
 async function restartPopulation(state, config) {
     if (state.topPerformers.length === 0) {
-        console.log("No top performers - initializing from scratch...");
+        logger.info("No top performers - initializing from scratch...");
         for (let i = 0; i < config.CREATURE_INITIAL_COUNT; i++) {
             state.creatures.push(await initCreature(state, config));
         }
         return;
     }
 
-    console.log("Restarting population with top performers...");
-    console.log('Top performers scores:', state.topPerformers.map(p => p.stats.score));
+    logger.info("Restarting population with top performers...");
+    logger.info('Top performers scores:', state.topPerformers.map(p => p.stats.score));
     state.creatures = [];
     const topPerformersCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_TOP_RATIO);
     const mutatedCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_MUTATED_RATIO);
@@ -50,7 +51,7 @@ async function restartPopulation(state, config) {
         state.creatures.push(await initCreature(state, config));
     }
 
-    console.log("Population restarted");
+    logger.info("Population restarted");
 }
 
 module.exports = {

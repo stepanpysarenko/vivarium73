@@ -33,7 +33,6 @@ jobs:
              github.event.workflow_run.conclusion == 'success') }}
     outputs:
       WEB_IMAGE_TAG: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
-      NN_IMAGE_TAG: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
       APP_VERSION: ${{ steps.meta.outputs.APP_VERSION }}
     steps:
       - name: Checkout
@@ -71,13 +70,11 @@ jobs:
           IMAGE_PREFIX="${REGISTRY}/${OWNER}/vivarium73"
 
           WEB_IMAGE_TAG="${IMAGE_PREFIX}-web:${TAG}"
-          NN_IMAGE_TAG="${IMAGE_PREFIX}-nn:${TAG}"
 
           {
             echo "APP_VERSION=${APP_VERSION}"
             echo "TAG=${TAG}"
             echo "WEB_IMAGE_TAG=${WEB_IMAGE_TAG}"
-            echo "NN_IMAGE_TAG=${NN_IMAGE_TAG}"
           } | tee -a "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
@@ -95,15 +92,6 @@ jobs:
         with:
           context: services/web_server
           tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build nn_service
-        uses: docker/build-push-action@v6
-        with:
-          context: services/nn_service
-          tags: ${{ steps.meta.outputs.NN_IMAGE_TAG }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -145,7 +133,6 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         env:
           WEB_IMAGE: ${{ needs.build_images.outputs.WEB_IMAGE_TAG }}
-          NN_IMAGE: ${{ needs.build_images.outputs.NN_IMAGE_TAG }}
           APP_VERSION: ${{ needs.build_images.outputs.APP_VERSION }}
           GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.repository_owner }}
           GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
@@ -153,7 +140,7 @@ jobs:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          envs: ENVIRONMENT,WEB_IMAGE,NN_IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
+          envs: ENVIRONMENT,WEB_IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -euo pipefail
 
@@ -165,7 +152,6 @@ jobs:
             fi
 
             docker pull "$WEB_IMAGE"
-            docker pull "$NN_IMAGE"
 
             cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=${{ env.ENVIRONMENT }}
@@ -175,10 +161,8 @@ jobs:
             GA_TAG_ID=${{ vars.GA_TAG_ID }}
             CANONICAL_URL=${{ vars.CANONICAL_URL }}
             WEB_PORT=${{ vars.WEB_PORT }}
-            NN_PORT=${{ vars.NN_PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
             WEB_IMAGE=${WEB_IMAGE}
-            NN_IMAGE=${NN_IMAGE}
             EOF
 
             cd "${{ vars.DEPLOY_PATH }}"

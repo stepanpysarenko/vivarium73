@@ -2,6 +2,7 @@ const { performance } = require('perf_hooks');
 const { SIM_CONFIG } = require('./config');
 const { createState, saveState, getPublicState, updateState, addFood } = require('./state');
 const { buildStateIndexes } = require('./grid');
+const logger = require('./logger');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -59,13 +60,16 @@ class Simulation {
         while (this._running) {
             const start = performance.now();
             try {
+                const updateStart = performance.now();
                 await updateState(this._state, this.config);
+                const updateMs = (performance.now() - updateStart).toFixed(2);
+                logger.debug(`[Simulation ${this.id}] tick: ${updateMs}ms`);
                 onTick(this.getPublicState());
                 retries = 0;
             } catch (err) {
-                console.error(`[Simulation ${this.id}] Critical error:`, err);
+                logger.error(`[Simulation ${this.id}] Critical error:`, err);
                 if (++retries >= this.config.STATE_UPDATE_LOOP_RETRY_LIMIT) {
-                    console.error(`[Simulation ${this.id}] Retry limit reached. Stopping.`);
+                    logger.error(`[Simulation ${this.id}] Retry limit reached. Stopping.`);
                     this._running = false;
                     break;
                 }

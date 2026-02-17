@@ -4,6 +4,7 @@ const { initCreature, getScore } = require("./creature");
 const { getMovements, mutateWeights } = require("./nn");
 const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./performance");
+const logger = require("./logger");
 
 function round2(x) {
     return Math.round(x * 100) / 100;
@@ -25,10 +26,10 @@ async function loadState(savePath) {
     try {
         const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
-        console.log(`State successfully loaded from ${filePath}`);
+        logger.info(`State successfully loaded from ${filePath}`);
         return state;
     } catch (error) {
-        console.warn(`Error loading state from ${filePath}:`, error.message);
+        logger.warn(`Error loading state from ${filePath}:`, error.message);
         return null;
     }
 }
@@ -38,9 +39,9 @@ async function saveState(state, savePath) {
     try {
         const data = JSON.stringify(state, null, 4);
         await fs.writeFile(filePath, data, 'utf8');
-        console.log('State successfully saved to', filePath);
+        logger.info('State successfully saved to', filePath);
     } catch (error) {
-        console.error(`Error saving state to ${filePath}:`, error.message);
+        logger.error(`Error saving state to ${filePath}:`, error.message);
     }
 }
 
@@ -71,7 +72,7 @@ async function createState(config) {
             state.creatures.push(creature);
         }
 
-        console.log("New random state initialized");
+        logger.info("New random state initialized");
     } else {
         buildStateIndexes(state);
     }

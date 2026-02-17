@@ -7,6 +7,7 @@ const path = require("path");
 const { SERVER_CONFIG } = require("./config");
 const { simulationManager } = require("./simulation");
 const registerRoutes = require("./routes");
+const logger = require("./logger");
 
 const SIM_ID = 'main';
 
@@ -28,8 +29,8 @@ app.use(express.static(path.join(__dirname, "../public")));
 registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
-    console.log("Client connected");
-    ws.on("close", () => console.log("Client disconnected"));
+    logger.debug("Client connected");
+    ws.on("close", () => logger.debug("Client disconnected"));
 });
 
 function broadcastState(state) {
@@ -39,7 +40,7 @@ function broadcastState(state) {
             try {
                 client.send(data);
             } catch (err) {
-                console.warn("WebSocket send failed:", err.message);
+                logger.warn("WebSocket send failed:", err.message);
             }
         }
     }
@@ -47,14 +48,14 @@ function broadcastState(state) {
 
 function startServer(port = SERVER_CONFIG.PORT) {
     server.listen(port, async () => {
-        console.log(`Server running on http://localhost:${port}`);
+        logger.info(`Server running on http://localhost:${port}`);
         const sim = await simulationManager.create(SIM_ID);
         sim.start(state => broadcastState(state));
     });
 }
 
 async function shutdown() {
-    console.log("Shutting down...");
+    logger.info("Shutting down...");
     const sim = simulationManager.get(SIM_ID);
     if (sim) {
         sim.stop();

@@ -1,113 +1,94 @@
-const axios = require('axios');
-const { SERVER_CONFIG, SIM_CONFIG } = require('../../src/config');
-const { initWeights, mutateWeights, getMovements } = require('../../src/nn');
-const grid = require('../../src/grid');
+const { initWeights, mutateWeights, getMovements, EXPECTED_WEIGHT_COUNT } = require('../../src/nn');
+const { SIM_CONFIG } = require('../../src/config');
 
-jest.mock('axios');
 jest.mock('../../src/grid', () => ({
+  ...jest.requireActual('../../src/grid'),
   getVisibleFood: jest.fn(() => []),
   getVisibleObstacles: jest.fn(() => []),
   getVisibleCreatures: jest.fn(() => [])
 }));
 
-describe('mutateWeights', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+describe('initWeights', () => {
+  it('returns the correct number of weights', () => {
+    const weights = initWeights();
+    expect(weights).toHaveLength(EXPECTED_WEIGHT_COUNT);
   });
 
-  it('returns mutated weights on success', async () => {
-    axios.post.mockResolvedValue({ data: { weights: [2, 3] } });
-    await expect(mutateWeights([1])).resolves.toEqual([2, 3]);
-    expect(axios.post).toHaveBeenCalledWith(
-      SERVER_CONFIG.NN_SERVICE_URL + '/weights/mutate',
-      { weights: [1] }
-    );
-  });
-
-  it('throws when request fails', async () => {
-    axios.post.mockRejectedValue(new Error('network'));
-    await expect(mutateWeights([1])).rejects.toThrow('Failed to mutate weights: network');
+  it('returns values within Xavier uniform bounds', () => {
+    const weights = initWeights();
+    expect(weights.every(w => w >= -1 && w <= 1)).toBe(true);
   });
 });
 
-describe('initWeights', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+describe('mutateWeights', () => {
+  it('returns the same number of weights', () => {
+    const weights = new Array(EXPECTED_WEIGHT_COUNT).fill(0);
+    const mutated = mutateWeights(weights);
+    expect(mutated).toHaveLength(EXPECTED_WEIGHT_COUNT);
   });
 
-  it('returns weights on success', async () => {
-    axios.get.mockResolvedValue({ data: { weights: [5, 6] } });
-    await expect(initWeights()).resolves.toEqual([5, 6]);
-    expect(axios.get).toHaveBeenCalledWith(SERVER_CONFIG.NN_SERVICE_URL + '/weights/init');
+  it('changes at least some values', () => {
+    const weights = new Array(EXPECTED_WEIGHT_COUNT).fill(0);
+    const mutated = mutateWeights(weights);
+    expect(mutated.some(w => w !== 0)).toBe(true);
   });
 
-  it('throws when request fails', async () => {
-    axios.get.mockRejectedValue(new Error('timeout'));
-    await expect(initWeights()).rejects.toThrow('Failed to initialize weights: timeout');
+  it('keeps values within [-1, 1]', () => {
+    const weights = [1.0, -1.0, 0.25, -0.75];
+    const mutated = mutateWeights(weights);
+    expect(mutated).toHaveLength(weights.length);
+    expect(mutated.every(w => w >= -1 && w <= 1)).toBe(true);
   });
 });
 
 describe('getMovements', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+  const makeCreature = (id, opts = {}) => ({
+    id,
+    x: 0, y: 0, angle: 0,
+    wanderAngle: opts.wanderAngle ?? 0,
+    wanderStrength: opts.wanderStrength ?? 0.5,
+    energy: 100,
+    prev: { x: 0, y: 0, angle: 0, energy: 100 },
+    recentPath: [{ x: 0, y: 0 }, { x: 0, y: 0 }],
+    justReproduced: false,
+    weights: opts.weights ?? new Array(EXPECTED_WEIGHT_COUNT).fill(0),
   });
 
-  const baseState = {
-    creatures: [
-      {
-        id: 1,
-        x: 0,
-        y: 0,
-        angle: 0,
-        wanderAngle: 0,
-        wanderStrength: 1.0,
-        energy: 10,
-        prev: { x: 0, y: 0, angle: 0, energy: 10 },
-        recentPath: [],
-        justReproduced: false,
-        weights: []
-      }
-    ]
-  };
-
-  it('returns movements on success', async () => {
-    axios.post.mockResolvedValue({ data: { movements: [{ angleDelta: 0, speed: 1 }] } });
-    await expect(getMovements(baseState, SIM_CONFIG)).resolves.toEqual([{ angleDelta: 0, speed: 1 }]);
-    expect(axios.post).toHaveBeenCalledWith(
-      SERVER_CONFIG.NN_SERVICE_URL + '/think',
-      {
-        creatures: [
-          {
-            id: 1,
-            x: 0,
-            y: 0,
-            angle: 0,
-            wanderAngle: 0,
-            wanderStrength: 1.0,
-            energy: 10,
-            prevX: 0,
-            prevY: 0,
-            prevAngle: 0,
-            recentPath: [],
-            prevEnergy: 10,
-            justReproduced: false,
-            weights: [],
-            food: [],
-            obstacles: [],
-            creatures: []
-          }
-        ],
-        gridSize: SIM_CONFIG.GRID_SIZE,
-        visibilityRadius: SIM_CONFIG.CREATURE_VISIBILITY_RADIUS,
-        maxEnergy: SIM_CONFIG.CREATURE_MAX_ENERGY,
-        maxTurnAngle: SIM_CONFIG.CREATURE_MAX_TURN_ANGLE_RADIANS,
-        maxSpeed: SIM_CONFIG.CREATURE_MAX_SPEED
-      }
-    );
+  it('returns one movement per creature', () => {
+    const state = { creatures: [makeCreature(1), makeCreature(2)] };
+    const movements = getMovements(state, SIM_CONFIG);
+    expect(movements).toHaveLength(2);
   });
 
-  it('throws when request fails', async () => {
-    axios.post.mockRejectedValue(new Error('down'));
-    await expect(getMovements(baseState, SIM_CONFIG)).rejects.toThrow('Failed to fetch movements: down');
+  it('preserves creature IDs in output order', () => {
+    const state = { creatures: [makeCreature(3), makeCreature(7)] };
+    const movements = getMovements(state, SIM_CONFIG);
+    expect(movements[0].id).toBe(3);
+    expect(movements[1].id).toBe(7);
+  });
+
+  it('returns angleDelta and speed for each movement', () => {
+    const state = { creatures: [makeCreature(1)] };
+    const movements = getMovements(state, SIM_CONFIG);
+    expect(movements[0]).toHaveProperty('angleDelta');
+    expect(movements[0]).toHaveProperty('speed');
+  });
+
+  it('produces non-zero movement with wander vector and real weights', () => {
+    const weights = initWeights();
+    const state = {
+      creatures: [makeCreature(1, { wanderAngle: 1.0, wanderStrength: 1.0, weights })]
+    };
+    const movements = getMovements(state, SIM_CONFIG);
+    const m = movements[0];
+    expect(m.angleDelta !== 0 || m.speed !== 0).toBe(true);
+  });
+
+  it('constrains speed to [0, maxSpeed]', () => {
+    const weights = initWeights();
+    const state = { creatures: [makeCreature(1, { weights })] };
+    const movements = getMovements(state, SIM_CONFIG);
+    expect(movements[0].speed).toBeGreaterThanOrEqual(0);
+    expect(movements[0].speed).toBeLessThanOrEqual(SIM_CONFIG.CREATURE_MAX_SPEED);
   });
 });
