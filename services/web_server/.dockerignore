@@ -1,6 +1,0 @@
-node_modules
-tests/
-.env
-*.log
-.git
-.vscode
