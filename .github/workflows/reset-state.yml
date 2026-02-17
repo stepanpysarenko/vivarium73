@@ -23,12 +23,12 @@ jobs:
         uses: appleboy/ssh-action@v0.1.10
         env:
           TARGET_ENV: ${{ inputs.environment || 'qa' }}
-          WEB_PORT: ${{ vars.WEB_PORT }}
+          PORT: ${{ vars.PORT }}
         with:
           host: ${{ vars.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.SSH_KEY }}
-          envs: TARGET_ENV,WEB_PORT
+          envs: TARGET_ENV,PORT
           script: |
             set -euo pipefail
             cd "${{ vars.DEPLOY_PATH }}"
@@ -49,5 +49,5 @@ jobs:
           username: root
           key: ${{ secrets.SSH_KEY }}
           script: |
-            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.WEB_PORT }}/api/health >/dev/null \
+            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.PORT }}/api/health >/dev/null \
               && echo "Health check passed" || (echo "Health check failed" && exit 1)

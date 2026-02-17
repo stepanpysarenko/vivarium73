@@ -1,10 +1,10 @@
 services:
-  web_server:
+  app:
     build: .
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
       - APP_VERSION=${APP_VERSION}
-      - PORT=${WEB_PORT}
+      - PORT=${PORT}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}
       - GA_TAG_ID=${GA_TAG_ID}
@@ -12,12 +12,12 @@ services:
       - WEBSOCKET_URL=${WEBSOCKET_URL}
       - LOG_LEVEL=${LOG_LEVEL}
     ports:
-      - "${WEB_PORT}:${WEB_PORT}"
+      - "${PORT}:${PORT}"
     volumes:
       - ./data:/app/data
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${WEB_PORT}/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/api/health"]
       interval: 3s
       timeout: 3s
       retries: 3
