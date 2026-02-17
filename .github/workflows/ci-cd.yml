@@ -1,11 +1,11 @@
-name: Deploy
+name: CI-CD
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    branches: [qa]
-    types: [completed]
+  pull_request:
+    branches: [main, qa]
+    paths-ignore: ['**/*.md','docs/**']
   push:
+    branches: [main, qa]
     tags: ['v*']
     paths-ignore: ['**/*.md','docs/**']
 
@@ -18,27 +18,46 @@ defaults:
     shell: bash
 
 concurrency:
-  group: cd-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run Jest suites
+        run: npm test
+
   build:
     name: Build
+    needs: [test]
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ github.event_name == 'push' ||
-            (github.event_name == 'workflow_run' &&
-             github.event.workflow_run.event == 'push' &&
-             github.event.workflow_run.head_branch == 'qa' &&
-             github.event.workflow_run.conclusion == 'success') }}
+    if: github.event_name == 'push'
     outputs:
       IMAGE_TAG: ${{ steps.meta.outputs.IMAGE_TAG }}
       APP_VERSION: ${{ steps.meta.outputs.APP_VERSION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup Node for metadata
         uses: actions/setup-node@v4
@@ -49,18 +68,17 @@ jobs:
       - name: Generate build metadata
         id: meta
         env:
-          REF_TYPE: ${{ github.event_name == 'workflow_run' && 'branch' || github.ref_type }}
-          REF_NAME: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
-          GIT_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
-          if [[ "$REF_TYPE" == "tag" && "$REF_NAME" == v* ]]; then
-            APP_VERSION="${REF_NAME#v}"
+          if [[ "${{ github.ref_type }}" == "tag" && "${{ github.ref_name }}" == v* ]]; then
+            APP_VERSION="${{ github.ref_name }}"
+            APP_VERSION="${APP_VERSION#v}"
             TAG="${APP_VERSION}"
           else
             PKG_VER=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
-            SHORT_SHA="${GIT_SHA::7}"
+            SHORT_SHA="${{ github.sha }}"
+            SHORT_SHA="${SHORT_SHA::7}"
             APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
             TAG="${PKG_VER}-${SHORT_SHA}"
           fi
@@ -97,8 +115,8 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [build]
     name: Deploy
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'qa' }}
@@ -108,8 +126,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Prepare remote directories
         uses: appleboy/ssh-action@v0.1.10
