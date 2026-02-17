@@ -18,6 +18,11 @@ async function loadState(savePath) {
     const filePath = path.resolve(savePath);
     try {
         await fs.access(filePath);
+    } catch {
+        return null;
+    }
+    
+    try {
         const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
         console.log(`State successfully loaded from ${filePath}`);

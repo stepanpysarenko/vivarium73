@@ -1,4 +1,11 @@
 const request = require('supertest');
+
+jest.mock('../../src/nn', () => ({
+  initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
+  mutateWeights: jest.fn(w => Promise.resolve(w)),
+  getMovements: jest.fn(() => Promise.resolve([])),
+}));
+
 const { app } = require('../../src/server');
 const { SERVER_CONFIG, SIM_CONFIG } = require('../../src/config');
 const { simulationManager } = require('../../src/simulation');

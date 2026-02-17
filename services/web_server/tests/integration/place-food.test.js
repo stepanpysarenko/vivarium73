@@ -1,5 +1,11 @@
 process.env.NODE_ENV = 'test';
 
+jest.mock('../../src/nn', () => ({
+  initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
+  mutateWeights: jest.fn(w => Promise.resolve(w)),
+  getMovements: jest.fn(() => Promise.resolve([])),
+}));
+
 const request = require('supertest');
 const { app } = require('../../src/server');
 const { simulationManager, __testUtils } = require('../../src/simulation');
