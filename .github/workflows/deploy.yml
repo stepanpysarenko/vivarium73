@@ -59,7 +59,7 @@ jobs:
             APP_VERSION="${REF_NAME#v}"
             TAG="${APP_VERSION}"
           else
-            PKG_VER=$(node -p "require('./services/web_server/package.json').version" 2>/dev/null || echo "0.0.0")
+            PKG_VER=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
             SHORT_SHA="${GIT_SHA::7}"
             APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
             TAG="${PKG_VER}-${SHORT_SHA}"
@@ -90,7 +90,7 @@ jobs:
       - name: Build web_server
         uses: docker/build-push-action@v6
         with:
-          context: services/web_server
+          context: .
           tags: ${{ steps.meta.outputs.WEB_IMAGE_TAG }}
           push: true
           cache-from: type=gha

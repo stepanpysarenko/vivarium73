@@ -1,6 +1,6 @@
 services:
   web_server:
-    build: ./services/web_server
+    build: .
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
       - APP_VERSION=${APP_VERSION}

@@ -11,13 +11,13 @@ vivarium73 is a real-time evolutionary simulation (PWA) where autonomous creatur
 
 ## Architecture
 
-Single Node.js service, optionally run via Docker:
+Single Node.js service, optionally run via Docker.
 
-- **`services/web_server`** — Node.js 22 / Express 5: simulation engine, neural network inference, REST API, WebSocket broadcast, state persistence.
+Node.js 22 / Express 5: simulation engine, neural network inference, REST API, WebSocket broadcast, state persistence.
 
 ## Key source files
 
-### web_server (`services/web_server/src/`)
+### Source (`src/`)
 | File | Purpose |
 |------|---------|
 | `server.js` | Express setup, WebSocket server, 300ms simulation tick loop |
@@ -28,8 +28,9 @@ Single Node.js service, optionally run via Docker:
 | `grid.js` | Spatial indexing, obstacle definitions, food distribution |
 | `performance.js` | Top-performer tracking, population restart logic |
 | `routes.js` | REST endpoints: `/api/health`, `/api/config`, `/api/place-food` |
+| `logger.js` | Log-level aware logger (LOG_LEVEL env var) |
 
-### Client (`services/web_server/public/`)
+### Client (`public/`)
 Vanilla JS + HTML5 Canvas. WebSocket consumer for real-time state rendering.
 
 ## Simulation parameters (config.js highlights)
@@ -46,27 +47,25 @@ Vanilla JS + HTML5 Canvas. WebSocket consumer for real-time state rendering.
 - Docker + Docker Compose (optional)
 
 ### Steps
-1. Copy `services/web_server/.env.example` → `services/web_server/.env` and update values.
-   - For Docker Compose, also copy root `.env.example` → `.env`.
-2. Set up **web_server**:
+1. Copy `.env.example` → `.env` and update values.
+2. Install dependencies:
    ```bash
-   cd services/web_server && npm ci && cd -
+   npm ci
    ```
 
 ## Local dev (without Docker)
 ```bash
-cd services/web_server && npm start
+npm start
 ```
 
 ## Testing instructions
 - Always run tests before committing.
-- **web_server:**
   ```bash
-  cd services/web_server && npm test
+  npm test
   ```
 - **E2E (Playwright, optional):**
   ```bash
-  cd services/web_server && npm run test:e2e
+  npm run test:e2e
   ```
 
 ## Docker notes
