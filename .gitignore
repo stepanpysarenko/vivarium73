@@ -126,12 +126,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# State data
-/data/*
-!/data/.gitkeep
-
 # Project-specific
 vivarium73.code-workspace
-venv/
-.venv/
-.pytest_cache/
+data/

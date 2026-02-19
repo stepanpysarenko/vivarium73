@@ -135,6 +135,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             mkdir -p "${{ vars.DEPLOY_PATH }}"
+            mkdir -p "${{ vars.DEPLOY_PATH }}/data"
+            chown 1001:1001 "${{ vars.DEPLOY_PATH }}/data"
 
       - name: Upload compose files
         uses: appleboy/scp-action@v0.1.4

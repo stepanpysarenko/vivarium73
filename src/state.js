@@ -37,6 +37,7 @@ async function loadState(savePath) {
 async function saveState(state, savePath) {
     const filePath = path.resolve(savePath);
     try {
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
         const data = JSON.stringify(state, null, 4);
         await fs.writeFile(filePath, data, 'utf8');
         logger.info('State successfully saved to', filePath);
@@ -73,6 +74,7 @@ async function createState(config) {
         }
 
         logger.info("New random state initialized");
+        saveState(state, config.STATE_SAVE_PATH);
     } else {
         buildStateIndexes(state);
     }
