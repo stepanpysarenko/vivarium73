@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 jest.mock('../../src/nn', () => ({
   initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
   mutateWeights: jest.fn(weights => Promise.resolve(weights.map(w => w + 0.01))),
-  getMovements: jest.fn(),
+  think: jest.fn(() => ({ id: 1, angleDelta: 0, speed: 0 })),
 }));
 
 jest.mock('../../src/creature', () => {

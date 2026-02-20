@@ -7,6 +7,7 @@ const SERVER_CONFIG = {
     PORT: process.env.PORT || 3000,
     CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
+    LOG_LEVEL: process.env.LOG_LEVEL || "info"
 };
 
 const SIM_CONFIG = {
@@ -45,7 +46,7 @@ const SIM_CONFIG = {
 
     POPULATION_RESTART_THRESHOLD: 3,
     POPULATION_TOP_RATIO: 0.2,
-    POPULATION_MUTATED_RATIO: 0.6,
+    POPULATION_MUTATED_RATIO: 0.6
 };
 
 module.exports = { SERVER_CONFIG, SIM_CONFIG };

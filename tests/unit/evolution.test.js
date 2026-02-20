@@ -1,5 +1,5 @@
 const { SIM_CONFIG } = require('../../src/config');
-const { appendTopPerformers } = require('../../src/performance');
+const { appendTopPerformers } = require('../../src/evolution');
 
 describe('appendTopPerformers', () => {
   it('adds creature and sorts by score', () => {

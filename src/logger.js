@@ -1,6 +1,7 @@
+const { SERVER_CONFIG } = require("./config");
 const LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
 
-const level = LEVELS[process.env.LOG_LEVEL] ?? LEVELS.info;
+const level = LEVELS[SERVER_CONFIG.LOG_LEVEL] ?? LEVELS.info;
 
 const logger = {
     error: (...args) => level >= LEVELS.error && console.error(...args),

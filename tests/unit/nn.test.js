@@ -1,12 +1,5 @@
-const { initWeights, mutateWeights, getMovements, EXPECTED_WEIGHT_COUNT } = require('../../src/nn');
+const { initWeights, mutateWeights, think, EXPECTED_WEIGHT_COUNT } = require('../../src/nn');
 const { SIM_CONFIG } = require('../../src/config');
-
-jest.mock('../../src/grid', () => ({
-  ...jest.requireActual('../../src/grid'),
-  getVisibleFood: jest.fn(() => []),
-  getVisibleObstacles: jest.fn(() => []),
-  getVisibleCreatures: jest.fn(() => [])
-}));
 
 describe('initWeights', () => {
   it('returns the correct number of weights', () => {
@@ -41,7 +34,7 @@ describe('mutateWeights', () => {
   });
 });
 
-describe('getMovements', () => {
+describe('think', () => {
   const makeCreature = (id, opts = {}) => ({
     id,
     x: 0, y: 0, angle: 0,
@@ -54,41 +47,27 @@ describe('getMovements', () => {
     weights: opts.weights ?? new Array(EXPECTED_WEIGHT_COUNT).fill(0),
   });
 
-  it('returns one movement per creature', () => {
-    const state = { creatures: [makeCreature(1), makeCreature(2)] };
-    const movements = getMovements(state, SIM_CONFIG);
-    expect(movements).toHaveLength(2);
+  it('returns a movement with the creature ID', () => {
+    const m = think(makeCreature(42), [], [], [], SIM_CONFIG);
+    expect(m.id).toBe(42);
   });
 
-  it('preserves creature IDs in output order', () => {
-    const state = { creatures: [makeCreature(3), makeCreature(7)] };
-    const movements = getMovements(state, SIM_CONFIG);
-    expect(movements[0].id).toBe(3);
-    expect(movements[1].id).toBe(7);
-  });
-
-  it('returns angleDelta and speed for each movement', () => {
-    const state = { creatures: [makeCreature(1)] };
-    const movements = getMovements(state, SIM_CONFIG);
-    expect(movements[0]).toHaveProperty('angleDelta');
-    expect(movements[0]).toHaveProperty('speed');
+  it('returns angleDelta and speed', () => {
+    const m = think(makeCreature(1), [], [], [], SIM_CONFIG);
+    expect(m).toHaveProperty('angleDelta');
+    expect(m).toHaveProperty('speed');
   });
 
   it('produces non-zero movement with wander vector and real weights', () => {
     const weights = initWeights();
-    const state = {
-      creatures: [makeCreature(1, { wanderAngle: 1.0, wanderStrength: 1.0, weights })]
-    };
-    const movements = getMovements(state, SIM_CONFIG);
-    const m = movements[0];
+    const m = think(makeCreature(1, { wanderAngle: 1.0, wanderStrength: 1.0, weights }), [], [], [], SIM_CONFIG);
     expect(m.angleDelta !== 0 || m.speed !== 0).toBe(true);
   });
 
   it('constrains speed to [0, maxSpeed]', () => {
     const weights = initWeights();
-    const state = { creatures: [makeCreature(1, { weights })] };
-    const movements = getMovements(state, SIM_CONFIG);
-    expect(movements[0].speed).toBeGreaterThanOrEqual(0);
-    expect(movements[0].speed).toBeLessThanOrEqual(SIM_CONFIG.CREATURE_MAX_SPEED);
+    const m = think(makeCreature(1, { weights }), [], [], [], SIM_CONFIG);
+    expect(m.speed).toBeGreaterThanOrEqual(0);
+    expect(m.speed).toBeLessThanOrEqual(SIM_CONFIG.CREATURE_MAX_SPEED);
   });
 });

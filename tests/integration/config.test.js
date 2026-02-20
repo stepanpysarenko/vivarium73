@@ -3,7 +3,7 @@ const request = require('supertest');
 jest.mock('../../src/nn', () => ({
   initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
   mutateWeights: jest.fn(w => Promise.resolve(w)),
-  getMovements: jest.fn(() => Promise.resolve([])),
+  think: jest.fn(() => ({ id: 0, angleDelta: 0, speed: 0 })),
 }));
 
 const { app } = require('../../src/server');

@@ -1,9 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { initCreature, getScore } = require("./creature");
-const { getMovements, mutateWeights } = require("./nn");
-const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex } = require("./grid");
-const { appendTopPerformers, restartPopulation } = require("./performance");
+const { think, mutateWeights } = require("./nn");
+const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex, getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
+const { appendTopPerformers, restartPopulation } = require("./evolution");
 const logger = require("./logger");
 
 function round2(x) {
@@ -106,7 +106,13 @@ function getPublicState(state, config) {
 }
 
 async function updateState(state, config) {
-    const movements = await getMovements(state, config);
+    const movements = state.creatures.map(c => think(
+        c,
+        getVisibleFood(c, state, config),
+        getVisibleObstacles(c, state, config),
+        getVisibleCreatures(c, state, config),
+        config
+    ));
     const movementsMap = new Map(movements.map(m => [m.id, m]));
 
     for (const creature of state.creatures) {

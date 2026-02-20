@@ -20,13 +20,14 @@ Node.js 22 / Express 5: simulation engine, neural network inference, REST API, W
 ### Source (`src/`)
 | File | Purpose |
 |------|---------|
-| `server.js` | Express setup, WebSocket server, 300ms simulation tick loop |
+| `server.js` | Express setup, WebSocket server, shutdown handling |
+| `simulation.js` | `Simulation` class with 300ms tick loop and `SimulationManager` |
 | `state.js` | Creature lifecycle, physics, collision detection, reproduction, food |
-| `config.js` | ~40 tunable simulation parameters (grid size, energy, FOV, mutation rates) |
+| `config.js` | ~35 tunable simulation parameters (grid size, energy, FOV, mutation rates) |
 | `creature.js` | Creature initialization and scoring |
-| `nn.js` | Neural network: 17 inputs → 9 hidden (tanh) → 2 outputs (tanh); Xavier init, Gaussian mutation |
+| `nn.js` | Neural network: 17 inputs → 9 hidden (tanh) → 2 outputs (tanh); Xavier init, uniform weight mutation |
 | `grid.js` | Spatial indexing, obstacle definitions, food distribution |
-| `performance.js` | Top-performer tracking, population restart logic |
+| `evolution.js` | Top-performer tracking, population restart logic |
 | `routes.js` | REST endpoints: `/api/health`, `/api/config`, `/api/place-food` |
 | `logger.js` | Log-level aware logger (LOG_LEVEL env var) |
 
@@ -34,7 +35,7 @@ Node.js 22 / Express 5: simulation engine, neural network inference, REST API, W
 Vanilla JS + HTML5 Canvas. WebSocket consumer for real-time state rendering.
 
 ## Simulation parameters (config.js highlights)
-- Grid: 50×50 cells; visibility radius: 10; FOV: ~100°
+- Grid: 50×50 cells; visibility radius: 15; FOV: 120°
 - Population: 20 creatures; restarts when <3 remain using top 5 performers
 - Reproduction at 1000 energy; costs 400; 50% mutation chance
 - Food: max 30 pieces, 130 energy each
