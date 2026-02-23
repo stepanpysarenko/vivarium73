@@ -3,6 +3,11 @@ const { mutateWeights } = require("./nn");
 const logger = require("./logger");
 
 function appendTopPerformers(creature, state, config) {
+    if (creature.id !== undefined) {
+        const existing = state.topPerformers.findIndex(p => p.id === creature.id);
+        if (existing !== -1) state.topPerformers.splice(existing, 1);
+    }
+
     const score = creature.stats.score ?? 0;
     // binary search for insertion point to maintain descending score order
     let lo = 0, hi = state.topPerformers.length;
@@ -42,7 +47,7 @@ async function restartPopulation(state, config) {
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const mutated = await mutateWeights(parent.weights);
+        const mutated = await mutateWeights(parent.weights, config.MUTATION_RATE);
         const offspring = await initCreature(state, config, null, null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }

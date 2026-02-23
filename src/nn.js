@@ -24,8 +24,10 @@ function clamp1(x) {
     return x < -1 ? -1 : x > 1 ? 1 : x;
 }
 
-function mutateWeights(weights) {
-    return weights.map(w => clamp1(w + (Math.random() - 0.5) * 0.1));
+function mutateWeights(weights, mutationRate = 0.2) {
+    return weights.map(w =>
+        Math.random() < mutationRate ? w + (Math.random() - 0.5) * 0.2 : w
+    );
 }
 
 function wrapAngle(angle) {

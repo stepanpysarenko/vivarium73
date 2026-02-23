@@ -276,9 +276,9 @@ async function handleLifecycle(state, config) {
 
         // creatures at 100% energy spawn an offspring and pay the reproduction cost
         if (creature.energy >= config.CREATURE_MAX_ENERGY) {
-            const weights = Math.random() <= config.MUTATION_CHANCE
-                ? await mutateWeights(creature.weights)
-                : creature.weights;
+            appendTopPerformers(creature, state, config);
+
+            const weights = await mutateWeights(creature.weights, config.MUTATION_RATE);
 
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
             const offspringCreature = await initCreature(

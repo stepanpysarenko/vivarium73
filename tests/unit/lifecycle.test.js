@@ -106,12 +106,7 @@ describe('handleLifecycle', () => {
     state.creatures = [parent];
     state.lastCreatureId = 1;
 
-    // Force no mutation (Math.random > MUTATION_CHANCE)
-    jest.spyOn(Math, 'random').mockReturnValue(0.99);
-
     const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
-
-    Math.random.mockRestore();
 
     // parent + offspring
     expect(result).toHaveLength(2);

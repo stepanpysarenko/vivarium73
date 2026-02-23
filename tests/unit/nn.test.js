@@ -26,11 +26,11 @@ describe('mutateWeights', () => {
     expect(mutated.some(w => w !== 0)).toBe(true);
   });
 
-  it('keeps values within [-1, 1]', () => {
+  it('mutates each weight by at most 0.1', () => {
     const weights = [1.0, -1.0, 0.25, -0.75];
-    const mutated = mutateWeights(weights);
+    const mutated = mutateWeights(weights, 1.0); // mutationRate=1 ensures all weights change
     expect(mutated).toHaveLength(weights.length);
-    expect(mutated.every(w => w >= -1 && w <= 1)).toBe(true);
+    expect(mutated.every((w, i) => Math.abs(w - weights[i]) <= 0.1)).toBe(true);
   });
 });
 
