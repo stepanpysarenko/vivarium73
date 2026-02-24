@@ -24,9 +24,9 @@ function clamp1(x) {
     return x < -1 ? -1 : x > 1 ? 1 : x;
 }
 
-function mutateWeights(weights, mutationRate = 0.2) {
+function mutateWeights(weights, rate, strength) {
     return weights.map(w =>
-        Math.random() < mutationRate ? w + (Math.random() - 0.5) * 0.2 : w
+        Math.random() < rate ? w + (Math.random() - 0.5) * strength : w
     );
 }
 

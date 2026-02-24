@@ -141,6 +141,9 @@ async function updateState(state, config) {
     }
 
     updateFood(state, config);
+    for (const p of state.topPerformers) {
+        p.stats.score *= config.TOP_PERFORMERS_SCORE_DECAY;
+    }
     updateStats(state);
 }
 
@@ -278,7 +281,7 @@ async function handleLifecycle(state, config) {
         if (creature.energy >= config.CREATURE_MAX_ENERGY) {
             appendTopPerformers(creature, state, config);
 
-            const weights = await mutateWeights(creature.weights, config.MUTATION_RATE);
+            const weights = await mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
 
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
             const offspringCreature = await initCreature(
@@ -310,10 +313,7 @@ async function handleLifecycle(state, config) {
 function updateStats(state) {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
-    const maxGen = Math.max(...state.creatures.map(c => c.generation), 0);
-    if (maxGen > state.stats.generation) {
-        state.stats.generation = maxGen;
-    }
+    state.stats.generation =  Math.max(...state.creatures.map(c => c.generation), 0);
 }
 
 function addFood(x, y, state, config) {

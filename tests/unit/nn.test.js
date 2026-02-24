@@ -22,15 +22,16 @@ describe('mutateWeights', () => {
 
   it('changes at least some values', () => {
     const weights = new Array(EXPECTED_WEIGHT_COUNT).fill(0);
-    const mutated = mutateWeights(weights);
+    const mutated = mutateWeights(weights, SIM_CONFIG.MUTATION_RATE, SIM_CONFIG.MUTATION_STRENGTH);
     expect(mutated.some(w => w !== 0)).toBe(true);
   });
 
-  it('mutates each weight by at most 0.1', () => {
+  it('mutates each weight by at most MUTATION_STRENGTH / 2', () => {
     const weights = [1.0, -1.0, 0.25, -0.75];
-    const mutated = mutateWeights(weights, 1.0); // mutationRate=1 ensures all weights change
+    const mutated = mutateWeights(weights, 1.0, SIM_CONFIG.MUTATION_STRENGTH); // rate=1 ensures all weights change
+    const maxDelta = SIM_CONFIG.MUTATION_STRENGTH / 2;
     expect(mutated).toHaveLength(weights.length);
-    expect(mutated.every((w, i) => Math.abs(w - weights[i]) <= 0.1)).toBe(true);
+    expect(mutated.every((w, i) => Math.abs(w - weights[i]) <= maxDelta)).toBe(true);
   });
 });
 
