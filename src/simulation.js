@@ -60,10 +60,7 @@ class Simulation {
         while (this._running) {
             const start = performance.now();
             try {
-                const updateStart = performance.now();
                 await updateState(this._state, this.config);
-                const updateMs = (performance.now() - updateStart).toFixed(2);
-                logger.debug(`[Simulation ${this.id}] tick: ${updateMs}ms`);
                 onTick(this.getPublicState());
                 retries = 0;
             } catch (err) {
