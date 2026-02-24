@@ -191,6 +191,7 @@ jobs:
             CANONICAL_URL=${{ vars.CANONICAL_URL }}
             PORT=${{ vars.PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
             IMAGE=${IMAGE}
             EOF
 
@@ -320,6 +321,7 @@ jobs:
             CANONICAL_URL=${{ vars.CANONICAL_URL }}
             PORT=${{ vars.PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
             IMAGE=${IMAGE}
             EOF
 

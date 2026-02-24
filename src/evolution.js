@@ -33,7 +33,7 @@ async function restartPopulation(state, config) {
     }
 
     logger.info("Restarting population with top performers...");
-    logger.info('Top performers scores:', state.topPerformers.map(p => p.stats.score));
+    logger.debug('Top performers scores:', state.topPerformers.map(p => p.stats.score));
     state.creatures = [];
     const topPerformersCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_TOP_RATIO);
     const mutatedCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_MUTATED_RATIO);

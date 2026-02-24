@@ -26,10 +26,10 @@ async function loadState(savePath) {
     try {
         const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
-        logger.info(`State successfully loaded from ${filePath}`);
+        logger.debug(`State successfully loaded from ${filePath}`);
         return state;
     } catch (error) {
-        logger.warn(`Error loading state from ${filePath}:`, error.message);
+        logger.error(`Error loading state from ${filePath}:`, error.message);
         return null;
     }
 }
@@ -40,7 +40,7 @@ async function saveState(state, savePath) {
         await fs.mkdir(path.dirname(filePath), { recursive: true });
         const data = JSON.stringify(state, null, 4);
         await fs.writeFile(filePath, data, 'utf8');
-        logger.info('State successfully saved to', filePath);
+        logger.debug(`State successfully saved to ${filePath}`);
     } catch (error) {
         logger.error(`Error saving state to ${filePath}:`, error.message);
     }
@@ -76,6 +76,7 @@ async function createState(config) {
         logger.info("New random state initialized");
         saveState(state, config.STATE_SAVE_PATH);
     } else {
+        logger.info("State loaded from file");
         buildStateIndexes(state);
     }
     return state;
