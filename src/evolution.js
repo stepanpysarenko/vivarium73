@@ -8,7 +8,14 @@ function appendTopPerformers(creature, state, config) {
         if (existing !== -1) state.topPerformers.splice(existing, 1);
     }
 
-    const score = creature.stats.score ?? 0;
+    const copy = {
+        id: creature.id,
+        generation: creature.generation,
+        weights: creature.weights.slice(),
+        stats: { ...creature.stats }
+    };
+
+    const score = copy.stats.score ?? 0;
     // binary search for insertion point to maintain descending score order
     let lo = 0, hi = state.topPerformers.length;
     while (lo < hi) {
@@ -16,7 +23,7 @@ function appendTopPerformers(creature, state, config) {
         if ((state.topPerformers[mid].stats.score ?? 0) > score) lo = mid + 1;
         else hi = mid;
     }
-    state.topPerformers.splice(lo, 0, creature);
+    state.topPerformers.splice(lo, 0, copy);
 
     if (state.topPerformers.length > config.TOP_PERFORMERS_COUNT) {
         state.topPerformers.length = config.TOP_PERFORMERS_COUNT;

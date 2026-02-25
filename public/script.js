@@ -167,7 +167,7 @@
             ui.stats.creature.id.textContent = `${creature.id}`;
             ui.stats.creature.generation.textContent = `${creature.generation}`;
             ui.stats.creature.life.textContent = formatTime(creature.msLived);
-            ui.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+            ui.stats.creature.energy.textContent = `${Math.ceil(creature.energy * 100)}%`;
             ui.stats.creature.score.textContent = `${creature.score}`;
         },
         startObserving(creature) {
