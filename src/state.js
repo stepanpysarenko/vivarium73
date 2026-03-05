@@ -95,7 +95,7 @@ function getPublicState(state, config) {
             x: round2(c.x),
             y: round2(c.y),
             angle: round2(c.angle),
-            energy: round2(c.energy / config.CREATURE_MAX_ENERGY),
+            energy: Math.ceil(c.energy / config.CREATURE_MAX_ENERGY),
             flashing: c.updatesToFlash > 0,
             generation: c.generation,
             score: c.stats.score,
@@ -283,13 +283,15 @@ async function handleLifecycle(state, config) {
             appendTopPerformers(creature, state, config);
 
             const weights = await mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
-
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
+            const spawnDist = config.CREATURE_INTERACTION_RADIUS * 2;
+            const offspringX = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.x + Math.cos(offspringAngle) * spawnDist));
+            const offspringY = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.y + Math.sin(offspringAngle) * spawnDist));
             const offspringCreature = await initCreature(
                 state,
                 config,
-                creature.x,
-                creature.y,
+                offspringX,
+                offspringY,
                 offspringAngle,
                 weights,
                 creature.generation + 1

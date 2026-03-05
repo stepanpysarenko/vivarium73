@@ -297,7 +297,7 @@
                 ctx.translate(x * app.scale + app.halfScale, y * app.scale + app.halfScale);
                 ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
-                ctx.globalAlpha = creature.energy * 0.8 + 0.2;
+                ctx.globalAlpha = (creature.energy / 100 ) * 0.8 + 0.2;
                 const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
                 ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
 
