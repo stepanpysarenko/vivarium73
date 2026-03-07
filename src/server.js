@@ -37,11 +37,26 @@ wss.on("connection", (ws) => {
         return;
     }
     logger.debug("Client connected");
+
+    const sim = simulationManager.get(SIM_ID);
+    ws.send(JSON.stringify({
+        type: 'config',
+        envCode: SERVER_CONFIG.ENVIRONMENT,
+        appVersion: SERVER_CONFIG.APP_VERSION,
+        stateUpdateInterval: sim.config.STATE_UPDATE_INTERVAL_MS,
+        gridSize: sim.config.GRID_SIZE,
+        foodMaxCount: sim.config.FOOD_MAX_COUNT,
+        creature: {
+            visibilityRadius: sim.config.CREATURE_VISIBILITY_RADIUS,
+            visibilityFovRadians: Math.round(sim.config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
+        }
+    }));
+
     ws.on("close", () => logger.debug("Client disconnected"));
 });
 
 function broadcastState(state) {
-    const data = JSON.stringify(state);
+    const data = JSON.stringify({ type: 'state', ...state });
     for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {
             try {

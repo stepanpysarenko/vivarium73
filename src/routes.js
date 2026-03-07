@@ -30,22 +30,6 @@ module.exports = function registerRoutes(app, getSim) {
         appVersion: SERVER_CONFIG.APP_VERSION
     }));
 
-    app.get('/api/config', (req, res) => {
-        const { config } = getSim();
-        res.json({
-            envCode: SERVER_CONFIG.ENVIRONMENT,
-            appVersion: SERVER_CONFIG.APP_VERSION,
-            webSocketUrl: SERVER_CONFIG.WEBSOCKET_URL,
-            stateUpdateInterval: config.STATE_UPDATE_INTERVAL_MS,
-            gridSize: config.GRID_SIZE,
-            foodMaxCount: config.FOOD_MAX_COUNT,
-            creature: {
-                visibilityRadius: config.CREATURE_VISIBILITY_RADIUS,
-                visibilityFovRadians: Math.round(config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
-            }
-        });
-    });
-
     app.post("/api/place-food", (req, res) => {
         const sim = getSim();
         const { x, y } = req.body;
