@@ -1,7 +1,6 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
-const cors = require("cors");
 const path = require("path");
 
 const { SERVER_CONFIG } = require("./config");
@@ -19,10 +18,12 @@ app.disable('x-powered-by');
 app.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     next();
 });
 
-app.use(cors({ origin: SERVER_CONFIG.CORS_ORIGIN }));
 app.use(express.json({ limit: "1kb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -46,10 +47,10 @@ function broadcastState(state) {
     }
 }
 
-function startServer(port = SERVER_CONFIG.PORT) {
-    server.listen(port, async () => {
+async function startServer(port = SERVER_CONFIG.PORT) {
+    const sim = await simulationManager.create(SIM_ID);
+    server.listen(port, () => {
         logger.info(`Server running on http://localhost:${port}`);
-        const sim = await simulationManager.create(SIM_ID);
         sim.start(state => broadcastState(state));
     });
 }

@@ -74,7 +74,7 @@ async function createState(config) {
         }
 
         logger.info("New random state initialized");
-        saveState(state, config.STATE_SAVE_PATH);
+        await saveState(state, config.STATE_SAVE_PATH);
     } else {
         logger.info("State loaded from file");
         buildStateIndexes(state);
@@ -282,7 +282,7 @@ async function handleLifecycle(state, config) {
         if (creature.energy >= config.CREATURE_MAX_ENERGY) {
             appendTopPerformers(creature, state, config);
 
-            const weights = await mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
+            const weights = mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
             const spawnDist = config.CREATURE_INTERACTION_RADIUS * 2;
             const offspringX = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.x + Math.cos(offspringAngle) * spawnDist));

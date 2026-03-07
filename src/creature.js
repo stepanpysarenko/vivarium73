@@ -13,7 +13,7 @@ async function initCreature(state, config, x = null, y = null, angle = null, wei
     angle = angle !== null ? angle : (Math.random() * 2 * Math.PI) - Math.PI;
 
     if (!weights) {
-        weights = await initWeights();
+        weights = initWeights();
     }
 
     const creature = {

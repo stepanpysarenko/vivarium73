@@ -5,7 +5,6 @@ const SERVER_CONFIG = {
     APP_VERSION: process.env.APP_VERSION || "dev",
 
     PORT: process.env.PORT || 3000,
-    CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
     LOG_LEVEL: process.env.LOG_LEVEL || "info"
 };

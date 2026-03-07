@@ -54,7 +54,7 @@ async function restartPopulation(state, config) {
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const mutated = await mutateWeights(parent.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
+        const mutated = mutateWeights(parent.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
         const offspring = await initCreature(state, config, null, null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }
