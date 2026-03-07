@@ -185,13 +185,15 @@ jobs:
             cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=qa
             APP_VERSION=${APP_VERSION}
-            CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
-            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
-            GA_TAG_ID=${{ vars.GA_TAG_ID }}
-            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
             PORT=${{ vars.PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
-            LOG_LEVEL=${{ vars.LOG_LEVEL }}
+            WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
+            RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
+            RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}
+            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            GA_TAG_ID=${{ vars.GA_TAG_ID }}
+            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
             IMAGE=${IMAGE}
             EOF
 
@@ -315,13 +317,15 @@ jobs:
             cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
             ENVIRONMENT=prod
             APP_VERSION=${APP_VERSION}
-            CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
-            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
-            GA_TAG_ID=${{ vars.GA_TAG_ID }}
-            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
             PORT=${{ vars.PORT }}
             WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
-            LOG_LEVEL=${{ vars.LOG_LEVEL }}
+            WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
+            RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
+            RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}
+            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            GA_TAG_ID=${{ vars.GA_TAG_ID }}
+            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
             IMAGE=${IMAGE}
             EOF
 

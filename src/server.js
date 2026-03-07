@@ -11,6 +11,7 @@ const logger = require("./logger");
 const SIM_ID = 'main';
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
@@ -30,6 +31,11 @@ app.use(express.static(path.join(__dirname, "../public")));
 registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
+    const limit = SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS;
+    if (limit !== null && wss.clients.size >= limit) {
+        ws.close(1013, "Max connections reached");
+        return;
+    }
     logger.debug("Client connected");
     ws.on("close", () => logger.debug("Client disconnected"));
 });

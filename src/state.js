@@ -316,7 +316,7 @@ async function handleLifecycle(state, config) {
 function updateStats(state) {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
-    state.stats.generation =  Math.max(...state.creatures.map(c => c.generation), 0);
+    state.stats.generation = state.creatures.reduce((max, c) => c.generation > max ? c.generation : max, 0);
 }
 
 function addFood(x, y, state, config) {

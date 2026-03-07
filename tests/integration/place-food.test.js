@@ -58,7 +58,7 @@ describe('POST /api/place-food', () => {
       .send({ x: 10, y: 10 });
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ success: false, error: 'Max food count reached' });
+    expect(res.body).toEqual({ success: false, error: 'Could not place food' });
   });
 
   it('returns 400 for invalid coordinate payloads', async () => {
