@@ -55,6 +55,7 @@
 
     const app = {
         config: null,
+        obstacles: null,
         socket: null,
         reconnectScheduled: false,
         reconnectDelay: 250,
@@ -242,10 +243,12 @@
             staticCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
 
             staticCtx.globalAlpha = 1;
-            staticCtx.fillStyle = app.colors.obstacle;
-            app.state.latest.obstacles.forEach(({ x, y }) => {
-                staticCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
-            });
+            if (app.obstacles) {
+                staticCtx.fillStyle = app.colors.obstacle;
+                app.obstacles.forEach(({ x, y }) => {
+                    staticCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
+                });
+            }
 
             staticCtx.fillStyle = app.colors.food;
             app.state.latest.food.forEach(({ x, y }) => {
@@ -461,6 +464,11 @@
                     buildInfo.update();
                     renderer.updateSettings();
                     if (isFirst) requestAnimationFrame(renderer.loop);
+                    return;
+                }
+                if (msg.type === 'obstacles') {
+                    app.obstacles = msg.obstacles;
+                    renderer.updateStaticLayer();
                     return;
                 }
                 const state = msg;

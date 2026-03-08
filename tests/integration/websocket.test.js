@@ -12,6 +12,7 @@ jest.mock('../../src/simulation', () => ({
         CREATURE_VISIBILITY_FOV_RADIANS: Math.PI,
       },
       start: jest.fn(),
+      getObstacles: jest.fn(() => [{ x: 0, y: 0 }]),
     })),
   },
 }));
@@ -32,7 +33,6 @@ const sampleFrame = () => ({
     { id: 7, x: 4.5, y: 3.2, angle: 1.2, energy: 0.6, flashing: false, generation: 2, score: 5, msLived: 1000 },
   ],
   food: [{ x: 1, y: 1 }],
-  obstacles: [{ x: 0, y: 0 }],
 });
 
 
@@ -59,7 +59,7 @@ describe('WebSocket connection', () => {
   it('sends config as first message on connect', () => {
     const { mockWs, messages } = connectMockClient();
 
-    expect(mockWs.send).toHaveBeenCalledTimes(1);
+    expect(mockWs.send).toHaveBeenCalledTimes(2);
     const config = messages[0];
     expect(config.type).toBe('config');
     expect(config).toHaveProperty('gridSize');
@@ -68,29 +68,38 @@ describe('WebSocket connection', () => {
     expect(config).toHaveProperty('foodMaxCount');
   });
 
+  it('sends obstacles as second message on connect', () => {
+    const { messages } = connectMockClient();
+
+    const obstaclesMsg = messages[1];
+    expect(obstaclesMsg.type).toBe('obstacles');
+    expect(Array.isArray(obstaclesMsg.obstacles)).toBe(true);
+  });
+
   it('config and state messages carry distinct types', () => {
     const { messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
-    expect(messages).toHaveLength(2);
+    expect(messages).toHaveLength(3);
     expect(messages[0].type).toBe('config');
-    expect(messages[1].type).toBe('state');
+    expect(messages[1].type).toBe('obstacles');
+    expect(messages[2].type).toBe('state');
   });
 });
 
 describe('WebSocket broadcasting', () => {
-  it('state frame includes stats, creatures, food, and obstacles', () => {
+  it('state frame includes stats, creatures, and food', () => {
     const { mockWs, messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
     const payload = messages.find(m => m.type === 'state');
-    expect(mockWs.send).toHaveBeenCalledTimes(2);
+    expect(mockWs.send).toHaveBeenCalledTimes(3);
     expect(payload).toHaveProperty('stats');
     expect(payload).toHaveProperty('creatures');
     expect(payload).toHaveProperty('food');
-    expect(payload).toHaveProperty('obstacles');
+    expect(payload).not.toHaveProperty('obstacles');
   });
 
   it('creature entries in state include id, position, angle, and energy', () => {
@@ -113,7 +122,7 @@ describe('WebSocket broadcasting', () => {
 
     broadcastState(sampleFrame());
 
-    expect(mockWs.send).toHaveBeenCalledTimes(2);
+    expect(mockWs.send).toHaveBeenCalledTimes(3);
     expect(messages.find(m => m.type === 'state').stats.creatureCount).toBe(1);
   });
 });

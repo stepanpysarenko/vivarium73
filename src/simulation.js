@@ -51,6 +51,10 @@ class Simulation {
         return getPublicState(this._state, this.config);
     }
 
+    getObstacles() {
+        return this._state.obstacles;
+    }
+
     addFood(x, y) {
         addFood(x, y, this._state, this.config);
     }

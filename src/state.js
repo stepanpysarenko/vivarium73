@@ -101,8 +101,7 @@ function getPublicState(state, config) {
             score: c.stats.score,
             msLived: c.stats.msLived
         })),
-        food: state.food,
-        obstacles: state.obstacles
+        food: state.food
     };
 }
 

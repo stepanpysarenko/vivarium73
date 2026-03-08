@@ -53,6 +53,7 @@ wss.on("connection", (ws) => {
             visibilityFovRadians: Math.round(sim.config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
         }
     }));
+    ws.send(JSON.stringify({ type: 'obstacles', obstacles: sim.getObstacles() }));
 
     ws.on("close", () => { wsClientCount--; logger.debug("Client disconnected"); });
 });
