@@ -14,6 +14,7 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+let wsClientCount = 0;
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -32,10 +33,11 @@ registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
     const limit = SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS;
-    if (limit !== null && wss.clients.size > limit) {
+    if (limit !== null && wsClientCount >= limit) {
         ws.close(1013, "Max connections reached");
         return;
     }
+    wsClientCount++;
     logger.debug("Client connected");
 
     const sim = simulationManager.get(SIM_ID);
@@ -52,7 +54,7 @@ wss.on("connection", (ws) => {
         }
     }));
 
-    ws.on("close", () => logger.debug("Client disconnected"));
+    ws.on("close", () => { wsClientCount--; logger.debug("Client disconnected"); });
 });
 
 function broadcastState(state) {
