@@ -1,5 +1,21 @@
 process.env.NODE_ENV = 'test';
 
+jest.mock('../../src/simulation', () => ({
+  simulationManager: {
+    create: jest.fn(),
+    get: jest.fn(() => ({
+      config: {
+        STATE_UPDATE_INTERVAL_MS: 100,
+        GRID_SIZE: 50,
+        FOOD_MAX_COUNT: 20,
+        CREATURE_VISIBILITY_RADIUS: 5,
+        CREATURE_VISIBILITY_FOV_RADIANS: Math.PI,
+      },
+      start: jest.fn(),
+    })),
+  },
+}));
+
 const WebSocketLib = require('ws');
 const { __testUtils } = require('../../src/server');
 
@@ -19,14 +35,17 @@ const sampleFrame = () => ({
   obstacles: [{ x: 0, y: 0 }],
 });
 
-const attachClient = () => {
+
+const connectMockClient = () => {
   const messages = [];
-  const client = {
+  const mockWs = {
     readyState: WebSocketLib.OPEN,
-    send: jest.fn(message => messages.push(JSON.parse(message))),
+    send: jest.fn(msg => messages.push(JSON.parse(msg))),
+    on: jest.fn(),
   };
-  wss.clients.add(client);
-  return { client, messages };
+  wss.emit('connection', mockWs);
+  wss.clients.add(mockWs);
+  return { mockWs, messages };
 };
 
 afterEach(() => {
@@ -35,26 +54,51 @@ afterEach(() => {
   }
 });
 
-describe('WebSocket broadcasting', () => {
-  it('includes stats, creatures, food, and obstacles in frames', () => {
-    const { client, messages } = attachClient();
+describe('WebSocket connection', () => {
+
+  it('sends config as first message on connect', () => {
+    const { mockWs, messages } = connectMockClient();
+
+    expect(mockWs.send).toHaveBeenCalledTimes(1);
+    const config = messages[0];
+    expect(config.type).toBe('config');
+    expect(config).toHaveProperty('gridSize');
+    expect(config).toHaveProperty('stateUpdateInterval');
+    expect(config).toHaveProperty('creature');
+    expect(config).toHaveProperty('foodMaxCount');
+  });
+
+  it('config and state messages carry distinct types', () => {
+    const { messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
-    expect(client.send).toHaveBeenCalledTimes(1);
-    const payload = messages[0];
+    expect(messages).toHaveLength(2);
+    expect(messages[0].type).toBe('config');
+    expect(messages[1].type).toBe('state');
+  });
+});
+
+describe('WebSocket broadcasting', () => {
+  it('state frame includes stats, creatures, food, and obstacles', () => {
+    const { mockWs, messages } = connectMockClient();
+
+    broadcastState(sampleFrame());
+
+    const payload = messages.find(m => m.type === 'state');
+    expect(mockWs.send).toHaveBeenCalledTimes(2);
     expect(payload).toHaveProperty('stats');
     expect(payload).toHaveProperty('creatures');
     expect(payload).toHaveProperty('food');
     expect(payload).toHaveProperty('obstacles');
   });
 
-  it('ensures each creature frame carries core fields', () => {
-    const { messages } = attachClient();
+  it('creature entries in state include id, position, angle, and energy', () => {
+    const { messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
-    const [creature] = messages[0].creatures;
+    const [creature] = messages.find(m => m.type === 'state').creatures;
     expect(creature).toMatchObject({
       id: expect.any(Number),
       x: expect.any(Number),
@@ -64,12 +108,12 @@ describe('WebSocket broadcasting', () => {
     });
   });
 
-  it('delivers state to listeners on the first broadcast', () => {
-    const { client, messages } = attachClient();
+  it('state broadcast is delivered to connected clients', () => {
+    const { mockWs, messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
-    expect(client.send).toHaveBeenCalledTimes(1);
-    expect(messages[0].stats.creatureCount).toBe(1);
+    expect(mockWs.send).toHaveBeenCalledTimes(2);
+    expect(messages.find(m => m.type === 'state').stats.creatureCount).toBe(1);
   });
 });

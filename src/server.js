@@ -1,7 +1,6 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
-const cors = require("cors");
 const path = require("path");
 
 const { SERVER_CONFIG } = require("./config");
@@ -12,6 +11,7 @@ const logger = require("./logger");
 const SIM_ID = 'main';
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
@@ -19,22 +19,44 @@ app.disable('x-powered-by');
 app.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     next();
 });
 
-app.use(cors({ origin: SERVER_CONFIG.CORS_ORIGIN }));
 app.use(express.json({ limit: "1kb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
 registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
+    const limit = SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS;
+    if (limit !== null && wss.clients.size >= limit) {
+        ws.close(1013, "Max connections reached");
+        return;
+    }
     logger.debug("Client connected");
+
+    const sim = simulationManager.get(SIM_ID);
+    ws.send(JSON.stringify({
+        type: 'config',
+        envCode: SERVER_CONFIG.ENVIRONMENT,
+        appVersion: SERVER_CONFIG.APP_VERSION,
+        stateUpdateInterval: sim.config.STATE_UPDATE_INTERVAL_MS,
+        gridSize: sim.config.GRID_SIZE,
+        foodMaxCount: sim.config.FOOD_MAX_COUNT,
+        creature: {
+            visibilityRadius: sim.config.CREATURE_VISIBILITY_RADIUS,
+            visibilityFovRadians: Math.round(sim.config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
+        }
+    }));
+
     ws.on("close", () => logger.debug("Client disconnected"));
 });
 
 function broadcastState(state) {
-    const data = JSON.stringify(state);
+    const data = JSON.stringify({ type: 'state', ...state });
     for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {
             try {
@@ -46,10 +68,10 @@ function broadcastState(state) {
     }
 }
 
-function startServer(port = SERVER_CONFIG.PORT) {
-    server.listen(port, async () => {
+async function startServer(port = SERVER_CONFIG.PORT) {
+    const sim = await simulationManager.create(SIM_ID);
+    server.listen(port, () => {
         logger.info(`Server running on http://localhost:${port}`);
-        const sim = await simulationManager.create(SIM_ID);
         sim.start(state => broadcastState(state));
     });
 }
@@ -71,8 +93,5 @@ process.on("SIGTERM", shutdown);
 module.exports = { app, startServer };
 
 if (process.env.NODE_ENV === 'test') {
-    module.exports.__testUtils = {
-        wss,
-        broadcastState
-    };
+    module.exports.__testUtils = { wss, broadcastState };
 }

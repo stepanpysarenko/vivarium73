@@ -1,0 +1,344 @@
+name: CI-CD
+
+on:
+  pull_request:
+    branches: [main, qa]
+    paths-ignore: ['**/*.md','docs/**']
+  push:
+    branches: [main, qa]
+    tags: ['v*']
+    paths-ignore: ['**/*.md','docs/**']
+
+permissions:
+  contents: read
+  packages: write
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run Jest suites
+        run: npm test
+
+  build:
+    name: Build
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/qa' || startsWith(github.ref, 'refs/tags/v'))
+    outputs:
+      IMAGE_TAG: ${{ steps.meta.outputs.IMAGE_TAG }}
+      APP_VERSION: ${{ steps.meta.outputs.APP_VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node for metadata
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
+
+      - name: Enforce v* tag on qa branch
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -euo pipefail
+          git fetch origin qa
+          if ! git merge-base --is-ancestor "${{ github.sha }}" origin/qa; then
+            echo "Error: tag ${{ github.ref_name }} does not point to a commit on origin/qa" >&2
+            exit 1
+          fi
+
+      - name: Generate build metadata
+        id: meta
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.ref_type }}" == "tag" && "${{ github.ref_name }}" == v* ]]; then
+            APP_VERSION="${{ github.ref_name }}"
+            APP_VERSION="${APP_VERSION#v}"
+            TAG="${APP_VERSION}"
+          else
+            PKG_VER=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+            SHORT_SHA="${{ github.sha }}"
+            SHORT_SHA="${SHORT_SHA::7}"
+            APP_VERSION="${PKG_VER}+sha.${SHORT_SHA}"
+            TAG="${PKG_VER}-${SHORT_SHA}"
+          fi
+
+          OWNER=$(echo "${REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          REGISTRY="ghcr.io"
+          IMAGE_PREFIX="${REGISTRY}/${OWNER}/vivarium73"
+
+          IMAGE_TAG="${IMAGE_PREFIX}:${TAG}"
+
+          {
+            echo "APP_VERSION=${APP_VERSION}"
+            echo "TAG=${TAG}"
+            echo "IMAGE_TAG=${IMAGE_TAG}"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ${{ steps.meta.outputs.IMAGE_TAG }}
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-qa:
+    name: Deploy (qa)
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: qa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p "${{ vars.DEPLOY_PATH }}"
+            mkdir -p "${{ vars.DEPLOY_PATH }}/data"
+            chown 1001:1001 "${{ vars.DEPLOY_PATH }}/data"
+
+      - name: Upload compose files
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose*.yml"
+          target: ${{ vars.DEPLOY_PATH }}
+
+      - name: Deploy via GHCR images
+        uses: appleboy/ssh-action@v0.1.10
+        env:
+          IMAGE: ${{ needs.build.outputs.IMAGE_TAG }}
+          APP_VERSION: ${{ needs.build.outputs.APP_VERSION }}
+          GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          envs: IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
+          script: |
+            set -euo pipefail
+
+            if [ -n "$GHCR_TOKEN" ]; then
+              GHCR_USERNAME=$(echo "$GHCR_USERNAME" | tr '[:upper:]' '[:lower:]')
+              echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            else
+              echo "GHCR_DEPLOY_TOKEN not set; assuming images are public and pulling anonymously (may be throttled)." >&2
+            fi
+
+            docker pull "$IMAGE"
+
+            cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
+            ENVIRONMENT=qa
+            APP_VERSION=${APP_VERSION}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
+            PORT=${{ vars.PORT }}
+            WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
+            WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
+            RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
+            RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}
+            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            GA_TAG_ID=${{ vars.GA_TAG_ID }}
+            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
+            IMAGE=${IMAGE}
+            EOF
+
+            cd "${{ vars.DEPLOY_PATH }}"
+            docker compose -p "qa-vivarium73" \
+              -f docker-compose.yml -f docker-compose.deploy.yml up -d --remove-orphans
+
+      - name: Health check
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.PORT }}/api/health >/dev/null \
+              && echo "Health check passed" || (echo "Health check failed" && exit 1)
+
+  release:
+    name: Release
+    needs: [deploy-qa]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+
+  deploy-prod:
+    name: Deploy (prod)
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve production image
+        id: resolve
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          LATEST_TAG=$(git tag --list 'v*' --merged HEAD --sort=-version:refname | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Error: no v* tag found reachable from HEAD" >&2
+            exit 1
+          fi
+
+          APP_VERSION="${LATEST_TAG#v}"
+
+          gh release view "$LATEST_TAG" --json tagName > /dev/null 2>&1 || {
+            echo "Error: no GitHub Release found for tag $LATEST_TAG" >&2
+            exit 1
+          }
+
+          OWNER=$(echo "${REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_TAG="ghcr.io/${OWNER}/vivarium73:${APP_VERSION}"
+
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Resolved image: ${IMAGE_TAG}"
+
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p "${{ vars.DEPLOY_PATH }}"
+            mkdir -p "${{ vars.DEPLOY_PATH }}/data"
+            chown 1001:1001 "${{ vars.DEPLOY_PATH }}/data"
+
+      - name: Upload compose files
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose*.yml"
+          target: ${{ vars.DEPLOY_PATH }}
+
+      - name: Deploy via GHCR images
+        uses: appleboy/ssh-action@v0.1.10
+        env:
+          IMAGE: ${{ steps.resolve.outputs.IMAGE_TAG }}
+          APP_VERSION: ${{ steps.resolve.outputs.APP_VERSION }}
+          GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || '' }}
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          envs: IMAGE,APP_VERSION,GHCR_USERNAME,GHCR_TOKEN
+          script: |
+            set -euo pipefail
+
+            if [ -n "$GHCR_TOKEN" ]; then
+              GHCR_USERNAME=$(echo "$GHCR_USERNAME" | tr '[:upper:]' '[:lower:]')
+              echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            else
+              echo "GHCR_DEPLOY_TOKEN not set; assuming images are public and pulling anonymously (may be throttled)." >&2
+            fi
+
+            docker pull "$IMAGE"
+
+            cat > "${{ vars.DEPLOY_PATH }}/.env" <<EOF
+            ENVIRONMENT=prod
+            APP_VERSION=${APP_VERSION}
+            LOG_LEVEL=${{ vars.LOG_LEVEL }}
+            PORT=${{ vars.PORT }}
+            WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
+            WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
+            RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
+            RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}
+            CANONICAL_URL=${{ vars.CANONICAL_URL }}
+            GA_TAG_ID=${{ vars.GA_TAG_ID }}
+            ROBOTS_TAG_CONTENT=${{ vars.ROBOTS_TAG_CONTENT }}
+            IMAGE=${IMAGE}
+            EOF
+
+            cd "${{ vars.DEPLOY_PATH }}"
+            docker compose -p "prod-vivarium73" \
+              -f docker-compose.yml -f docker-compose.deploy.yml up -d --remove-orphans
+
+      - name: Health check
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            curl -fsS --retry 3 --retry-all-errors --retry-delay 3 --max-time 5 http://localhost:${{ vars.PORT }}/api/health >/dev/null \
+              && echo "Health check passed" || (echo "Health check failed" && exit 1)

@@ -1,12 +1,9 @@
-const { getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
-
 const INPUT_SIZE = 17;
 const HIDDEN_SIZE = 9;
 const OUTPUT_SIZE = 2;
 const HIDDEN_WEIGHT_COUNT = HIDDEN_SIZE * INPUT_SIZE;
 const OUTPUT_WEIGHT_COUNT = OUTPUT_SIZE * HIDDEN_SIZE;
 const EXPECTED_WEIGHT_COUNT = HIDDEN_WEIGHT_COUNT + OUTPUT_WEIGHT_COUNT;
-const SQRT2 = Math.SQRT2;
 
 function xavierUniform(fanIn, fanOut, count) {
     const limit = Math.sqrt(6 / (fanIn + fanOut));
@@ -23,9 +20,13 @@ function initWeights() {
     return hidden.concat(output);
 }
 
-function mutateWeights(weights) {
+function clamp1(x) {
+    return x < -1 ? -1 : x > 1 ? 1 : x;
+}
+
+function mutateWeights(weights, rate, strength) {
     return weights.map(w =>
-        Math.max(-1, Math.min(1, w + (Math.random() - 0.5) * 0.1))
+        Math.random() < rate ? w + (Math.random() - 0.5) * strength : w
     );
 }
 
@@ -50,14 +51,14 @@ function influenceVector(x, y, targets, repel) {
         vx /= mag;
         vy /= mag;
     }
-    return [vx, vy];
+    return { x: vx, y: vy };
 }
 
 function angleAndMagnitude(x, y, orientation) {
-    const angle = Math.atan2(y, x);
-    const relAngle = wrapAngle(angle - orientation);
-    const magnitude = Math.hypot(x, y);
-    return [relAngle / Math.PI, Math.min(magnitude / SQRT2, 1)];
+    return {
+        angle: wrapAngle(Math.atan2(y, x) - orientation) / Math.PI,
+        magnitude: Math.min(Math.hypot(x, y) / Math.SQRT2, 1)
+    };
 }
 
 function angleDelta(current, prev) {
@@ -65,62 +66,52 @@ function angleDelta(current, prev) {
 }
 
 function netMovementVector(path, visibilityRadius) {
-    if (path.length < 2) return [0, 0];
+    if (path.length < 2 || !visibilityRadius) return { x: 0, y: 0 };
     const dx = path[path.length - 1].x - path[0].x;
     const dy = path[path.length - 1].y - path[0].y;
-    return [Math.tanh(dx / visibilityRadius), Math.tanh(dy / visibilityRadius)];
+    return { x: Math.tanh(dx / visibilityRadius), y: Math.tanh(dy / visibilityRadius) };
 }
 
-function think(creature, config) {
-    const maxEnergy = config.CREATURE_MAX_ENERGY;
-    const maxTurnAngle = config.CREATURE_MAX_TURN_ANGLE_RADIANS;
-    const maxSpeed = config.CREATURE_MAX_SPEED;
-    const visibilityRadius = config.CREATURE_VISIBILITY_RADIUS;
+function buildInputs(c, food, obstacles, creatures, config) {
+    const { CREATURE_MAX_ENERGY: maxEnergy, CREATURE_VISIBILITY_RADIUS: visibilityRadius } = config;
 
-    const energyLevel = 2 * (creature.energy / maxEnergy) - 1;
-    const energyDx = Math.max(-1, Math.min(1, (creature.energy - creature.prevEnergy) / maxEnergy));
-    const justReproduced = creature.justReproduced ? 1.0 : -1.0;
+    const foodVec = influenceVector(c.x, c.y, food, false);
+    const obsVec = influenceVector(c.x, c.y, obstacles, true);
+    const creatVec = influenceVector(c.x, c.y, creatures, true);
+    const netVec = netMovementVector(c.recentPath, visibilityRadius);
 
-    const [fx, fy] = influenceVector(creature.x, creature.y, creature.food, false);
-    const [foodAngle, foodMagnitude] = angleAndMagnitude(fx, fy, creature.angle);
+    const foodDir = angleAndMagnitude(foodVec.x, foodVec.y, c.angle);
+    const obsDir = angleAndMagnitude(obsVec.x, obsVec.y, c.angle);
+    const creatDir = angleAndMagnitude(creatVec.x, creatVec.y, c.angle);
+    const netDir = angleAndMagnitude(netVec.x, netVec.y, c.angle);
+    const moveDir = angleAndMagnitude(c.x - c.prev.x, c.y - c.prev.y, c.angle);
 
-    const [ox, oy] = influenceVector(creature.x, creature.y, creature.obstacles, true);
-    const [obstacleAngle, obstacleMagnitude] = angleAndMagnitude(ox, oy, creature.angle);
-
-    const [cx, cy] = influenceVector(creature.x, creature.y, creature.creatures, true);
-    const [creatureAngle, creatureMagnitude] = angleAndMagnitude(cx, cy, creature.angle);
-
-    const [netDx, netDy] = netMovementVector(creature.recentPath, visibilityRadius);
-    const [netAngle, netMagnitude] = angleAndMagnitude(netDx, netDy, creature.angle);
-
-    const moveDx = creature.x - creature.prevX;
-    const moveDy = creature.y - creature.prevY;
-    const [moveAngle, moveMagnitude] = angleAndMagnitude(moveDx, moveDy, creature.angle);
-
-    const angleDeltaVal = angleDelta(creature.angle, creature.prevAngle);
-
-    const wanderAngle = wrapAngle(creature.wanderAngle - creature.angle) / Math.PI;
-    const wanderMagnitude = Math.min(creature.wanderStrength / SQRT2, 1);
-
-    const inputs = [
-        energyLevel, energyDx, justReproduced,
-        foodAngle, foodMagnitude,
-        obstacleAngle, obstacleMagnitude,
-        creatureAngle, creatureMagnitude,
-        netAngle, netMagnitude,
-        angleDeltaVal,
-        moveAngle, moveMagnitude,
-        wanderAngle, wanderMagnitude,
-        1.0
+    return [
+        2 * (c.energy / maxEnergy) - 1,                 // energy level [0]
+        clamp1((c.energy - c.prev.energy) / maxEnergy), // energy delta [1]
+        c.justReproduced ? 1.0 : -1.0,                  // just reproduced [2]
+        foodDir.angle, foodDir.magnitude,               // food dir [3,4]
+        obsDir.angle, obsDir.magnitude,                 // obstacle dir [5,6]
+        creatDir.angle, creatDir.magnitude,             // creature dir [7,8]
+        netDir.angle, netDir.magnitude,                 // net movement [9,10]
+        angleDelta(c.angle, c.prev.angle),              // angle delta [11]
+        moveDir.angle, moveDir.magnitude,               // last move dir [12,13]
+        wrapAngle(c.wanderAngle - c.angle) / Math.PI,   // wander angle [14]
+        Math.min(c.wanderStrength / Math.SQRT2, 1),     // wander strength [15]
+        1.0,                                            // bias [16]
     ];
+}
 
-    const weights = creature.weights;
+function think(c, food, obstacles, creatures, config) {
+    const inputs = buildInputs(c, food, obstacles, creatures, config);
+
+    const weights = c.weights;
     if (weights.length !== EXPECTED_WEIGHT_COUNT) {
         throw new Error(`Expected ${EXPECTED_WEIGHT_COUNT} weights, got ${weights.length}`);
     }
 
     // Hidden layer: tanh(W_hidden * inputs)
-    const hidden = new Array(HIDDEN_SIZE);
+    const hidden = new Float64Array(HIDDEN_SIZE);
     for (let i = 0; i < HIDDEN_SIZE; i++) {
         let sum = 0;
         const offset = i * INPUT_SIZE;
@@ -131,7 +122,7 @@ function think(creature, config) {
     }
 
     // Output layer: tanh(W_output * hidden)
-    const output = new Array(OUTPUT_SIZE);
+    const output = new Float64Array(OUTPUT_SIZE);
     for (let i = 0; i < OUTPUT_SIZE; i++) {
         let sum = 0;
         const offset = HIDDEN_WEIGHT_COUNT + i * HIDDEN_SIZE;
@@ -142,43 +133,14 @@ function think(creature, config) {
     }
 
     return {
-        id: creature.id,
-        angleDelta: output[0] * maxTurnAngle,
-        speed: ((output[1] + 1) / 2) * maxSpeed
+        id: c.id,
+        angleDelta: output[0] * config.CREATURE_MAX_TURN_ANGLE_RADIANS,
+        speed: ((output[1] + 1) / 2) * config.CREATURE_MAX_SPEED
     };
 }
 
-function getMovements(state, config) {
-    return state.creatures.map(c => think({
-        id: c.id,
-        x: c.x,
-        y: c.y,
-        angle: c.angle,
-        wanderAngle: c.wanderAngle,
-        wanderStrength: c.wanderStrength,
-        energy: c.energy,
-        prevX: c.prev.x,
-        prevY: c.prev.y,
-        prevAngle: c.prev.angle,
-        recentPath: c.recentPath,
-        prevEnergy: c.prev.energy,
-        justReproduced: c.justReproduced,
-        weights: c.weights,
-        food: getVisibleFood(c, state, config),
-        obstacles: getVisibleObstacles(c, state, config),
-        creatures: getVisibleCreatures(c, state, config)
-    }, config));
-}
-
-module.exports = {
-    initWeights,
-    mutateWeights,
-    getMovements
-};
+module.exports = { initWeights, mutateWeights, think };
 
 if (process.env.NODE_ENV === 'test') {
-    module.exports.EXPECTED_WEIGHT_COUNT = EXPECTED_WEIGHT_COUNT;
-    module.exports.INPUT_SIZE = INPUT_SIZE;
-    module.exports.HIDDEN_SIZE = HIDDEN_SIZE;
-    module.exports.OUTPUT_SIZE = OUTPUT_SIZE;
+    Object.assign(module.exports, { EXPECTED_WEIGHT_COUNT, INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, buildInputs });
 }

@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 jest.mock('../../src/nn', () => ({
   initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
   mutateWeights: jest.fn(w => Promise.resolve(w)),
-  getMovements: jest.fn(() => Promise.resolve([])),
+  think: jest.fn(() => ({ id: 0, angleDelta: 0, speed: 0 })),
 }));
 
 const request = require('supertest');
@@ -58,7 +58,7 @@ describe('POST /api/place-food', () => {
       .send({ x: 10, y: 10 });
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ success: false, error: 'Max food count reached' });
+    expect(res.body).toEqual({ success: false, error: 'Could not place food' });
   });
 
   it('returns 400 for invalid coordinate payloads', async () => {

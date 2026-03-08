@@ -3,10 +3,14 @@ require("dotenv").config();
 const SERVER_CONFIG = {
     ENVIRONMENT: process.env.ENVIRONMENT || "local",
     APP_VERSION: process.env.APP_VERSION || "dev",
+    LOG_LEVEL: process.env.LOG_LEVEL || "info",
 
     PORT: process.env.PORT || 3000,
-    CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
     WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:3000",
+    WEBSOCKET_MAX_CLIENTS: process.env.WEBSOCKET_MAX_CLIENTS ? parseInt(process.env.WEBSOCKET_MAX_CLIENTS, 10) : 100,
+
+    RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) : 60000,
+    RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : 60
 };
 
 const SIM_CONFIG = {
@@ -14,7 +18,7 @@ const SIM_CONFIG = {
     STATE_SAVE_INTERVAL_MS: 1000 * 60 * 5,
 
     STATE_UPDATE_INTERVAL_MS: 300,
-    STATE_UPDATE_LOOP_RETRY_LIMIT: parseInt(process.env.STATE_UPDATE_LOOP_RETRY_LIMIT || '3', 10),
+    STATE_UPDATE_LOOP_RETRY_LIMIT: 3,
     GRID_SIZE: 50,
     GRID_TARGET_ENERGY: 15000,
 
@@ -40,12 +44,14 @@ const SIM_CONFIG = {
     FOOD_ENERGY_BONUS: 130,
     FOOD_ENERGY_BONUS_MAX_GENERATION: 100,
 
-    MUTATION_CHANCE: 0.5,
-    TOP_PERFORMERS_COUNT: 5,
+    MUTATION_RATE: 0.2,
+    MUTATION_STRENGTH: 0.3,
+    TOP_PERFORMERS_COUNT: 20,
+    TOP_PERFORMERS_SCORE_DECAY: 0.999,
 
     POPULATION_RESTART_THRESHOLD: 3,
     POPULATION_TOP_RATIO: 0.2,
-    POPULATION_MUTATED_RATIO: 0.6,
+    POPULATION_MUTATED_RATIO: 0.6
 };
 
 module.exports = { SERVER_CONFIG, SIM_CONFIG };

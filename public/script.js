@@ -167,7 +167,7 @@
             ui.stats.creature.id.textContent = `${creature.id}`;
             ui.stats.creature.generation.textContent = `${creature.generation}`;
             ui.stats.creature.life.textContent = formatTime(creature.msLived);
-            ui.stats.creature.energy.textContent = `${Math.round(creature.energy * 100)}%`;
+            ui.stats.creature.energy.textContent = `${Math.ceil(creature.energy * 100)}%`;
             ui.stats.creature.score.textContent = `${creature.score}`;
         },
         startObserving(creature) {
@@ -230,7 +230,6 @@
 
             app.scale = canvas.width / app.config.gridSize;
             app.halfScale = app.scale * 0.5;
-            app.animation.renderDelay = app.config.stateUpdateInterval;
             renderer.updateStaticLayer();
         },
         clear() {
@@ -431,11 +430,6 @@
 
     const connection = {
         open() {
-            if (!app.config || !app.config.webSocketUrl) {
-                console.error('Cannot open WebSocket: configuration missing.');
-                return;
-            }
-
             if (app.socket && (app.socket.readyState === WebSocket.OPEN || app.socket.readyState === WebSocket.CONNECTING)) {
                 console.log('WS is already open or connecting - skipping new start');
                 return;
@@ -445,7 +439,8 @@
                 this.close();
             }
 
-            app.socket = new WebSocket(app.config.webSocketUrl);
+            const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+            app.socket = new WebSocket(wsUrl);
             app.socket.addEventListener('open', this.handleOpen);
             app.socket.addEventListener('message', this.handleMessage);
             app.socket.addEventListener('close', this.handleClose);
@@ -458,7 +453,17 @@
         },
         handleMessage: event => {
             try {
-                const state = JSON.parse(event.data);
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'config') {
+                    const isFirst = !app.config;
+                    app.config = msg;
+                    app.animation.renderDelay = msg.stateUpdateInterval;
+                    buildInfo.update();
+                    renderer.updateSettings();
+                    if (isFirst) requestAnimationFrame(renderer.loop);
+                    return;
+                }
+                const state = msg;
                 state.creaturesMap = new Map(state.creatures.map(creature => [creature.id, creature]));
                 state.timestamp = performance.now();
                 stateBuffer.push(state);
@@ -481,7 +486,7 @@
             console.error('WS error:', error);
         },
         scheduleReconnect: () => {
-            if (!app.config || app.reconnectScheduled) {
+            if (app.reconnectScheduled) {
                 return;
             }
 
@@ -559,31 +564,11 @@
         window.addEventListener('beforeunload', connection.close);
     };
 
-    const init = async () => {
+    const init = () => {
         stats.showGridPanel();
         theme.loadPreferred();
         registerServiceWorker();
-
-        try {
-            const response = await fetch('/api/config');
-            if (!response.ok) {
-                throw new Error(`Failed to load config: ${response.status} ${response.statusText}`);
-            }
-
-            app.config = await response.json();
-            if (!app.config.gridSize || !app.config.webSocketUrl || !app.config.creature?.visibilityRadius) {
-                throw new Error('Incomplete config received from server');
-            }
-            buildInfo.update();
-        } catch (error) {
-            console.error('Error loading configuration', error);
-            showLoader();
-            return;
-        }
-
         setupEventListeners();
-        renderer.updateSettings();
-        requestAnimationFrame(renderer.loop);
         connection.open();
     };
 

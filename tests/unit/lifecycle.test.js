@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 jest.mock('../../src/nn', () => ({
   initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
   mutateWeights: jest.fn(weights => Promise.resolve(weights.map(w => w + 0.01))),
-  getMovements: jest.fn(),
+  think: jest.fn(() => ({ id: 1, angleDelta: 0, speed: 0 })),
 }));
 
 jest.mock('../../src/creature', () => {
@@ -106,12 +106,7 @@ describe('handleLifecycle', () => {
     state.creatures = [parent];
     state.lastCreatureId = 1;
 
-    // Force no mutation (Math.random > MUTATION_CHANCE)
-    jest.spyOn(Math, 'random').mockReturnValue(0.99);
-
     const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
-
-    Math.random.mockRestore();
 
     // parent + offspring
     expect(result).toHaveLength(2);

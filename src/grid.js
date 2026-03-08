@@ -26,7 +26,7 @@ function getTotalEnergy(state, config) {
 }
 
 function getRandomEmptyCell(state, config) {
-    const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length;
+    const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length - (state.borderObstacles?.length ?? 0);
     let cell = null;
     let attempts = 0;
     do {

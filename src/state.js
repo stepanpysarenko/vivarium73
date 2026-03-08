@@ -1,9 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { initCreature, getScore } = require("./creature");
-const { getMovements, mutateWeights } = require("./nn");
-const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex } = require("./grid");
-const { appendTopPerformers, restartPopulation } = require("./performance");
+const { think, mutateWeights } = require("./nn");
+const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex, getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
+const { appendTopPerformers, restartPopulation } = require("./evolution");
 const logger = require("./logger");
 
 function round2(x) {
@@ -26,10 +26,10 @@ async function loadState(savePath) {
     try {
         const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
-        logger.info(`State successfully loaded from ${filePath}`);
+        logger.debug(`State successfully loaded from ${filePath}`);
         return state;
     } catch (error) {
-        logger.warn(`Error loading state from ${filePath}:`, error.message);
+        logger.error(`Error loading state from ${filePath}:`, error.message);
         return null;
     }
 }
@@ -37,9 +37,10 @@ async function loadState(savePath) {
 async function saveState(state, savePath) {
     const filePath = path.resolve(savePath);
     try {
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
         const data = JSON.stringify(state, null, 4);
         await fs.writeFile(filePath, data, 'utf8');
-        logger.info('State successfully saved to', filePath);
+        logger.debug(`State successfully saved to ${filePath}`);
     } catch (error) {
         logger.error(`Error saving state to ${filePath}:`, error.message);
     }
@@ -73,7 +74,9 @@ async function createState(config) {
         }
 
         logger.info("New random state initialized");
+        await saveState(state, config.STATE_SAVE_PATH);
     } else {
+        logger.info("State loaded from file");
         buildStateIndexes(state);
     }
     return state;
@@ -104,7 +107,13 @@ function getPublicState(state, config) {
 }
 
 async function updateState(state, config) {
-    const movements = await getMovements(state, config);
+    const movements = state.creatures.map(c => think(
+        c,
+        getVisibleFood(c, state, config),
+        getVisibleObstacles(c, state, config),
+        getVisibleCreatures(c, state, config),
+        config
+    ));
     const movementsMap = new Map(movements.map(m => [m.id, m]));
 
     for (const creature of state.creatures) {
@@ -133,6 +142,9 @@ async function updateState(state, config) {
     }
 
     updateFood(state, config);
+    for (const p of state.topPerformers) {
+        p.stats.score *= config.TOP_PERFORMERS_SCORE_DECAY;
+    }
     updateStats(state);
 }
 
@@ -268,16 +280,18 @@ async function handleLifecycle(state, config) {
 
         // creatures at 100% energy spawn an offspring and pay the reproduction cost
         if (creature.energy >= config.CREATURE_MAX_ENERGY) {
-            const weights = Math.random() <= config.MUTATION_CHANCE
-                ? await mutateWeights(creature.weights)
-                : creature.weights;
+            appendTopPerformers(creature, state, config);
 
+            const weights = mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
+            const spawnDist = config.CREATURE_INTERACTION_RADIUS * 2;
+            const offspringX = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.x + Math.cos(offspringAngle) * spawnDist));
+            const offspringY = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.y + Math.sin(offspringAngle) * spawnDist));
             const offspringCreature = await initCreature(
                 state,
                 config,
-                creature.x,
-                creature.y,
+                offspringX,
+                offspringY,
                 offspringAngle,
                 weights,
                 creature.generation + 1
@@ -302,10 +316,7 @@ async function handleLifecycle(state, config) {
 function updateStats(state) {
     state.stats.creatureCount = state.creatures.length;
     state.stats.foodCount = state.food.length;
-    const maxGen = Math.max(...state.creatures.map(c => c.generation), 0);
-    if (maxGen > state.stats.generation) {
-        state.stats.generation = maxGen;
-    }
+    state.stats.generation = state.creatures.reduce((max, c) => c.generation > max ? c.generation : max, 0);
 }
 
 function addFood(x, y, state, config) {

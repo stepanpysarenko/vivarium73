@@ -3,7 +3,19 @@ const { mutateWeights } = require("./nn");
 const logger = require("./logger");
 
 function appendTopPerformers(creature, state, config) {
-    const score = creature.stats.score ?? 0;
+    if (creature.id !== undefined) {
+        const existing = state.topPerformers.findIndex(p => p.id === creature.id);
+        if (existing !== -1) state.topPerformers.splice(existing, 1);
+    }
+
+    const copy = {
+        id: creature.id,
+        generation: creature.generation,
+        weights: creature.weights.slice(),
+        stats: { ...creature.stats }
+    };
+
+    const score = copy.stats.score ?? 0;
     // binary search for insertion point to maintain descending score order
     let lo = 0, hi = state.topPerformers.length;
     while (lo < hi) {
@@ -11,7 +23,7 @@ function appendTopPerformers(creature, state, config) {
         if ((state.topPerformers[mid].stats.score ?? 0) > score) lo = mid + 1;
         else hi = mid;
     }
-    state.topPerformers.splice(lo, 0, creature);
+    state.topPerformers.splice(lo, 0, copy);
 
     if (state.topPerformers.length > config.TOP_PERFORMERS_COUNT) {
         state.topPerformers.length = config.TOP_PERFORMERS_COUNT;
@@ -28,7 +40,7 @@ async function restartPopulation(state, config) {
     }
 
     logger.info("Restarting population with top performers...");
-    logger.info('Top performers scores:', state.topPerformers.map(p => p.stats.score));
+    logger.debug('Top performers scores:', state.topPerformers.map(p => p.stats.score));
     state.creatures = [];
     const topPerformersCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_TOP_RATIO);
     const mutatedCount = Math.floor(config.CREATURE_INITIAL_COUNT * config.POPULATION_MUTATED_RATIO);
@@ -42,7 +54,7 @@ async function restartPopulation(state, config) {
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const mutated = await mutateWeights(parent.weights);
+        const mutated = mutateWeights(parent.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
         const offspring = await initCreature(state, config, null, null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }
