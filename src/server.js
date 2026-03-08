@@ -32,7 +32,7 @@ registerRoutes(app, () => simulationManager.get(SIM_ID));
 
 wss.on("connection", (ws) => {
     const limit = SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS;
-    if (limit !== null && wss.clients.size >= limit) {
+    if (limit !== null && wss.clients.size > limit) {
         ws.close(1013, "Max connections reached");
         return;
     }
