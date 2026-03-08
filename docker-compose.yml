@@ -4,13 +4,12 @@ services:
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
       - APP_VERSION=${APP_VERSION}
-      - PORT=${PORT}
-      - CORS_ORIGIN=${CORS_ORIGIN}
-      - ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}
-      - GA_TAG_ID=${GA_TAG_ID}
-      - CANONICAL_URL=${CANONICAL_URL}
-      - WEBSOCKET_URL=${WEBSOCKET_URL}
       - LOG_LEVEL=${LOG_LEVEL}
+      - PORT=${PORT}
+      - WEBSOCKET_URL=${WEBSOCKET_URL}
+      - CANONICAL_URL=${CANONICAL_URL}
+      - GA_TAG_ID=${GA_TAG_ID}
+      - ROBOTS_TAG_CONTENT=${ROBOTS_TAG_CONTENT}
     ports:
       - "${PORT}:${PORT}"
     volumes:
