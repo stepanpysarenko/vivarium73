@@ -70,7 +70,8 @@
         },
         state: {
             buffer: [],
-            latest: null
+            latest: null,
+            obstacles: []
         }
     };
 
@@ -165,10 +166,10 @@
             }
 
             ui.stats.creature.id.textContent = `${creature.id}`;
-            ui.stats.creature.generation.textContent = `${creature.generation}`;
-            ui.stats.creature.life.textContent = formatTime(creature.msLived);
-            ui.stats.creature.energy.textContent = `${Math.ceil(creature.energy * 100)}%`;
-            ui.stats.creature.score.textContent = `${creature.score}`;
+            ui.stats.creature.generation.textContent = `${creature.g}`;
+            ui.stats.creature.life.textContent = formatTime(creature.t);
+            ui.stats.creature.energy.textContent = `${Math.ceil(creature.e * 100)}%`;
+            ui.stats.creature.score.textContent = `${creature.s}`;
         },
         startObserving(creature) {
             if (typeof gtag === 'function') {
@@ -243,7 +244,7 @@
 
             staticCtx.globalAlpha = 1;
             staticCtx.fillStyle = app.colors.obstacle;
-            app.state.latest.obstacles.forEach(({ x, y }) => {
+            app.state.obstacles.forEach(({ x, y }) => {
                 staticCtx.fillRect(x * app.scale, y * app.scale, app.scale, app.scale);
             });
 
@@ -280,11 +281,11 @@
                     x = lerp(previous.x, creature.x, t);
                     y = lerp(previous.y, creature.y, t);
                     const angleT = Math.min(t, 1);
-                    angle = lerpAngle(previous.angle, creature.angle, angleT);
+                    angle = lerpAngle(previous.a, creature.a, angleT);
                 } else {
                     x = creature.x;
                     y = creature.y;
-                    angle = creature.angle;
+                    angle = creature.a;
                 }
 
                 if (creature.id === app.observedCreatureId) {
@@ -296,8 +297,8 @@
                 ctx.translate(x * app.scale + app.halfScale, y * app.scale + app.halfScale);
                 ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
 
-                ctx.globalAlpha = creature.energy * 0.8 + 0.2;
-                const flash = creature.flashing && Math.floor(now / 200) % 2 === 0;
+                ctx.globalAlpha = creature.e * 0.8 + 0.2;
+                const flash = creature.f && Math.floor(now / 200) % 2 === 0;
                 ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
 
                 ctx.fillRect(-app.halfScale, -app.halfScale, app.scale, app.scale);
@@ -454,10 +455,11 @@
         handleMessage: event => {
             try {
                 const msg = JSON.parse(event.data);
-                if (msg.type === 'config') {
+                if (msg.type === 'init') {
                     const isFirst = !app.config;
-                    app.config = msg;
-                    app.animation.renderDelay = msg.stateUpdateInterval;
+                    app.config = msg.config;
+                    app.state.obstacles = msg.state.obstacles;
+                    app.animation.renderDelay = msg.config.stateUpdateInterval;
                     buildInfo.update();
                     renderer.updateSettings();
                     if (isFirst) requestAnimationFrame(renderer.loop);

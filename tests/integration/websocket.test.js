@@ -11,6 +11,7 @@ jest.mock('../../src/simulation', () => ({
         CREATURE_VISIBILITY_RADIUS: 5,
         CREATURE_VISIBILITY_FOV_RADIANS: Math.PI,
       },
+      getObstacles: jest.fn(() => [{ x: 0, y: 0 }]),
       start: jest.fn(),
     })),
   },
@@ -29,10 +30,9 @@ const sampleFrame = () => ({
     foodCount: 3,
   },
   creatures: [
-    { id: 7, x: 4.5, y: 3.2, angle: 1.2, energy: 0.6, flashing: false, generation: 2, score: 5, msLived: 1000 },
+    { id: 7, x: 4.5, y: 3.2, a: 1.2, e: 0.6, f: false, g: 2, s: 5, t: 1000 },
   ],
   food: [{ x: 1, y: 1 }],
-  obstacles: [{ x: 0, y: 0 }],
 });
 
 
@@ -56,31 +56,32 @@ afterEach(() => {
 
 describe('WebSocket connection', () => {
 
-  it('sends config as first message on connect', () => {
+  it('sends init on connect with config and state blocks', () => {
     const { mockWs, messages } = connectMockClient();
 
     expect(mockWs.send).toHaveBeenCalledTimes(1);
-    const config = messages[0];
-    expect(config.type).toBe('config');
-    expect(config).toHaveProperty('gridSize');
-    expect(config).toHaveProperty('stateUpdateInterval');
-    expect(config).toHaveProperty('creature');
-    expect(config).toHaveProperty('foodMaxCount');
+    const init = messages[0];
+    expect(init.type).toBe('init');
+    expect(init.config).toHaveProperty('gridSize');
+    expect(init.config).toHaveProperty('stateUpdateInterval');
+    expect(init.config).toHaveProperty('creature');
+    expect(init.config).toHaveProperty('foodMaxCount');
+    expect(init.state).toHaveProperty('obstacles');
   });
 
-  it('config and state messages carry distinct types', () => {
+  it('init and state messages carry distinct types', () => {
     const { messages } = connectMockClient();
 
     broadcastState(sampleFrame());
 
     expect(messages).toHaveLength(2);
-    expect(messages[0].type).toBe('config');
+    expect(messages[0].type).toBe('init');
     expect(messages[1].type).toBe('state');
   });
 });
 
 describe('WebSocket broadcasting', () => {
-  it('state frame includes stats, creatures, food, and obstacles', () => {
+  it('state frame includes stats, creatures, and food', () => {
     const { mockWs, messages } = connectMockClient();
 
     broadcastState(sampleFrame());
@@ -90,7 +91,7 @@ describe('WebSocket broadcasting', () => {
     expect(payload).toHaveProperty('stats');
     expect(payload).toHaveProperty('creatures');
     expect(payload).toHaveProperty('food');
-    expect(payload).toHaveProperty('obstacles');
+    expect(payload).not.toHaveProperty('obstacles');
   });
 
   it('creature entries in state include id, position, angle, and energy', () => {
@@ -103,8 +104,8 @@ describe('WebSocket broadcasting', () => {
       id: expect.any(Number),
       x: expect.any(Number),
       y: expect.any(Number),
-      angle: expect.any(Number),
-      energy: expect.any(Number),
+      a: expect.any(Number), // angle
+      e: expect.any(Number), // energy
     });
   });
 

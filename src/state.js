@@ -94,15 +94,14 @@ function getPublicState(state, config) {
             id: c.id,
             x: round2(c.x),
             y: round2(c.y),
-            angle: round2(c.angle),
-            energy: round2(c.energy / config.CREATURE_MAX_ENERGY),
-            flashing: c.updatesToFlash > 0,
-            generation: c.generation,
-            score: c.stats.score,
-            msLived: c.stats.msLived
+            a: round2(c.angle),                                 // angle
+            e: round2(c.energy / config.CREATURE_MAX_ENERGY),   // energy
+            f: c.updatesToFlash > 0,                            // flashing
+            g: c.generation,                                    // generation
+            s: c.stats.score,                                   // score
+            t: c.stats.msLived                                  // msLived
         })),
-        food: state.food,
-        obstacles: state.obstacles
+        food: state.food
     };
 }
 
