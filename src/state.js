@@ -4,16 +4,13 @@ const { initCreature, getScore } = require("./creature");
 const { think, mutateWeights } = require("./nn");
 const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex, getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./evolution");
+const { wrapAngle } = require("./utils");
 const logger = require("./logger");
 
 function round2(x) {
     return Math.round(x * 100) / 100;
 }
 
-function wrapAngle(angle) {
-    const TWO_PI = 2 * Math.PI;
-    return ((angle + Math.PI) % TWO_PI + TWO_PI) % TWO_PI - Math.PI;
-}
 
 async function loadState(savePath) {
     const filePath = path.resolve(savePath);
@@ -261,9 +258,12 @@ function handleEating(creature, state, config) {
                 const energyGained = Math.min(creature.energy + foodEnergy, config.CREATURE_MAX_ENERGY) - creature.energy;
                 creature.energy += energyGained;
                 creature.stats.energyGained += energyGained;
-                const idx = state.food.indexOf(food);
-                if (idx !== -1) state.food.splice(idx, 1);
                 state.foodMap.delete(key);
+                const idx = state.food.indexOf(food);
+                if (idx !== -1) {
+                    state.food[idx] = state.food[state.food.length - 1];
+                    state.food.pop();
+                }
                 return;
             }
         }

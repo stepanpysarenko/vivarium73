@@ -1,3 +1,5 @@
+const { wrapAngle } = require("./utils");
+
 const INPUT_SIZE = 17;
 const HIDDEN_SIZE = 9;
 const OUTPUT_SIZE = 2;
@@ -30,9 +32,6 @@ function mutateWeights(weights, rate, strength) {
     );
 }
 
-function wrapAngle(angle) {
-    return ((angle + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-}
 
 function influenceVector(x, y, targets, repel) {
     let vx = 0, vy = 0;

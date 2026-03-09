@@ -14,7 +14,7 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-let wsClientCount = 0;
+
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -31,35 +31,36 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 registerRoutes(app, () => simulationManager.get(SIM_ID));
 
-wss.on("connection", (ws) => {
-    const limit = SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS;
-    if (limit !== null && wsClientCount >= limit) {
-        ws.close(1013, "Max connections reached");
-        return;
+function sendInitMessage(ws, sim) {
+    try {
+        ws.send(JSON.stringify({
+            type: 'init',
+            config: {
+                envCode: SERVER_CONFIG.ENVIRONMENT,
+                appVersion: SERVER_CONFIG.APP_VERSION,
+                stateUpdateInterval: sim.config.STATE_UPDATE_INTERVAL_MS,
+                gridSize: sim.config.GRID_SIZE,
+                foodMaxCount: sim.config.FOOD_MAX_COUNT,
+                creature: {
+                    visibilityRadius: sim.config.CREATURE_VISIBILITY_RADIUS,
+                    visibilityFovRadians: Math.round(sim.config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
+                }
+            },
+            state: {
+                obstacles: sim.getObstacles()
+            }
+        }));
+    } catch (err) {
+        logger.warn("WebSocket init send failed:", err.message);
     }
-    wsClientCount++;
+}
+
+wss.on("connection", (ws) => {
     logger.debug("Client connected");
 
-    const sim = simulationManager.get(SIM_ID);
-    ws.send(JSON.stringify({
-        type: 'init',
-        config: {
-            envCode: SERVER_CONFIG.ENVIRONMENT,
-            appVersion: SERVER_CONFIG.APP_VERSION,
-            stateUpdateInterval: sim.config.STATE_UPDATE_INTERVAL_MS,
-            gridSize: sim.config.GRID_SIZE,
-            foodMaxCount: sim.config.FOOD_MAX_COUNT,
-            creature: {
-                visibilityRadius: sim.config.CREATURE_VISIBILITY_RADIUS,
-                visibilityFovRadians: Math.round(sim.config.CREATURE_VISIBILITY_FOV_RADIANS * 100) / 100
-            }
-        },
-        state: {
-            obstacles: sim.getObstacles()
-        }
-    }));
+    sendInitMessage(ws, simulationManager.get(SIM_ID));
 
-    ws.on("close", () => { wsClientCount--; logger.debug("Client disconnected"); });
+    ws.on("close", () => { logger.debug("Client disconnected"); });
 });
 
 function broadcastState(state) {

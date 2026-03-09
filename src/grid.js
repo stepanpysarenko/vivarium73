@@ -9,6 +9,7 @@ function buildCreatureIndex(creatures) {
 }
 
 function buildStateIndexes(state) {
+    state.allObstacles = [...state.obstacles, ...(state.borderObstacles || [])];
     state.obstacleMap = new Map(state.obstacles.map(o => [`${o.x},${o.y}`, o]));
     state.foodMap = new Map(state.food.map(f => [`${f.x},${f.y}`, f]));
     state.creatureMap = buildCreatureIndex(state.creatures || []);
@@ -129,8 +130,7 @@ function getVisibleCreatures(creature, state, config) {
 }
 
 function getVisibleObstacles(creature, state, config) {
-    const allObstacles = [...state.obstacles, ...state.borderObstacles];
-    return getVisibleObjects(allObstacles, creature, config);
+    return getVisibleObjects(state.allObstacles, creature, config);
 }
 
 module.exports = {

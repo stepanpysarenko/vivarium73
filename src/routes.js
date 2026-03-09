@@ -39,9 +39,6 @@ module.exports = function registerRoutes(app, getSim) {
 
         const gridX = Math.floor(x);
         const gridY = Math.floor(y);
-        if (gridX < 0 || gridX >= sim.config.GRID_SIZE || gridY < 0 || gridY >= sim.config.GRID_SIZE) {
-            return res.status(400).json({ success: false, error: "Coordinates out of bounds" });
-        }
 
         try {
             sim.addFood(gridX, gridY);
