@@ -234,6 +234,7 @@
             renderer.updateStaticLayer();
         },
         clear() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.globalAlpha = 1;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         },
@@ -258,21 +259,21 @@
             const centerY = y * app.scale + app.halfScale;
             const radius = app.scale * app.config.creature.visibilityRadius;
 
-            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.globalAlpha = 0.05;
             ctx.fillStyle = app.colors.creatureObservedHighlight;
 
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY); 
+            ctx.moveTo(centerX, centerY);
             const halfFOV = fovRadians / 2;
             const startAngle = angle - halfFOV;
             const endAngle = angle + halfFOV;
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.lineTo(centerX, centerY);
             ctx.fill();
-            ctx.restore();
         },
         drawCreatures(prevState, currentState, t, now) {
+            const flash = Math.floor(now / 200) % 2 === 0;
             currentState.creatures.forEach(creature => {
                 let x, y, angle;
                 const previous = prevState ? prevState.creaturesMap.get(creature.id) : null;
@@ -293,18 +294,18 @@
                     renderer.drawObservedHighlight(x, y, angle, fovRadians);
                 }
 
-                ctx.save();
-                ctx.translate(x * app.scale + app.halfScale, y * app.scale + app.halfScale);
-                ctx.rotate(angle + Math.PI * 0.75); // rotate towards positive x-axis
+                const a = angle + Math.PI * 0.75; // rotate towards positive x-axis
+                const cos = Math.cos(a);
+                const sin = Math.sin(a);
+                const cx = x * app.scale + app.halfScale;
+                const cy = y * app.scale + app.halfScale;
+                ctx.setTransform(cos, sin, -sin, cos, cx, cy);
 
                 ctx.globalAlpha = creature.e * 0.8 + 0.2;
-                const flash = creature.f && Math.floor(now / 200) % 2 === 0;
-                ctx.fillStyle = flash ? app.colors.creatureFlash : app.colors.creature;
-
+                ctx.fillStyle = creature.f && flash ? app.colors.creatureFlash : app.colors.creature;
                 ctx.fillRect(-app.halfScale, -app.halfScale, app.scale, app.scale);
                 ctx.fillStyle = app.colors.creatureSecondary;
                 ctx.fillRect(-app.halfScale, -app.halfScale, app.halfScale, app.halfScale);
-                ctx.restore();
             });
         },
         loop() {
