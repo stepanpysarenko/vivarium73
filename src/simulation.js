@@ -112,7 +112,7 @@ if (process.env.NODE_ENV === 'test') {
             const sim = simulationManager.get(id);
             if (sim) {
                 sim._state = s;
-                buildStateIndexes(s);
+                buildStateIndexes(s, sim.config);
             }
         },
         getSimState(id) {

@@ -21,7 +21,7 @@ const createBaseState = () => {
     lastCreatureId: 0,
     topPerformers: [],
   };
-  buildStateIndexes(s);
+  buildStateIndexes(s, SIM_CONFIG);
   return s;
 };
 
@@ -85,7 +85,7 @@ describe('energy adjustments', () => {
     };
 
     const state = { ...createBaseState(), creatures: [creature, other] };
-    buildStateIndexes(state);
+    buildStateIndexes(state, SIM_CONFIG);
     state.creatureMap = new Map();
     state.creatureMap.set('1,1', [creature, other]);
 
@@ -154,7 +154,7 @@ describe('handleObstacleCollision', () => {
       obstacles: [{ x: 10, y: 10 }],
       borderObstacles: [],
     };
-    buildStateIndexes(state);
+    buildStateIndexes(state, SIM_CONFIG);
 
     const creature = {
       x: 5, y: 5,
@@ -176,7 +176,7 @@ describe('handleObstacleCollision', () => {
       obstacles: [{ x: 10, y: 10 }, { x: 10, y: 9 }, { x: 9, y: 10 }],
       borderObstacles: [],
     };
-    buildStateIndexes(state);
+    buildStateIndexes(state, SIM_CONFIG);
 
     const creature = {
       x: 10, y: 10,
@@ -199,7 +199,7 @@ describe('handleObstacleCollision', () => {
       obstacles: [],
       borderObstacles: [],
     };
-    buildStateIndexes(state);
+    buildStateIndexes(state, SIM_CONFIG);
 
     const creature = {
       x: -2, y: -2,
@@ -221,7 +221,7 @@ describe('handleObstacleCollision', () => {
       obstacles: [{ x: 10, y: 10 }],
       borderObstacles: [],
     };
-    buildStateIndexes(state);
+    buildStateIndexes(state, SIM_CONFIG);
 
     const creature = {
       x: 10, y: 10,
