@@ -56,9 +56,14 @@ function sendInitMessage(ws, sim) {
 }
 
 wss.on("connection", (ws) => {
+    if (wss.clients.size > SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS) {
+        ws.close(1013, "Server full");
+        return;
+    }
+    
     logger.debug("Client connected");
     sendInitMessage(ws, simulationManager.get(SIM_ID));
-    
+
     ws.on("close", () => { logger.debug("Client disconnected"); });
 });
 
