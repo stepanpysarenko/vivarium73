@@ -1,7 +1,7 @@
 const { initWeights } = require("./nn");
 const { getRandomEmptyCell } = require("./grid");
 
-async function initCreature(state, config, x = null, y = null, angle = null, weights = null, generation = 1) {
+function initCreature(state, config, x = null, y = null, angle = null, weights = null, generation = 1) {
     if (x === null || y === null) {
         const cell = getRandomEmptyCell(state, config);
         if (!cell) {

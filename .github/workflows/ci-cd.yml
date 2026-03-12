@@ -187,7 +187,6 @@ jobs:
             APP_VERSION=${APP_VERSION}
             LOG_LEVEL=${{ vars.LOG_LEVEL }}
             PORT=${{ vars.PORT }}
-            WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
             WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
             RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
             RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}
@@ -319,7 +318,6 @@ jobs:
             APP_VERSION=${APP_VERSION}
             LOG_LEVEL=${{ vars.LOG_LEVEL }}
             PORT=${{ vars.PORT }}
-            WEBSOCKET_URL=${{ vars.WEBSOCKET_URL }}
             WEBSOCKET_MAX_CLIENTS=${{ vars.WEBSOCKET_MAX_CLIENTS }}
             RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS }}
             RATE_LIMIT_MAX=${{ vars.RATE_LIMIT_MAX }}

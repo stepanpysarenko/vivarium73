@@ -48,11 +48,6 @@ describe('think', () => {
     weights: opts.weights ?? new Array(EXPECTED_WEIGHT_COUNT).fill(0),
   });
 
-  it('returns a movement with the creature ID', () => {
-    const m = think(makeCreature(42), [], [], [], SIM_CONFIG);
-    expect(m.id).toBe(42);
-  });
-
   it('returns angleDelta and speed', () => {
     const m = think(makeCreature(1), [], [], [], SIM_CONFIG);
     expect(m).toHaveProperty('angleDelta');

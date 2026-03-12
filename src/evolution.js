@@ -30,11 +30,11 @@ function appendTopPerformers(creature, state, config) {
     }
 }
 
-async function restartPopulation(state, config) {
+function restartPopulation(state, config) {
     if (state.topPerformers.length === 0) {
         logger.info("No top performers - initializing from scratch...");
         for (let i = 0; i < config.CREATURE_INITIAL_COUNT; i++) {
-            state.creatures.push(await initCreature(state, config));
+            state.creatures.push(initCreature(state, config));
         }
         return;
     }
@@ -48,19 +48,19 @@ async function restartPopulation(state, config) {
 
     for (let i = 0; i < topPerformersCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
-        const clone = await initCreature(state, config, null, null, null, parent.weights, parent.generation + 1);
+        const clone = initCreature(state, config, null, null, null, parent.weights, parent.generation + 1);
         state.creatures.push(clone);
     }
 
     for (let i = 0; i < mutatedCount; i++) {
         const parent = state.topPerformers[i % state.topPerformers.length];
         const mutated = mutateWeights(parent.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
-        const offspring = await initCreature(state, config, null, null, null, mutated, parent.generation + 1);
+        const offspring = initCreature(state, config, null, null, null, mutated, parent.generation + 1);
         state.creatures.push(offspring);
     }
 
     for (let i = 0; i < randomCount; i++) {
-        state.creatures.push(await initCreature(state, config));
+        state.creatures.push(initCreature(state, config));
     }
 
     logger.info("Population restarted");

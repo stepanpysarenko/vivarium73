@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { initCreature, getScore } = require("./creature");
 const { think, mutateWeights } = require("./nn");
-const { getObstacles, getBorderObstacles, updateFood, isCellOccupied, isWithinRadius, buildStateIndexes, buildCreatureIndex, getVisibleFood, getVisibleObstacles, getVisibleCreatures } = require("./grid");
+const grid = require("./grid");
 const { appendTopPerformers, restartPopulation } = require("./evolution");
 const { wrapAngle } = require("./utils");
 const logger = require("./logger");
@@ -19,7 +19,7 @@ async function loadState(savePath) {
     } catch {
         return null;
     }
-    
+
     try {
         const fileData = await fs.readFile(filePath, 'utf8');
         const state = JSON.parse(fileData);
@@ -49,8 +49,7 @@ async function createState(config) {
         state = {
             creatures: [],
             food: [],
-            obstacles: getObstacles(),
-            borderObstacles: getBorderObstacles(config),
+            obstacles: grid.getObstacles(),
             stats: {
                 restarts: 0,
                 generation: 1,
@@ -62,11 +61,11 @@ async function createState(config) {
             createdAt: Date.now()
         };
 
-        buildStateIndexes(state);
-        updateFood(state, config);
+        grid.buildStateIndexes(state, config);
+        grid.updateFood(state, config);
 
         for (let i = 0; i < config.CREATURE_INITIAL_COUNT; i++) {
-            const creature = await initCreature(state, config);
+            const creature = initCreature(state, config);
             state.creatures.push(creature);
         }
 
@@ -74,7 +73,7 @@ async function createState(config) {
         await saveState(state, config.STATE_SAVE_PATH);
     } else {
         logger.info("State loaded from file");
-        buildStateIndexes(state);
+        grid.buildStateIndexes(state, config);
     }
     return state;
 }
@@ -103,41 +102,40 @@ function getPublicState(state, config) {
 }
 
 async function updateState(state, config) {
-    const movements = state.creatures.map(c => think(
-        c,
-        getVisibleFood(c, state, config),
-        getVisibleObstacles(c, state, config),
-        getVisibleCreatures(c, state, config),
-        config
-    ));
-    const movementsMap = new Map(movements.map(m => [m.id, m]));
-
+    const foodEnergy = getFoodEnergy(state, config);
     for (const creature of state.creatures) {
         creature.wanderAngle = wrapAngle(creature.wanderAngle + (Math.random() - 0.5) * 0.2);
         creature.updatesToFlash = Math.max(creature.updatesToFlash - 1, 0);
 
-        const movement = movementsMap.get(creature.id);
-        if (!movement) continue;
+        const movement = think(
+            creature,
+            grid.getVisibleFood(creature, state, config),
+            grid.getVisibleObstacles(creature, state, config),
+            grid.getVisibleCreatures(creature, state, config),
+            config
+        )
 
         applyMovement(creature, movement, config);
         handleObstacleCollision(creature, state, config);
-        handleEating(creature, state, config);
+        handleEating(creature, state, config, foodEnergy);
     }
 
-    state.creatureMap = buildCreatureIndex(state.creatures);
+    state.creatureMap = grid.buildCreatureIndex(state.creatures);
     state.creatures.forEach(c => handleCreatureCollision(c, state, config));
 
-    state.creatures = await handleLifecycle(state, config);
+    state.creatures = handleLifecycle(state, config);
     if (state.creatures.length === 0 || state.creatures.length < config.POPULATION_RESTART_THRESHOLD) {
         for (const creature of state.creatures) {
-            appendTopPerformers(creature, state, config);
+            if (!creature.justReproduced) {
+                appendTopPerformers(creature, state, config);
+            }
         }
-        await restartPopulation(state, config);
+        restartPopulation(state, config);
         state.stats.restarts++;
         await saveState(state, config.STATE_SAVE_PATH);
     }
 
-    updateFood(state, config);
+    grid.updateFood(state, config);
     for (const p of state.topPerformers) {
         p.stats.score *= config.TOP_PERFORMERS_SCORE_DECAY;
     }
@@ -174,7 +172,7 @@ function isObstacleCollision(x, y, state, config) {
     for (let dx = 0; dx <= 1; dx++) {
         for (let dy = 0; dy <= 1; dy++) {
             const obstacle = state.obstacleMap.get(`${fx + dx},${fy + dy}`);
-            if (obstacle && isWithinRadius(obstacle.x, obstacle.y, x, y, r2Interaction)) return true;
+            if (obstacle && grid.isWithinRadius(obstacle.x, obstacle.y, x, y, r2Interaction)) return true;
         }
     }
     return false;
@@ -219,6 +217,7 @@ function handleObstacleCollision(creature, state, config) {
 }
 
 function handleCreatureCollision(creature, state, config) {
+    const r2 = config.CREATURE_INTERACTION_RADIUS ** 2;
     const fx = Math.floor(creature.x);
     const fy = Math.floor(creature.y);
     for (let dx = -1; dx <= 1; dx++) {
@@ -226,8 +225,10 @@ function handleCreatureCollision(creature, state, config) {
             const others = state.creatureMap.get(`${fx + dx},${fy + dy}`) || [];
             for (const other of others) {
                 if (other.id === creature.id) continue;
-                const dist = Math.hypot(other.x - creature.x, other.y - creature.y);
-                if (dist < config.CREATURE_INTERACTION_RADIUS && dist > 0.001) {
+                const ddx = other.x - creature.x;
+                const ddy = other.y - creature.y;
+                const distSq = ddx * ddx + ddy * ddy;
+                if (distSq < r2 && distSq > 0.000001) {
                     creature.energy = Math.max(creature.energy - config.CREATURE_COLLISION_ENERGY_PENALTY, 0);
                     creature.updatesToFlash = config.CREATURE_COLLISION_TICKS_TO_FLASH;
                 }
@@ -236,14 +237,18 @@ function handleCreatureCollision(creature, state, config) {
     }
 }
 
-function handleEating(creature, state, config) {
-    const r2Interaction = config.CREATURE_INTERACTION_RADIUS ** 2;
+function getFoodEnergy(state, config) {
     let foodEnergy = config.FOOD_ENERGY;
     // apply a gradually decreasing energy bonus for early generations
     if (state.stats.generation <= config.FOOD_ENERGY_BONUS_MAX_GENERATION) {
         const progress = state.stats.generation / config.FOOD_ENERGY_BONUS_MAX_GENERATION;
         foodEnergy += Math.round(config.FOOD_ENERGY_BONUS * (1 - progress));
     }
+    return foodEnergy;
+}
+
+function handleEating(creature, state, config, foodEnergy) {
+    const r2Interaction = config.CREATURE_INTERACTION_RADIUS ** 2;
 
     const fx = Math.floor(creature.x);
     const fy = Math.floor(creature.y);
@@ -270,7 +275,7 @@ function handleEating(creature, state, config) {
     }
 }
 
-async function handleLifecycle(state, config) {
+function handleLifecycle(state, config) {
     const survivors = [];
     const offspring = [];
 
@@ -284,9 +289,13 @@ async function handleLifecycle(state, config) {
             const weights = mutateWeights(creature.weights, config.MUTATION_RATE, config.MUTATION_STRENGTH);
             const offspringAngle = wrapAngle(creature.angle + Math.PI);
             const spawnDist = config.CREATURE_INTERACTION_RADIUS * 2;
-            const offspringX = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.x + Math.cos(offspringAngle) * spawnDist));
-            const offspringY = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.y + Math.sin(offspringAngle) * spawnDist));
-            const offspringCreature = await initCreature(
+            let offspringX = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.x + Math.cos(offspringAngle) * spawnDist));
+            let offspringY = Math.max(0, Math.min(config.GRID_SIZE - 1, creature.y + Math.sin(offspringAngle) * spawnDist));
+            if (isObstacleCollision(offspringX, offspringY, state, config)) {
+                const cell = grid.getRandomEmptyCell(state, config);
+                if (cell) { offspringX = cell.x; offspringY = cell.y; }
+            }
+            const offspringCreature = initCreature(
                 state,
                 config,
                 offspringX,
@@ -327,7 +336,7 @@ function addFood(x, y, state, config) {
         throw new Error("Invalid coordinates");
     }
 
-    if (isCellOccupied(x, y, state)) {
+    if (grid.isCellOccupied(x, y, state)) {
         throw new Error("Cell is occupied");
     }
 

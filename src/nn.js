@@ -132,7 +132,6 @@ function think(c, food, obstacles, creatures, config) {
     }
 
     return {
-        id: c.id,
         angleDelta: output[0] * config.CREATURE_MAX_TURN_ANGLE_RADIANS,
         speed: ((output[1] + 1) / 2) * config.CREATURE_MAX_SPEED
     };

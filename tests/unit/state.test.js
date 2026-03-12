@@ -63,7 +63,7 @@ describe('energy adjustments', () => {
       stats: { energyGained: 0 },
     };
 
-    __testUtils.handleEating(creature, state, SIM_CONFIG);
+    __testUtils.handleEating(creature, state, SIM_CONFIG, SIM_CONFIG.FOOD_ENERGY);
 
     expect(creature.energy).toBe(SIM_CONFIG.CREATURE_MAX_ENERGY);
     expect(creature.stats.energyGained).toBe(SIM_CONFIG.FOOD_ENERGY);

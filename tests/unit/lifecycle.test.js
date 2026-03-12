@@ -1,8 +1,8 @@
 process.env.NODE_ENV = 'test';
 
 jest.mock('../../src/nn', () => ({
-  initWeights: jest.fn(() => Promise.resolve(new Array(171).fill(0))),
-  mutateWeights: jest.fn(weights => Promise.resolve(weights.map(w => w + 0.01))),
+  initWeights: jest.fn(() => new Array(171).fill(0)),
+  mutateWeights: jest.fn(weights => weights.map(w => w + 0.01)),
   think: jest.fn(() => ({ id: 1, angleDelta: 0, speed: 0 })),
 }));
 
@@ -13,7 +13,7 @@ jest.mock('../../src/creature', () => {
     getScore: actual.getScore,
     initCreature: jest.fn((state, config, x, y, angle, weights, generation) => {
       const id = ++state.lastCreatureId;
-      return Promise.resolve({
+      return {
         id, x, y, angle, weights, generation,
         energy: mockSim.CREATURE_INITIAL_ENERGY,
         prev: { x, y, angle, energy: mockSim.CREATURE_INITIAL_ENERGY },
@@ -23,7 +23,7 @@ jest.mock('../../src/creature', () => {
         justReproduced: false,
         updatesToFlash: 0,
         stats: { msLived: 0, energyGained: 0, score: 0 },
-      });
+      };
     }),
   };
 });
@@ -37,6 +37,10 @@ const createBaseState = () => ({
   food: [],
   obstacles: [],
   borderObstacles: [],
+  allObstacles: [],
+  obstacleMap: new Map(),
+  foodMap: new Map(),
+  creatureMap: new Map(),
   stats: {
     restarts: 0,
     generation: SIM_CONFIG.FOOD_ENERGY_BONUS_MAX_GENERATION + 1,

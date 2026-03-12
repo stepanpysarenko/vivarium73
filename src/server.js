@@ -57,9 +57,8 @@ function sendInitMessage(ws, sim) {
 
 wss.on("connection", (ws) => {
     logger.debug("Client connected");
-
     sendInitMessage(ws, simulationManager.get(SIM_ID));
-
+    
     ws.on("close", () => { logger.debug("Client disconnected"); });
 });
 

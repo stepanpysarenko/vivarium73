@@ -1,3 +1,5 @@
+const { wrapAngle } = require("./utils");
+
 function buildCreatureIndex(creatures) {
     const map = new Map();
     for (const c of creatures) {
@@ -8,16 +10,16 @@ function buildCreatureIndex(creatures) {
     return map;
 }
 
-function buildStateIndexes(state) {
-    state.allObstacles = [...state.obstacles, ...(state.borderObstacles || [])];
-    state.obstacleMap = new Map(state.obstacles.map(o => [`${o.x},${o.y}`, o]));
+function buildStateIndexes(state, config) {
+    state.allObstacles = [...state.obstacles, ...getBorderObstacles(config)];
+    state.obstacleMap = new Map(state.allObstacles.map(o => [`${o.x},${o.y}`, o]));
     state.foodMap = new Map(state.food.map(f => [`${f.x},${f.y}`, f]));
-    state.creatureMap = buildCreatureIndex(state.creatures || []);
+    state.creatureMap = buildCreatureIndex(state.creatures);
 }
 
 function isCellOccupied(x, y, state) {
     const key = `${x},${y}`;
-    return state.foodMap.has(key) || state.obstacleMap.has(key);
+    return state.foodMap.has(key) || state.obstacleMap.has(key) || state.creatureMap.has(key);
 }
 
 function getTotalEnergy(state, config) {
@@ -27,7 +29,7 @@ function getTotalEnergy(state, config) {
 }
 
 function getRandomEmptyCell(state, config) {
-    const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length - (state.borderObstacles?.length ?? 0);
+    const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length;
     let cell = null;
     let attempts = 0;
     do {
@@ -81,9 +83,12 @@ function getObstacles() {
 
 function getBorderObstacles(config) {
     const obstacles = [];
+    const last = config.GRID_SIZE - 1;
     for (let i = 0; i < config.GRID_SIZE; i++) {
-        obstacles.push({ x: i, y: 0 }, { x: i, y: config.GRID_SIZE - 1 });
-        obstacles.push({ x: 0, y: i }, { x: config.GRID_SIZE - 1, y: i });
+        obstacles.push({ x: i, y: 0 }, { x: i, y: last });
+    }
+    for (let i = 1; i < last; i++) {
+        obstacles.push({ x: 0, y: i }, { x: last, y: i });
     }
     return obstacles;
 }
@@ -99,23 +104,18 @@ function isWithinFOV(creatureX, creatureY, creatureAngle, targetX, targetY, fovR
     const dy = targetY - creatureY;
     const angleToTarget = Math.atan2(dy, dx);
 
-    let angleDiff = angleToTarget - creatureAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
+    const angleDiff = wrapAngle(angleToTarget - creatureAngle);
     return Math.abs(angleDiff) <= fovRadians / 2;
 }
 
-function getVisibleObjects(objects, creature, config) {
+function getVisibleObjects(objects, creature, config, excludeId) {
     const r2Visibility = config.CREATURE_VISIBILITY_RADIUS ** 2;
     const { x, y, angle } = creature;
     const fov = config.CREATURE_VISIBILITY_FOV_RADIANS;
 
     return objects.filter(obj => {
-        if (!isWithinRadius(obj.x, obj.y, x, y, r2Visibility)) {
-            return false;
-        }
+        if (excludeId !== undefined && obj.id === excludeId) return false;
+        if (!isWithinRadius(obj.x, obj.y, x, y, r2Visibility)) return false;
         return isWithinFOV(x, y, angle, obj.x, obj.y, fov);
     });
 }
@@ -125,8 +125,7 @@ function getVisibleFood(creature, state, config) {
 }
 
 function getVisibleCreatures(creature, state, config) {
-    const otherCreatures = state.creatures.filter(c => c.id !== creature.id);
-    return getVisibleObjects(otherCreatures, creature, config);
+    return getVisibleObjects(state.creatures, creature, config, creature.id);
 }
 
 function getVisibleObstacles(creature, state, config) {
