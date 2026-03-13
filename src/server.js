@@ -13,7 +13,17 @@ const SIM_ID = 'main';
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+
+const wss = new WebSocket.Server({
+    server,
+    verifyClient: (_info, cb) => {
+        if (wss.clients.size >= SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS) {
+            cb(false, 503, "Server full");
+        } else {
+            cb(true);
+        }
+    }
+});
 
 
 app.disable('x-powered-by');
@@ -55,12 +65,7 @@ function sendInitMessage(ws, sim) {
     }
 }
 
-wss.on("connection", (ws) => {
-    if (wss.clients.size > SERVER_CONFIG.WEBSOCKET_MAX_CLIENTS) {
-        ws.close(1013, "Server full");
-        return;
-    }
-    
+wss.on("connection", (ws) => {   
     logger.debug("Client connected");
     sendInitMessage(ws, simulationManager.get(SIM_ID));
 
@@ -90,6 +95,10 @@ async function startServer(port = SERVER_CONFIG.PORT) {
 
 async function shutdown() {
     logger.info("Shutting down...");
+    setTimeout(() => {
+        logger.error("Shutdown timed out — forcing exit");
+        process.exit(1);
+    }, 5000).unref();
     const sim = simulationManager.get(SIM_ID);
     if (sim) {
         sim.stop();

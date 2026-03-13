@@ -95,7 +95,7 @@ function getPublicState(state, config) {
             f: c.updatesToFlash > 0,                            // flashing
             g: c.generation,                                    // generation
             s: c.stats.score,                                   // score
-            t: c.stats.msLived                                  // msLived
+            t: c.stats.msLived                                  // time lived in ms
         })),
         food: state.food
     };

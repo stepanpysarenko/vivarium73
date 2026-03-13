@@ -6,7 +6,7 @@ const SERVER_CONFIG = {
     LOG_LEVEL: process.env.LOG_LEVEL || "info",
 
     PORT: process.env.PORT || 3000,
-    WEBSOCKET_MAX_CLIENTS: process.env.WEBSOCKET_MAX_CLIENTS ? parseInt(process.env.WEBSOCKET_MAX_CLIENTS, 10) : 100,
+    WEBSOCKET_MAX_CLIENTS: process.env.WEBSOCKET_MAX_CLIENTS ? parseInt(process.env.WEBSOCKET_MAX_CLIENTS, 10) : 1000,
 
     RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) : 60000,
     RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX, 10) : 60

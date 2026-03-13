@@ -96,10 +96,6 @@ class SimulationManager {
     get(id) {
         return this._sims.get(id);
     }
-
-    getAll() {
-        return [...this._sims.values()];
-    }
 }
 
 const simulationManager = new SimulationManager();

@@ -1,18 +1,18 @@
 const { SERVER_CONFIG } = require("./config");
 
-const _rlMap = new Map();
+const rateLimitStore = new Map();
 setInterval(() => {
     const now = Date.now();
-    _rlMap.forEach((v, k) => { if (now > v.reset) _rlMap.delete(k); });
+    rateLimitStore.forEach((v, k) => { if (now > v.reset) rateLimitStore.delete(k); });
 }, 300_000).unref();
 
-function makeRateLimiter(windowMs, max) {
+function createRateLimiter(windowMs, max) {
     return (req, res, next) => {
         const key = req.ip;
         const now = Date.now();
-        const entry = _rlMap.get(key);
+        const entry = rateLimitStore.get(key);
         if (!entry || now > entry.reset) {
-            _rlMap.set(key, { count: 1, reset: now + windowMs });
+            rateLimitStore.set(key, { count: 1, reset: now + windowMs });
             return next();
         }
         if (entry.count >= max) {
@@ -24,7 +24,8 @@ function makeRateLimiter(windowMs, max) {
 }
 
 module.exports = function registerRoutes(app, getSim) {
-    app.use("/api", makeRateLimiter(SERVER_CONFIG.RATE_LIMIT_WINDOW_MS, SERVER_CONFIG.RATE_LIMIT_MAX));
+    app.use("/api", createRateLimiter(SERVER_CONFIG.RATE_LIMIT_WINDOW_MS, SERVER_CONFIG.RATE_LIMIT_MAX));
+    
     app.get("/api/health", (req, res) => res.json({
         status: "OK",
         appVersion: SERVER_CONFIG.APP_VERSION
