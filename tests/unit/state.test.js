@@ -7,7 +7,7 @@ const { buildStateIndexes } = require('../../src/grid');
 const { __testUtils } = stateModule;
 
 const createBaseState = () => {
-  const s = {
+  const state = {
     creatures: [],
     food: [],
     obstacles: [],
@@ -21,8 +21,8 @@ const createBaseState = () => {
     lastCreatureId: 0,
     topPerformers: [],
   };
-  buildStateIndexes(s);
-  return s;
+  const indexes = buildStateIndexes(state);
+  return { state, indexes };
 };
 
 describe('applyMovement', () => {
@@ -49,10 +49,10 @@ describe('applyMovement', () => {
 
 describe('energy adjustments', () => {
   it('increases energy when eating food', () => {
-    const state = createBaseState();
+    const { state, indexes } = createBaseState();
     const food = { x: 5, y: 5 };
     state.food.push(food);
-    state.foodMap.set('5,5', food);
+    indexes.foodMap.set('5,5', food);
     const creature = {
       id: 2,
       x: 5,
@@ -63,7 +63,7 @@ describe('energy adjustments', () => {
       stats: { energyGained: 0 },
     };
 
-    __testUtils.handleEating(creature, state, SIM_CONFIG);
+    __testUtils.handleEating(creature, state, indexes, SIM_CONFIG);
 
     expect(creature.energy).toBe(SIM_CONFIG.CREATURE_MAX_ENERGY);
     expect(creature.stats.energyGained).toBe(SIM_CONFIG.FOOD_ENERGY);
@@ -84,12 +84,12 @@ describe('energy adjustments', () => {
       y: 1.2,
     };
 
-    const state = { ...createBaseState(), creatures: [creature, other] };
-    buildStateIndexes(state);
-    state.creatureMap = new Map();
-    state.creatureMap.set('1,1', [creature, other]);
+    const { state } = createBaseState();
+    const indexes = buildStateIndexes({ ...state, creatures: [creature, other] });
+    indexes.creatureMap = new Map();
+    indexes.creatureMap.set('1,1', [creature, other]);
 
-    __testUtils.handleCreatureCollision(creature, state, SIM_CONFIG);
+    __testUtils.handleCreatureCollision(creature, indexes, SIM_CONFIG);
 
     expect(creature.energy).toBe(100 - SIM_CONFIG.CREATURE_COLLISION_ENERGY_PENALTY);
     expect(creature.updatesToFlash).toBe(SIM_CONFIG.CREATURE_COLLISION_TICKS_TO_FLASH);
@@ -98,24 +98,24 @@ describe('energy adjustments', () => {
 
 describe('addFood validation', () => {
   it('adds food within bounds', () => {
-    const state = createBaseState();
-    stateModule.addFood(3, 4, state, SIM_CONFIG);
+    const { state, indexes } = createBaseState();
+    stateModule.addFood(3, 4, state, indexes, SIM_CONFIG);
 
     expect(state.food).toHaveLength(1);
     expect(state.stats.foodCount).toBe(1);
   });
 
   it('throws when coordinates are out of bounds', () => {
-    const state = createBaseState();
-    expect(() => stateModule.addFood(-1, 0, state, SIM_CONFIG)).toThrow('Invalid coordinates');
+    const { state, indexes } = createBaseState();
+    expect(() => stateModule.addFood(-1, 0, state, indexes, SIM_CONFIG)).toThrow('Invalid coordinates');
   });
 
   it('throws when max food count reached', () => {
-    const state = createBaseState();
+    const { state, indexes } = createBaseState();
     state.food = Array.from({ length: SIM_CONFIG.FOOD_MAX_COUNT }, (_, idx) => ({ x: idx, y: 0 }));
     state.stats.foodCount = SIM_CONFIG.FOOD_MAX_COUNT;
 
-    expect(() => stateModule.addFood(1, 1, state, SIM_CONFIG)).toThrow('Max food count reached');
+    expect(() => stateModule.addFood(1, 1, state, indexes, SIM_CONFIG)).toThrow('Max food count reached');
   });
 });
 
@@ -150,11 +150,12 @@ describe('wrapAngle', () => {
 describe('handleObstacleCollision', () => {
   it('does not alter position when there is no collision', () => {
     const state = {
-      ...createBaseState(),
       obstacles: [{ x: 10, y: 10 }],
       borderObstacles: [],
+      food: [],
+      creatures: [],
     };
-    buildStateIndexes(state);
+    const indexes = buildStateIndexes(state);
 
     const creature = {
       x: 5, y: 5,
@@ -163,7 +164,7 @@ describe('handleObstacleCollision', () => {
       updatesToFlash: 0,
     };
 
-    __testUtils.handleObstacleCollision(creature, state, SIM_CONFIG);
+    __testUtils.handleObstacleCollision(creature, state, indexes, SIM_CONFIG);
 
     expect(creature.x).toBeCloseTo(5);
     expect(creature.y).toBeCloseTo(5);
@@ -172,11 +173,12 @@ describe('handleObstacleCollision', () => {
 
   it('retreats to previous position when both axes are blocked', () => {
     const state = {
-      ...createBaseState(),
       obstacles: [{ x: 10, y: 10 }, { x: 10, y: 9 }, { x: 9, y: 10 }],
       borderObstacles: [],
+      food: [],
+      creatures: [],
     };
-    buildStateIndexes(state);
+    const indexes = buildStateIndexes(state);
 
     const creature = {
       x: 10, y: 10,
@@ -185,7 +187,7 @@ describe('handleObstacleCollision', () => {
       updatesToFlash: 0,
     };
 
-    __testUtils.handleObstacleCollision(creature, state, SIM_CONFIG);
+    __testUtils.handleObstacleCollision(creature, state, indexes, SIM_CONFIG);
 
     expect(creature.x).toBeCloseTo(9);
     expect(creature.y).toBeCloseTo(9);
@@ -195,11 +197,12 @@ describe('handleObstacleCollision', () => {
 
   it('clamps position to grid bounds when beyond grid', () => {
     const state = {
-      ...createBaseState(),
       obstacles: [],
       borderObstacles: [],
+      food: [],
+      creatures: [],
     };
-    buildStateIndexes(state);
+    const indexes = buildStateIndexes(state);
 
     const creature = {
       x: -2, y: -2,
@@ -208,7 +211,7 @@ describe('handleObstacleCollision', () => {
       updatesToFlash: 0,
     };
 
-    __testUtils.handleObstacleCollision(creature, state, SIM_CONFIG);
+    __testUtils.handleObstacleCollision(creature, state, indexes, SIM_CONFIG);
 
     expect(creature.x).toBe(0);
     expect(creature.y).toBe(0);
@@ -217,11 +220,12 @@ describe('handleObstacleCollision', () => {
 
   it('slides along Y when X is blocked', () => {
     const state = {
-      ...createBaseState(),
       obstacles: [{ x: 10, y: 10 }],
       borderObstacles: [],
+      food: [],
+      creatures: [],
     };
-    buildStateIndexes(state);
+    const indexes = buildStateIndexes(state);
 
     const creature = {
       x: 10, y: 10,
@@ -230,7 +234,7 @@ describe('handleObstacleCollision', () => {
       updatesToFlash: 0,
     };
 
-    __testUtils.handleObstacleCollision(creature, state, SIM_CONFIG);
+    __testUtils.handleObstacleCollision(creature, state, indexes, SIM_CONFIG);
 
     expect(creature.x).toBeCloseTo(9);
     expect(creature.y).toBeCloseTo(10);

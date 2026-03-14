@@ -9,14 +9,16 @@ function buildCreatureIndex(creatures) {
 }
 
 function buildStateIndexes(state) {
-    state.obstacleMap = new Map(state.obstacles.map(o => [`${o.x},${o.y}`, o]));
-    state.foodMap = new Map(state.food.map(f => [`${f.x},${f.y}`, f]));
-    state.creatureMap = buildCreatureIndex(state.creatures || []);
+    return {
+        obstacleMap: new Map(state.obstacles.map(o => [`${o.x},${o.y}`, o])),
+        foodMap: new Map(state.food.map(f => [`${f.x},${f.y}`, f])),
+        creatureMap: buildCreatureIndex(state.creatures || [])
+    };
 }
 
-function isCellOccupied(x, y, state) {
+function isCellOccupied(x, y, indexes) {
     const key = `${x},${y}`;
-    return state.foodMap.has(key) || state.obstacleMap.has(key);
+    return indexes.foodMap.has(key) || indexes.obstacleMap.has(key);
 }
 
 function getTotalEnergy(state, config) {
@@ -25,7 +27,7 @@ function getTotalEnergy(state, config) {
     return creatureEnergy + foodEnergy;
 }
 
-function getRandomEmptyCell(state, config) {
+function getRandomEmptyCell(state, indexes, config) {
     const maxAttempts = config.GRID_SIZE ** 2 - state.food.length - state.obstacles.length - (state.borderObstacles?.length ?? 0);
     let cell = null;
     let attempts = 0;
@@ -35,17 +37,17 @@ function getRandomEmptyCell(state, config) {
             y: Math.floor(Math.random() * config.GRID_SIZE)
         };
         attempts++;
-    } while (isCellOccupied(cell.x, cell.y, state) && attempts < maxAttempts);
+    } while (isCellOccupied(cell.x, cell.y, indexes) && attempts < maxAttempts);
 
-    return isCellOccupied(cell.x, cell.y, state) ? null : cell;
+    return isCellOccupied(cell.x, cell.y, indexes) ? null : cell;
 }
 
-function updateFood(state, config) {
+function updateFood(state, indexes, config) {
     while (getTotalEnergy(state, config) < config.GRID_TARGET_ENERGY && state.food.length < config.FOOD_MAX_COUNT) {
-        const cell = getRandomEmptyCell(state, config);
+        const cell = getRandomEmptyCell(state, indexes, config);
         if (!cell) break;
         state.food.push(cell);
-        state.foodMap.set(`${cell.x},${cell.y}`, cell);
+        indexes.foodMap.set(`${cell.x},${cell.y}`, cell);
     }
 }
 

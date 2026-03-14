@@ -13,12 +13,15 @@ class Simulation {
         this.id = id;
         this.config = { ...SIM_CONFIG, ...configOverrides };
         this._state = null;
+        this._indexes = null;
         this._running = false;
         this._saveTimer = null;
     }
 
     async init() {
-        this._state = await createState(this.config);
+        const { state, indexes } = await createState(this.config);
+        this._state = state;
+        this._indexes = indexes;
     }
 
     start(onTick) {
@@ -52,7 +55,7 @@ class Simulation {
     }
 
     addFood(x, y) {
-        addFood(x, y, this._state, this.config);
+        addFood(x, y, this._state, this._indexes, this.config);
     }
 
     async _loop(onTick) {
@@ -60,7 +63,7 @@ class Simulation {
         while (this._running) {
             const start = performance.now();
             try {
-                await updateState(this._state, this.config);
+                await updateState(this._state, this._indexes, this.config);
                 onTick(this.getPublicState());
                 retries = 0;
             } catch (err) {
@@ -108,7 +111,7 @@ if (process.env.NODE_ENV === 'test') {
             const sim = simulationManager.get(id);
             if (sim) {
                 sim._state = s;
-                buildStateIndexes(s);
+                sim._indexes = buildStateIndexes(s);
             }
         },
         getSimState(id) {

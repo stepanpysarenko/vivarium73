@@ -1,9 +1,9 @@
 const { initWeights } = require("./nn");
 const { getRandomEmptyCell } = require("./grid");
 
-async function initCreature(state, config, x = null, y = null, angle = null, weights = null, generation = 1) {
+async function initCreature(state, indexes, config, x = null, y = null, angle = null, weights = null, generation = 1) {
     if (x === null || y === null) {
-        const cell = getRandomEmptyCell(state, config);
+        const cell = getRandomEmptyCell(state, indexes, config);
         if (!cell) {
             throw new Error("No empty cells available to place a creature");
         }

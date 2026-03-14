@@ -3,15 +3,15 @@ const { buildStateIndexes, isCellOccupied, isWithinRadius, isWithinFOV, getRando
 
 describe('isCellOccupied', () => {
   it('returns true when food occupies cell', () => {
-    const state = { food: [{ x: 1, y: 2 }], obstacles: [] };
-    buildStateIndexes(state);
-    expect(isCellOccupied(1, 2, state)).toBe(true);
+    const state = { food: [{ x: 1, y: 2 }], obstacles: [], creatures: [] };
+    const indexes = buildStateIndexes(state);
+    expect(isCellOccupied(1, 2, indexes)).toBe(true);
   });
 
   it('returns false for empty cell', () => {
-    const state = { food: [], obstacles: [] };
-    buildStateIndexes(state);
-    expect(isCellOccupied(0, 0, state)).toBe(false);
+    const state = { food: [], obstacles: [], creatures: [] };
+    const indexes = buildStateIndexes(state);
+    expect(isCellOccupied(0, 0, indexes)).toBe(false);
   });
 });
 

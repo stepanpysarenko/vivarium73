@@ -11,7 +11,7 @@ jest.mock('../../src/creature', () => {
   const { SIM_CONFIG: mockSim } = require('../../src/config');
   return {
     getScore: actual.getScore,
-    initCreature: jest.fn((state, config, x, y, angle, weights, generation) => {
+    initCreature: jest.fn((state, indexes, config, x, y, angle, weights, generation) => {
       const id = ++state.lastCreatureId;
       return Promise.resolve({
         id, x, y, angle, weights, generation,
@@ -47,6 +47,8 @@ const createBaseState = () => ({
   topPerformers: [],
 });
 
+const EMPTY_INDEXES = { obstacleMap: new Map(), foodMap: new Map(), creatureMap: new Map() };
+
 const createCreature = (overrides = {}) => ({
   id: 1,
   x: 5,
@@ -75,7 +77,7 @@ describe('handleLifecycle', () => {
     const creature = createCreature({ id: 1, energy: 500 });
     state.creatures = [creature];
 
-    const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
+    const result = await __testUtils.handleLifecycle(state, EMPTY_INDEXES, SIM_CONFIG);
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(1);
@@ -89,7 +91,7 @@ describe('handleLifecycle', () => {
     const alive = createCreature({ id: 2, energy: 500 });
     state.creatures = [dead, alive];
 
-    const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
+    const result = await __testUtils.handleLifecycle(state, EMPTY_INDEXES, SIM_CONFIG);
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(2);
@@ -106,7 +108,7 @@ describe('handleLifecycle', () => {
     state.creatures = [parent];
     state.lastCreatureId = 1;
 
-    const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
+    const result = await __testUtils.handleLifecycle(state, EMPTY_INDEXES, SIM_CONFIG);
 
     // parent + offspring
     expect(result).toHaveLength(2);
@@ -128,7 +130,7 @@ describe('handleLifecycle', () => {
     creature.stats.energyGained = 250;
     state.creatures = [creature];
 
-    const result = await __testUtils.handleLifecycle(state, SIM_CONFIG);
+    const result = await __testUtils.handleLifecycle(state, EMPTY_INDEXES, SIM_CONFIG);
 
     expect(result[0].stats.score).toBe(25); // 250 / 10
   });
